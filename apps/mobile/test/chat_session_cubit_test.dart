@@ -15,6 +15,8 @@ class MockBridgeService extends BridgeService {
       StreamController<(ServerMessage, String?)>.broadcast();
   final sentMessages = <ClientMessage>[];
   final cachedMessagesBySession = <String, List<ServerMessage>>{};
+  final historySeqBySession = <String, int>{};
+  bool connected = true;
 
   void emitMessage(ServerMessage msg, {String? sessionId}) {
     _taggedController.add((msg, sessionId));
@@ -23,6 +25,9 @@ class MockBridgeService extends BridgeService {
 
   @override
   Stream<ServerMessage> get messages => _messageController.stream;
+
+  @override
+  bool get isConnected => connected;
 
   @override
   Stream<ServerMessage> messagesForSession(String sessionId) {
@@ -68,6 +73,11 @@ class MockBridgeService extends BridgeService {
   @override
   List<ServerMessage> cachedSessionMessages(String sessionId) {
     return cachedMessagesBySession[sessionId] ?? const [];
+  }
+
+  @override
+  int cachedSessionHistorySeq(String sessionId) {
+    return historySeqBySession[sessionId] ?? 0;
   }
 
   @override
@@ -265,6 +275,26 @@ void main() {
               as Map<String, dynamic>;
       expect(payload['clientMessageId'], entry.clientMessageId);
       expect(payload.containsKey('baseSeq'), isFalse);
+    });
+
+    test('sendMessage while disconnected queues entry with baseSeq', () async {
+      mockBridge.connected = false;
+      mockBridge.historySeqBySession['s1'] = 9;
+      final cubit = createCubit('s1');
+      addTearDown(cubit.close);
+      await Future.microtask(() {});
+
+      cubit.sendMessage('Offline input');
+
+      final entry = cubit.state.entries.single as UserChatEntry;
+      expect(entry.status, MessageStatus.queued);
+      expect(entry.clientMessageId, isNotNull);
+
+      final payload =
+          jsonDecode(mockBridge.sentMessages.single.toJson())
+              as Map<String, dynamic>;
+      expect(payload['clientMessageId'], entry.clientMessageId);
+      expect(payload['baseSeq'], 9);
     });
 
     test(

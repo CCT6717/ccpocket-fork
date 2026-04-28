@@ -574,6 +574,10 @@ class ChatSessionCubit extends Cubit<ChatSessionState> {
     if (isCodex && state.queuedInput != null) return;
 
     final clientMessageId = _uuid.v4();
+    final isOffline = !_bridge.isConnected;
+    final baseSeq = isOffline
+        ? _bridge.cachedSessionHistorySeq(sessionId)
+        : null;
     final shouldAddLocalEntry = !isCodex || state.status == ProcessStatus.idle;
     if (shouldAddLocalEntry) {
       final entry = UserChatEntry(
@@ -581,6 +585,7 @@ class ChatSessionCubit extends Cubit<ChatSessionState> {
         sessionId: sessionId,
         clientMessageId: clientMessageId,
         imageBytesList: images?.map((i) => i.bytes).toList(),
+        status: isOffline ? MessageStatus.queued : MessageStatus.sending,
       );
       emit(state.copyWith(entries: [...state.entries, entry]));
     }
@@ -605,6 +610,7 @@ class ChatSessionCubit extends Cubit<ChatSessionState> {
         text,
         sessionId: sessionId,
         clientMessageId: clientMessageId,
+        baseSeq: baseSeq,
         images: imagePayloads,
         skill: structuredMentions.skills.isNotEmpty
             ? structuredMentions.skills.first
@@ -1058,6 +1064,7 @@ class ChatSessionCubit extends Cubit<ChatSessionState> {
   void retryMessage(UserChatEntry entry) {
     final clientMessageId = _uuid.v4();
     final retrySessionId = entry.sessionId ?? sessionId;
+    final isOffline = !_bridge.isConnected;
     emit(
       state.copyWith(
         entries: state.entries.map((e) {
@@ -1069,7 +1076,7 @@ class ChatSessionCubit extends Cubit<ChatSessionState> {
               imageBytesList: entry.imageBytesList,
               imageUrls: entry.imageUrls,
               imageCount: entry.imageCount,
-              status: MessageStatus.sending,
+              status: isOffline ? MessageStatus.queued : MessageStatus.sending,
               messageUuid: entry.messageUuid,
               timestamp: entry.timestamp,
             );
@@ -1083,6 +1090,9 @@ class ChatSessionCubit extends Cubit<ChatSessionState> {
         entry.text,
         sessionId: retrySessionId,
         clientMessageId: clientMessageId,
+        baseSeq: isOffline
+            ? _bridge.cachedSessionHistorySeq(retrySessionId)
+            : null,
       ),
     );
   }
