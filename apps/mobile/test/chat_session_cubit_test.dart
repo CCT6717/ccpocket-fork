@@ -14,6 +14,7 @@ class MockBridgeService extends BridgeService {
   final _taggedController =
       StreamController<(ServerMessage, String?)>.broadcast();
   final sentMessages = <ClientMessage>[];
+  final cachedMessagesBySession = <String, List<ServerMessage>>{};
 
   void emitMessage(ServerMessage msg, {String? sessionId}) {
     _taggedController.add((msg, sessionId));
@@ -62,6 +63,11 @@ class MockBridgeService extends BridgeService {
   void requestSessionHistory(String sessionId) {
     requestSessionHistoryCallCount++;
     lastRequestedSessionId = sessionId;
+  }
+
+  @override
+  List<ServerMessage> cachedSessionMessages(String sessionId) {
+    return cachedMessagesBySession[sessionId] ?? const [];
   }
 
   @override
@@ -534,6 +540,57 @@ void main() {
 
       expect(cubit.state.entries, hasLength(1));
       expect(cubit.state.status, ProcessStatus.idle);
+    });
+
+    test('restores cached runtime messages before requesting history', () {
+      mockBridge.cachedMessagesBySession['s1'] = [
+        const StatusMessage(status: ProcessStatus.running),
+        AssistantServerMessage(
+          message: AssistantMessage(
+            id: 'cached-a1',
+            role: 'assistant',
+            content: [const TextContent(text: 'Cached response')],
+            model: 'claude',
+          ),
+        ),
+      ];
+
+      final cubit = createCubit('s1');
+      addTearDown(cubit.close);
+
+      expect(mockBridge.requestSessionHistoryCallCount, 1);
+      expect(cubit.state.status, ProcessStatus.running);
+      expect(cubit.state.entries, hasLength(1));
+      final entry = cubit.state.entries.single as ServerChatEntry;
+      final msg = entry.message as AssistantServerMessage;
+      expect(
+        (msg.message.content.single as TextContent).text,
+        'Cached response',
+      );
+    });
+
+    test('restores cached queue state without visible ack entries', () {
+      mockBridge.cachedMessagesBySession['s1'] = [
+        const InputAckMessage(sessionId: 's1', queued: true),
+        const ConversationQueueMessage(
+          sessionId: 's1',
+          limit: 1,
+          items: [
+            QueuedInputItem(
+              itemId: 'queued-1',
+              text: 'Queued while busy',
+              createdAt: '2026-04-28T00:00:00.000Z',
+            ),
+          ],
+        ),
+      ];
+
+      final cubit = createCubit('s1', provider: Provider.codex);
+      addTearDown(cubit.close);
+
+      expect(cubit.state.entries, isEmpty);
+      expect(cubit.state.queuedInput?.itemId, 'queued-1');
+      expect(cubit.state.queuedInput?.text, 'Queued while busy');
     });
 
     test('result message adds cost', () async {

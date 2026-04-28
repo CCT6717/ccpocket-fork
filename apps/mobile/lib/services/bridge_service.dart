@@ -10,16 +10,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import '../core/logger.dart';
 import '../models/messages.dart';
 import 'bridge_service_base.dart';
-
-class ExplorerHistorySnapshot {
-  const ExplorerHistorySnapshot({
-    this.currentPath = '',
-    this.recentPeekedFiles = const [],
-  });
-
-  final String currentPath;
-  final List<String> recentPeekedFiles;
-}
+import 'session_runtime_store.dart';
 
 class BridgeService implements BridgeServiceBase {
   void Function(ClientMessage message)? onOutgoingMessage;
@@ -102,7 +93,7 @@ class BridgeService implements BridgeServiceBase {
   String? _defaultCodexProfile;
   String? _bridgeVersion;
   UsageResultMessage? _lastUsageResult;
-  final Map<String, ExplorerHistorySnapshot> _explorerHistoryBySession = {};
+  final SessionRuntimeStore _runtimeStore = SessionRuntimeStore();
 
   // Diff image cache: survives screen navigation, cleared on session stop.
   // Key: "$projectPath\n$filePath"
@@ -253,6 +244,9 @@ class BridgeService implements BridgeServiceBase {
             final json = jsonDecode(data as String) as Map<String, dynamic>;
             final sessionId = json['sessionId'] as String?;
             final msg = ServerMessage.fromJson(json);
+            if (sessionId != null) {
+              _runtimeStore.applyServerMessage(sessionId, msg);
+            }
             switch (msg) {
               case SessionListMessage(
                 :final sessions,
@@ -650,8 +644,11 @@ class BridgeService implements BridgeServiceBase {
   }
 
   ExplorerHistorySnapshot getExplorerHistory(String sessionId) {
-    return _explorerHistoryBySession[sessionId] ??
-        const ExplorerHistorySnapshot();
+    return _runtimeStore.getExplorerHistory(sessionId);
+  }
+
+  List<ServerMessage> cachedSessionMessages(String sessionId) {
+    return _runtimeStore.messages(sessionId);
   }
 
   void setExplorerHistory(
@@ -666,23 +663,26 @@ class BridgeService implements BridgeServiceBase {
         .take(10)
         .toList();
     if (normalizedPath.isEmpty && normalizedFiles.isEmpty) {
-      _explorerHistoryBySession.remove(sessionId);
+      _runtimeStore.setExplorerHistory(
+        sessionId,
+        currentPath: '',
+        recentPeekedFiles: const [],
+      );
       return;
     }
-    _explorerHistoryBySession[sessionId] = ExplorerHistorySnapshot(
+    _runtimeStore.setExplorerHistory(
+      sessionId,
       currentPath: normalizedPath,
       recentPeekedFiles: normalizedFiles,
     );
   }
 
   void migrateExplorerHistory(String fromSessionId, String toSessionId) {
-    final snapshot = _explorerHistoryBySession.remove(fromSessionId);
-    if (snapshot == null) return;
-    _explorerHistoryBySession[toSessionId] = snapshot;
+    _runtimeStore.migrateSession(fromSessionId, toSessionId);
   }
 
   void clearExplorerHistory(String sessionId) {
-    _explorerHistoryBySession.remove(sessionId);
+    _runtimeStore.clearSession(sessionId);
   }
 
   /// Rename a session. For running sessions, [sessionId] is the bridge id.

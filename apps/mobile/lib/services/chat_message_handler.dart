@@ -505,6 +505,8 @@ class ChatMessageHandler {
     String? lastAskToolUseId;
     Map<String, dynamic>? lastAskInput;
     String? claudeSessionId;
+    QueuedInputItem? queuedInput;
+    var clearQueuedInput = false;
 
     // Track last known timestamp from user messages so server entries
     // (which don't carry timestamps) inherit a realistic time instead of
@@ -516,6 +518,13 @@ class ChatMessageHandler {
     for (final m in messages) {
       if (m is StatusMessage) {
         lastStatus = m.status;
+      } else if (m is ConversationQueueMessage) {
+        queuedInput = m.items.isNotEmpty ? m.items.first : null;
+        clearQueuedInput = m.items.isEmpty;
+      } else if (m is InputAckMessage || m is InputRejectedMessage) {
+        // Runtime cache may contain transient acknowledgements. They should
+        // not become visible history entries during cache restoration.
+        continue;
       } else if (m is UserInputMessage) {
         // Skip synthetic and meta messages
         if (m.isSynthetic || m.isMeta) continue;
@@ -638,6 +647,8 @@ class ChatMessageHandler {
       askToolUseId: isWaiting ? lastAskToolUseId : null,
       askInput: isWaiting ? lastAskInput : null,
       claudeSessionId: claudeSessionId,
+      queuedInput: queuedInput,
+      clearQueuedInput: clearQueuedInput,
     );
   }
 

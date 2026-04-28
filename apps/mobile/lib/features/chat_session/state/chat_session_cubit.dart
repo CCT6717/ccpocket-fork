@@ -101,6 +101,8 @@ class ChatSessionCubit extends Cubit<ChatSessionState> {
     // Subscribe to messages for this session
     _subscription = _bridge.messagesForSession(sessionId).listen(_onMessage);
 
+    _restoreCachedRuntimeMessages();
+
     // Request in-memory history from the bridge server
     _bridge.requestSessionHistory(sessionId);
 
@@ -122,6 +124,26 @@ class ChatSessionCubit extends Cubit<ChatSessionState> {
   // ---------------------------------------------------------------------------
   // Message processing
   // ---------------------------------------------------------------------------
+
+  void _restoreCachedRuntimeMessages() {
+    final cachedMessages = _bridge.cachedSessionMessages(sessionId);
+    if (cachedMessages.isEmpty) return;
+    try {
+      final history = HistoryMessage(messages: cachedMessages);
+      final update = _handler.handle(
+        history,
+        isBackground: true,
+        isCodex: isCodex,
+      );
+      _applyUpdate(update, history);
+    } catch (e, st) {
+      logger.error(
+        '[session:$sessionId] Failed to restore cached runtime messages',
+        e,
+        st,
+      );
+    }
+  }
 
   void _onMessage(ServerMessage msg) {
     // Log errors prominently
