@@ -349,38 +349,11 @@ class ChatSessionCubit extends Cubit<ChatSessionState> {
       // to prevent duplicates when get_history is received multiple times.
       final pastEntries = entries.take(_pastEntryCount).toList();
       final existingNonPast = entries.skip(_pastEntryCount).toList();
-      final historyCount = nonStreamingEntries.length;
 
-      // Preserve live entries that the history snapshot may not contain.
-      //
-      // The server builds the snapshot from session.history at the time of
-      // the get_history request. Live-broadcast messages that arrived at the
-      // client AFTER that snapshot was taken would be lost by a blind
-      // replace. If the client already has MORE non-past entries than the
-      // history provides, the tail entries are live-only and must survive.
-      //
-      // Also preserve locally-added UserChatEntry (status: sending) that
-      // the server history won't contain until the SDK echoes them back.
-      final extraLiveEntries = <ChatEntry>[];
-      if (existingNonPast.length > historyCount) {
-        extraLiveEntries.addAll(existingNonPast.skip(historyCount));
-      }
-      // Preserve any "sending" user entries that aren't already in history
-      // or extras (they were added by sendMessage() before the server
-      // confirmed receipt).
-      for (final e in existingNonPast) {
-        if (e is UserChatEntry &&
-            e.status == MessageStatus.sending &&
-            !extraLiveEntries.contains(e)) {
-          // Check whether this user entry is already covered by history
-          final coveredByHistory = nonStreamingEntries.any(
-            (h) => h is UserChatEntry && h.text == e.text,
-          );
-          if (!coveredByHistory) {
-            extraLiveEntries.add(e);
-          }
-        }
-      }
+      final extraLiveEntries = _entriesToPreserveAfterHistoryReplace(
+        existingNonPast: existingNonPast,
+        historyEntries: nonStreamingEntries,
+      );
 
       entries = [...pastEntries, ...nonStreamingEntries, ...extraLiveEntries];
 
@@ -431,8 +404,9 @@ class ChatSessionCubit extends Cubit<ChatSessionState> {
 
       didModifyEntries = true;
     } else if (nonStreamingEntries.isNotEmpty) {
-      entries = [...entries, ...nonStreamingEntries];
-      didModifyEntries = true;
+      final result = _appendEntriesDeduped(entries, nonStreamingEntries);
+      entries = result.entries;
+      didModifyEntries = result.didChange;
     }
 
     // --- Cleanup responded tool use IDs ---
@@ -620,6 +594,274 @@ class ChatSessionCubit extends Cubit<ChatSessionState> {
           ? Duration(milliseconds: durationMs.round())
           : null,
     );
+  }
+
+  List<ChatEntry> _entriesToPreserveAfterHistoryReplace({
+    required List<ChatEntry> existingNonPast,
+    required List<ChatEntry> historyEntries,
+  }) {
+    var lastMatchedExistingIndex = -1;
+    var searchStart = 0;
+
+    for (final historyEntry in historyEntries) {
+      final matchIndex = _indexOfEquivalentEntry(
+        existingNonPast,
+        historyEntry,
+        start: searchStart,
+        allowWeakMatch: true,
+      );
+      if (matchIndex == -1) continue;
+      lastMatchedExistingIndex = matchIndex;
+      searchStart = matchIndex + 1;
+    }
+
+    final candidates = lastMatchedExistingIndex == -1
+        ? existingNonPast.where(_isLocalUnconfirmedUserEntry)
+        : existingNonPast.skip(lastMatchedExistingIndex + 1);
+    final preserved = <ChatEntry>[];
+    final covered = [...historyEntries];
+
+    for (final candidate in candidates) {
+      if (_indexOfEquivalentEntry(covered, candidate, allowWeakMatch: true) !=
+          -1) {
+        continue;
+      }
+      if (!_shouldPreserveEntryAcrossHistoryReplace(candidate)) continue;
+      preserved.add(candidate);
+      covered.add(candidate);
+    }
+    return preserved;
+  }
+
+  ({List<ChatEntry> entries, bool didChange}) _appendEntriesDeduped(
+    List<ChatEntry> current,
+    List<ChatEntry> additions,
+  ) {
+    var next = current;
+    var didChange = false;
+
+    for (final addition in additions) {
+      final matchIndex = _indexOfEquivalentEntry(next, addition);
+      if (matchIndex != -1) {
+        final merged = _mergeEquivalentEntry(next[matchIndex], addition);
+        if (!identical(merged, next[matchIndex])) {
+          next = [...next];
+          next[matchIndex] = merged;
+          didChange = true;
+        }
+        continue;
+      }
+      if (!didChange) next = [...next];
+      next.add(addition);
+      didChange = true;
+    }
+
+    return (entries: next, didChange: didChange);
+  }
+
+  int _indexOfEquivalentEntry(
+    List<ChatEntry> entries,
+    ChatEntry target, {
+    int start = 0,
+    bool allowWeakMatch = false,
+  }) {
+    for (var i = start; i < entries.length; i++) {
+      if (_entriesEquivalent(
+        entries[i],
+        target,
+        allowWeakMatch: allowWeakMatch,
+      )) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  bool _entriesEquivalent(
+    ChatEntry a,
+    ChatEntry b, {
+    bool allowWeakMatch = false,
+  }) {
+    final aKey = _entryStableKey(a);
+    final bKey = _entryStableKey(b);
+    if (aKey != null && bKey != null) return aKey == bKey;
+
+    if (allowWeakMatch) {
+      final aWeakKey = _entryWeakKey(a);
+      final bWeakKey = _entryWeakKey(b);
+      if (aWeakKey != null && bWeakKey != null) return aWeakKey == bWeakKey;
+    }
+
+    if (a is UserChatEntry && b is UserChatEntry) {
+      // Older Bridge versions may not include clientMessageId in restored
+      // history. Use text only as a last-resort match for local pending entries.
+      return (a.status != MessageStatus.sent ||
+              b.status != MessageStatus.sent) &&
+          a.text == b.text &&
+          a.imageCount == b.imageCount;
+    }
+    return false;
+  }
+
+  String? _entryStableKey(ChatEntry entry) {
+    if (entry is UserChatEntry) {
+      final uuid = entry.messageUuid;
+      if (uuid != null && uuid.isNotEmpty) return 'user:uuid:$uuid';
+      final clientMessageId = entry.clientMessageId;
+      if (clientMessageId != null && clientMessageId.isNotEmpty) {
+        return 'user:client:$clientMessageId';
+      }
+      return null;
+    }
+    if (entry is ServerChatEntry) {
+      return _serverMessageStableKey(entry.message);
+    }
+    return null;
+  }
+
+  String? _entryWeakKey(ChatEntry entry) {
+    if (entry is UserChatEntry) {
+      return ['user', entry.text, entry.imageCount].join('\u0001');
+    }
+    if (entry is ServerChatEntry) {
+      return _serverMessageWeakKey(entry.message);
+    }
+    return null;
+  }
+
+  String? _serverMessageStableKey(ServerMessage message) {
+    switch (message) {
+      case AssistantServerMessage(:final messageUuid, :final message):
+        if (messageUuid != null && messageUuid.isNotEmpty) {
+          return 'assistant:uuid:$messageUuid';
+        }
+        if (message.id.isNotEmpty) return 'assistant:id:${message.id}';
+        return null;
+      case ToolResultMessage(:final toolUseId):
+        return 'tool_result:$toolUseId';
+      case PermissionRequestMessage(:final toolUseId):
+        return 'permission_request:$toolUseId';
+      case PermissionResolvedMessage(:final toolUseId):
+        return 'permission_resolved:$toolUseId';
+      default:
+        return null;
+    }
+  }
+
+  String? _serverMessageWeakKey(ServerMessage message) {
+    switch (message) {
+      case SystemMessage(
+        :final subtype,
+        :final sessionId,
+        :final claudeSessionId,
+        :final provider,
+        :final projectPath,
+        :final permissionMode,
+        :final executionMode,
+        :final approvalPolicy,
+        :final approvalsReviewer,
+        :final sandboxMode,
+        :final sourceSessionId,
+        :final tipCode,
+      ):
+        return [
+          'system',
+          subtype,
+          sessionId,
+          claudeSessionId,
+          provider,
+          projectPath,
+          permissionMode,
+          executionMode,
+          approvalPolicy,
+          approvalsReviewer,
+          sandboxMode,
+          sourceSessionId,
+          tipCode,
+        ].join('\u0001');
+      case AssistantServerMessage(:final message):
+        return 'assistant:content:${_assistantContentSignature(message)}';
+      case ResultMessage(
+        :final subtype,
+        :final sessionId,
+        :final stopReason,
+        :final result,
+        :final error,
+      ):
+        return [
+          'result',
+          subtype,
+          sessionId,
+          stopReason,
+          result,
+          error,
+        ].join('\u0001');
+      case ErrorMessage(:final message, :final errorCode):
+        return ['error', errorCode, message].join('\u0001');
+      case ToolUseSummaryMessage(:final summary, :final precedingToolUseIds):
+        return [
+          'tool_use_summary',
+          summary,
+          ...precedingToolUseIds,
+        ].join('\u0001');
+      default:
+        return null;
+    }
+  }
+
+  String _assistantContentSignature(AssistantMessage message) {
+    return message.content
+        .map((content) {
+          return switch (content) {
+            TextContent(:final text) => 'text:$text',
+            ThinkingContent(:final thinking) => 'thinking:$thinking',
+            ToolUseContent(:final id, :final name) => 'tool_use:$id:$name',
+          };
+        })
+        .join('\u0001');
+  }
+
+  bool _isLocalUnconfirmedUserEntry(ChatEntry entry) {
+    return entry is UserChatEntry && entry.status != MessageStatus.sent;
+  }
+
+  bool _shouldPreserveEntryAcrossHistoryReplace(ChatEntry entry) {
+    if (entry is UserChatEntry) return true;
+    if (entry is ServerChatEntry) {
+      return entry.message is! StatusMessage &&
+          entry.message is! InputAckMessage &&
+          entry.message is! InputRejectedMessage &&
+          entry.message is! ConversationQueueMessage;
+    }
+    return false;
+  }
+
+  ChatEntry _mergeEquivalentEntry(ChatEntry existing, ChatEntry incoming) {
+    if (existing is UserChatEntry && incoming is UserChatEntry) {
+      final imageBytes = existing.imageBytesList.isNotEmpty
+          ? existing.imageBytesList
+          : incoming.imageBytesList;
+      final imageUrls = incoming.imageUrls.isNotEmpty
+          ? incoming.imageUrls
+          : existing.imageUrls;
+      final imageCount = incoming.imageCount > 0
+          ? incoming.imageCount
+          : existing.imageCount;
+      return UserChatEntry(
+        existing.text.isNotEmpty ? existing.text : incoming.text,
+        sessionId: existing.sessionId ?? incoming.sessionId,
+        clientMessageId: existing.clientMessageId ?? incoming.clientMessageId,
+        imageBytesList: imageBytes,
+        imageUrls: imageUrls,
+        imageCount: imageCount,
+        status: incoming.status == MessageStatus.sent
+            ? MessageStatus.sent
+            : existing.status,
+        messageUuid: existing.messageUuid ?? incoming.messageUuid,
+        timestamp: existing.timestamp,
+      );
+    }
+    return existing;
   }
 
   List<ChatEntry> _appendDeliveredPendingInputEntry(

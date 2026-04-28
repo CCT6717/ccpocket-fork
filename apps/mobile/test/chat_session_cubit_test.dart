@@ -458,6 +458,109 @@ void main() {
     );
 
     test(
+      'codex restored user input delta does not duplicate delivery pending entry',
+      () async {
+        final cubit = createCubit('s1', provider: Provider.codex);
+        addTearDown(cubit.close);
+        mockBridge.emitMessage(
+          const StatusMessage(status: ProcessStatus.idle),
+          sessionId: 's1',
+        );
+        await Future.microtask(() {});
+
+        cubit.sendMessage('Restored pending input');
+        final payload =
+            jsonDecode(mockBridge.sentMessages.single.toJson())
+                as Map<String, dynamic>;
+        final clientMessageId = payload['clientMessageId'] as String;
+
+        await Future<void>.delayed(const Duration(milliseconds: 650));
+        mockBridge.emitMessage(
+          InputAckMessage(sessionId: 's1', clientMessageId: clientMessageId),
+          sessionId: 's1',
+        );
+        await Future.microtask(() {});
+
+        expect(cubit.state.queuedInput, isNull);
+        expect(cubit.state.entries.whereType<UserChatEntry>(), hasLength(1));
+
+        mockBridge.emitMessage(
+          UserInputMessage(
+            text: 'Restored pending input',
+            clientMessageId: clientMessageId,
+            timestamp: '2026-04-28T12:00:00.000Z',
+          ),
+          sessionId: 's1',
+        );
+        await Future.microtask(() {});
+
+        final users = cubit.state.entries.whereType<UserChatEntry>().toList();
+        expect(users, hasLength(1));
+        expect(users.single.text, 'Restored pending input');
+        expect(users.single.status, MessageStatus.sent);
+      },
+    );
+
+    test(
+      'history replace keeps live tail without duplicating matched user input',
+      () async {
+        final cubit = createCubit('s1', provider: Provider.codex);
+        addTearDown(cubit.close);
+        mockBridge.emitMessage(
+          const StatusMessage(status: ProcessStatus.idle),
+          sessionId: 's1',
+        );
+        await Future.microtask(() {});
+
+        mockBridge.emitMessage(
+          const SystemMessage(subtype: 'init', provider: 'codex'),
+          sessionId: 's1',
+        );
+        cubit.sendMessage('History matched input');
+        final payload =
+            jsonDecode(mockBridge.sentMessages.single.toJson())
+                as Map<String, dynamic>;
+        final clientMessageId = payload['clientMessageId'] as String;
+        mockBridge.emitMessage(
+          AssistantServerMessage(
+            message: AssistantMessage(
+              id: 'a1',
+              role: 'assistant',
+              content: [const TextContent(text: 'live tail')],
+              model: 'codex',
+            ),
+          ),
+          sessionId: 's1',
+        );
+        await Future.microtask(() {});
+
+        mockBridge.emitMessage(
+          HistoryMessage(
+            messages: [
+              UserInputMessage(
+                text: 'History matched input',
+                clientMessageId: clientMessageId,
+                timestamp: '2026-04-28T12:00:00.000Z',
+              ),
+            ],
+          ),
+          sessionId: 's1',
+        );
+        await Future.microtask(() {});
+
+        final users = cubit.state.entries.whereType<UserChatEntry>().toList();
+        expect(users, hasLength(1));
+        expect(users.single.text, 'History matched input');
+        expect(
+          cubit.state.entries.whereType<ServerChatEntry>().where(
+            (entry) => entry.message is AssistantServerMessage,
+          ),
+          hasLength(1),
+        );
+      },
+    );
+
+    test(
       'codex assistant response clears delivery pending without ack',
       () async {
         final cubit = createCubit('s1', provider: Provider.codex);
