@@ -27,7 +27,7 @@ on:
         type: boolean
         default: false
       android_version_code:
-        description: 'Android versionCode to update (defaults to pubspec build number)'
+        description: 'Android versionCode to update (defaults to latest android tag build number)'
         required: false
         type: string
         default: ''
@@ -84,7 +84,10 @@ jobs:
       - name: Read Android version code
         id: android_version
         run: |
-          version=$(grep '^version:' pubspec.yaml | awk '{print $2}')
+          version=$(git tag -l 'android/v*' --sort=-v:refname | head -1 | sed 's|^android/v||')
+          if [ -z "$version" ]; then
+            version=$(grep '^version:' pubspec.yaml | awk '{print $2}')
+          fi
           echo "code=${version##*+}" >> "$GITHUB_OUTPUT"
 
       - name: Validate metadata
