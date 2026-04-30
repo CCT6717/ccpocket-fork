@@ -247,7 +247,7 @@ compose_ipad_screenshot() {
 
   # Dark theme variant: dark background + white text
   local is_dark=false
-  case "$key" in 08_dark_theme) is_dark=true ;; esac
+  case "$key" in 05_dark_workspace) is_dark=true ;; esac
 
   if [ ! -f "$input" ]; then
     echo "SKIP: $input not found"
@@ -352,6 +352,13 @@ for entry in "${IPAD_SCREENSHOTS[@]}"; do
   compose_ipad_screenshot "$key" "$kw_ja" "$tt_ja" "ja" "$FONT_JA_BOLD" "$FONT_JA_REG" "en-US"
 done
 
+echo ""
+echo "=== iPad Chinese (Simplified) ==="
+for entry in "${IPAD_SCREENSHOTS[@]}"; do
+  IFS='|' read -r key kw_en tt_en kw_ja tt_ja kw_zh tt_zh <<< "$entry"
+  compose_ipad_screenshot "$key" "$kw_zh" "$tt_zh" "zh-CN" "$FONT_ZH_BOLD" "$FONT_ZH_REG" "en-US"
+done
+
 # === README banner (4 screenshots side by side, resized to 1200px width) ===
 echo ""
 echo "=== README banner ==="
@@ -378,26 +385,29 @@ for lang_dir in en-US ja zh-CN; do
 done
 
 # === Copy framed screenshots to store upload directories ===
-# iOS: screenshots/store/{en-US,ja}/ (used by fastlane deliver)
-# Android: metadata/android/{en-US,ja-JP}/images/phoneScreenshots/
+# iOS: screenshots/store/{en-US,ja,zh-Hans}/ (used by fastlane deliver)
+# Android: metadata/android/{en-US,ja-JP,zh-CN}/images/phoneScreenshots/
 echo ""
 echo "=== Store upload directories ==="
 STORE_DIR="${SCRIPT_DIR}/store"
 ANDROID_META="${SCRIPT_DIR}/../../fastlane/metadata/android"
 
 for lang_dir in en-US ja zh-CN; do
-  # iOS store directory (skip zh-CN — not distributed in China on iOS)
-  if [ "$lang_dir" != "zh-CN" ]; then
-    store_lang_dir="${STORE_DIR}/${lang_dir}"
-    mkdir -p "$store_lang_dir"
-    rm -f "$store_lang_dir"/*.png
-    for f in "${SCRIPT_DIR}/${lang_dir}"/*_framed.png; do
-      [ -f "$f" ] || continue
-      name=$(basename "$f" | sed 's/_framed//')
-      cp "$f" "$store_lang_dir/$name"
-    done
-    echo "  iOS  -> $store_lang_dir/ ($(ls "$store_lang_dir" | wc -l | tr -d ' ') files)"
+  # iOS uses zh-Hans for Simplified Chinese, while Android keeps zh-CN.
+  if [ "$lang_dir" = "zh-CN" ]; then
+    ios_lang="zh-Hans"
+  else
+    ios_lang="$lang_dir"
   fi
+  store_lang_dir="${STORE_DIR}/${ios_lang}"
+  mkdir -p "$store_lang_dir"
+  rm -f "$store_lang_dir"/*.png
+  for f in "${SCRIPT_DIR}/${lang_dir}"/*_framed.png; do
+    [ -f "$f" ] || continue
+    name=$(basename "$f" | sed 's/_framed//')
+    cp "$f" "$store_lang_dir/$name"
+  done
+  echo "  iOS  -> $store_lang_dir/ ($(ls "$store_lang_dir" | wc -l | tr -d ' ') files)"
 
   # Android metadata directory (phone screenshots only)
   if [ "$lang_dir" = "en-US" ]; then
