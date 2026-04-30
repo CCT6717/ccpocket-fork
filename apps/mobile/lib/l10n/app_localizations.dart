@@ -721,8 +721,38 @@ abstract class AppLocalizations {
   /// No description provided for @bridgeVersionCurrentExpected.
   ///
   /// In ja, this message translates to:
-  /// **'現在 v{current}、必要 v{expected}'**
+  /// **'現在 v{current}、推奨 v{expected}以上'**
   String bridgeVersionCurrentExpected(String current, String expected);
+
+  /// No description provided for @bridgeUpdateSetupTitle.
+  ///
+  /// In ja, this message translates to:
+  /// **'Bridge 更新の準備'**
+  String get bridgeUpdateSetupTitle;
+
+  /// No description provided for @bridgeUpdateSetupDescription.
+  ///
+  /// In ja, this message translates to:
+  /// **'このマシンで Bridge の更新機能を使うには、SSH 接続と Bridge の自動起動セットアップが必要です。'**
+  String get bridgeUpdateSetupDescription;
+
+  /// No description provided for @bridgeUpdateSetupEnableSsh.
+  ///
+  /// In ja, this message translates to:
+  /// **'Bridge 接続設定で SSH を有効にします。'**
+  String get bridgeUpdateSetupEnableSsh;
+
+  /// No description provided for @bridgeUpdateSetupRunCommand.
+  ///
+  /// In ja, this message translates to:
+  /// **'接続先マシンでセットアップコマンドを実行しておきます。'**
+  String get bridgeUpdateSetupRunCommand;
+
+  /// No description provided for @bridgeUpdateSetupCommand.
+  ///
+  /// In ja, this message translates to:
+  /// **'npx @ccpocket/bridge@latest setup'**
+  String get bridgeUpdateSetupCommand;
 
   /// No description provided for @stopServer.
   ///

@@ -144,13 +144,18 @@
   "bridgeUpdateAvailable": "更新があります",
   "bridgeUpdateRequiresSetup": "SSH と Bridge の自動起動セットアップが必要です",
   "bridgeVersionUnknown": "Bridge のバージョンを確認できません",
-  "bridgeVersionCurrentExpected": "現在 v{current}、必要 v{expected}",
+  "bridgeVersionCurrentExpected": "現在 v{current}、推奨 v{expected}以上",
   "@bridgeVersionCurrentExpected": {
     "placeholders": {
       "current": { "type": "String" },
       "expected": { "type": "String" }
     }
   },
+  "bridgeUpdateSetupTitle": "Bridge 更新の準備",
+  "bridgeUpdateSetupDescription": "このマシンで Bridge の更新機能を使うには、SSH 接続と Bridge の自動起動セットアップが必要です。",
+  "bridgeUpdateSetupEnableSsh": "Bridge 接続設定で SSH を有効にします。",
+  "bridgeUpdateSetupRunCommand": "接続先マシンでセットアップコマンドを実行しておきます。",
+  "bridgeUpdateSetupCommand": "npx @ccpocket/bridge@latest setup",
   "stopServer": "サーバーを停止",
   "update": "更新",
   "download": "ダウンロード",

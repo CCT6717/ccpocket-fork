@@ -338,8 +338,24 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String bridgeVersionCurrentExpected(String current, String expected) {
-    return '現在 v$current、必要 v$expected';
+    return '現在 v$current、推奨 v$expected以上';
   }
+
+  @override
+  String get bridgeUpdateSetupTitle => 'Bridge 更新の準備';
+
+  @override
+  String get bridgeUpdateSetupDescription =>
+      'このマシンで Bridge の更新機能を使うには、SSH 接続と Bridge の自動起動セットアップが必要です。';
+
+  @override
+  String get bridgeUpdateSetupEnableSsh => 'Bridge 接続設定で SSH を有効にします。';
+
+  @override
+  String get bridgeUpdateSetupRunCommand => '接続先マシンでセットアップコマンドを実行しておきます。';
+
+  @override
+  String get bridgeUpdateSetupCommand => 'npx @ccpocket/bridge@latest setup';
 
   @override
   String get stopServer => 'サーバーを停止';

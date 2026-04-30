@@ -1042,6 +1042,7 @@ class _BridgeUpdateStatusTile extends StatelessWidget {
     final versionInfo = machineWithStatus?.versionInfo;
     final hasSshSetup = machine?.canStartRemotely ?? false;
     final isOnline = machineWithStatus?.status == MachineStatus.online;
+    final canShowSetupHelp = !hasSshSetup;
     final needsUpdate =
         isOnline &&
         hasSshSetup &&
@@ -1072,9 +1073,15 @@ class _BridgeUpdateStatusTile extends StatelessWidget {
         : cs.onSurfaceVariant;
 
     return ListTile(
+      key: canShowSetupHelp
+          ? const ValueKey('settings_bridge_update_setup_tile')
+          : null,
       leading: Icon(icon, color: iconColor),
       title: Text(title),
       subtitle: Text(subtitle),
+      onTap: canShowSetupHelp
+          ? () => _showBridgeUpdateSetupSheet(context)
+          : null,
       trailing: isUpdating
           ? const SizedBox(
               width: 20,
@@ -1088,7 +1095,109 @@ class _BridgeUpdateStatusTile extends StatelessWidget {
               icon: const Icon(Icons.system_update, size: 18),
               label: Text(l.update),
             )
+          : canShowSetupHelp
+          ? Icon(Icons.chevron_right, color: cs.onSurfaceVariant)
           : null,
+    );
+  }
+
+  void _showBridgeUpdateSetupSheet(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final cs = Theme.of(context).colorScheme;
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) {
+        return SafeArea(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l.bridgeUpdateSetupTitle,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    l.bridgeUpdateSetupDescription,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: cs.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  _BridgeUpdateSetupStep(
+                    index: 1,
+                    text: l.bridgeUpdateSetupEnableSsh,
+                  ),
+                  const SizedBox(height: 12),
+                  _BridgeUpdateSetupStep(
+                    index: 2,
+                    text: l.bridgeUpdateSetupRunCommand,
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: cs.surfaceContainerHighest.withValues(alpha: 0.65),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: SelectableText(
+                      l.bridgeUpdateSetupCommand,
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.copyWith(fontFamily: 'monospace'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _BridgeUpdateSetupStep extends StatelessWidget {
+  final int index;
+  final String text;
+
+  const _BridgeUpdateSetupStep({required this.index, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 24,
+          height: 24,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: cs.primaryContainer,
+            shape: BoxShape.circle,
+          ),
+          child: Text(
+            '$index',
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: cs.onPrimaryContainer,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(child: Text(text)),
+      ],
     );
   }
 }

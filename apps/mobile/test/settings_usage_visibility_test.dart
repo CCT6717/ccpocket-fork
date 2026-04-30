@@ -439,6 +439,19 @@ void main() {
         find.byKey(const ValueKey('settings_update_bridge_button')),
         findsNothing,
       );
+      expect(
+        find.byKey(const ValueKey('settings_bridge_update_setup_tile')),
+        findsOneWidget,
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey('settings_bridge_update_setup_tile')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text(l.bridgeUpdateSetupTitle), findsOneWidget);
+      expect(find.text(l.bridgeUpdateSetupEnableSsh), findsOneWidget);
+      expect(find.text(l.bridgeUpdateSetupCommand), findsOneWidget);
 
       await missingSshSettingsCubit.close();
       await missingSshCubit.close();

@@ -261,13 +261,20 @@ class _MetadataLine extends StatelessWidget {
       );
     }
 
-    return Text.rich(
-      TextSpan(children: parts),
-      style: theme.textTheme.bodySmall?.copyWith(
-        color: colorScheme.outline,
-        fontSize: 12,
-      ),
-      overflow: TextOverflow.ellipsis,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isCompact = constraints.maxWidth < 280;
+        return Text.rich(
+          TextSpan(children: parts),
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: colorScheme.outline,
+            fontSize: isCompact ? 11 : 12,
+            height: 1.25,
+          ),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        );
+      },
     );
   }
 
