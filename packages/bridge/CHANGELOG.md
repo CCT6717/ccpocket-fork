@@ -2,6 +2,12 @@
 
 All notable changes to `@ccpocket/bridge` will be documented in this file.
 
+## [1.49.0] - 2026-05-01
+
+### Added
+- Add Bridge-managed Prompt History 2.0 storage, sync, mutation, and legacy import protocol support.
+- Add prompt history parser and WebSocket tests for the new 2.0 message types.
+
 ## [1.48.1] - 2026-04-30
 
 ### Fixed
