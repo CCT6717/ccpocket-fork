@@ -1121,6 +1121,78 @@ class AppLocalizationsJa extends AppLocalizations {
   String get noPromptHistoryYet => 'プロンプト履歴はまだありません';
 
   @override
+  String get promptHistoryFilters => 'フィルター';
+
+  @override
+  String get promptHistoryFilterThisDevice => 'この端末で使った履歴';
+
+  @override
+  String get promptHistoryFilterThisProject => '開いているプロジェクト';
+
+  @override
+  String get promptHistoryFilterThisBridge => '接続中のBridge';
+
+  @override
+  String get promptHistoryFilterFavorites => 'お気に入り';
+
+  @override
+  String get promptHistoryFilterCommands => 'コマンドとスキル';
+
+  @override
+  String get promptHistoryOpenProjectEmptyHint =>
+      '開いているプロジェクトのフィルターは、新しいアプリで記録した履歴にのみ有効です。';
+
+  @override
+  String get promptHistorySectionTitle => 'プロンプト履歴';
+
+  @override
+  String get promptHistorySyncTitle => 'プロンプト履歴を同期';
+
+  @override
+  String get promptHistoryReplaceTitle => '旧方式履歴でBridgeを上書き';
+
+  @override
+  String get promptHistoryReplaceSubtitle =>
+      '旧方式履歴はアプリ側で管理されていました。新方式ではBridge側で履歴を管理します。メイン端末で移行済みの場合は通常不要です。サブ端末でBridgeの履歴を初期化してしまった場合に、接続中のBridge履歴をこの端末の旧方式履歴で上書きします。';
+
+  @override
+  String get promptHistoryReplaceConfirmAction => '上書き';
+
+  @override
+  String get promptHistoryReplaceDismissAction => '移行済みとして非表示';
+
+  @override
+  String get promptHistoryNotSyncedYet => 'まだ同期していません';
+
+  @override
+  String promptHistoryLatestSync(String time) {
+    return '最終同期: $time';
+  }
+
+  @override
+  String promptHistorySyncedBridges(int count) {
+    return '$count件のBridgeを同期済み';
+  }
+
+  @override
+  String promptHistorySyncSummaryWithFailures(int synced, int failed) {
+    return '$synced件同期、$failed件失敗';
+  }
+
+  @override
+  String promptHistoryBridgeId(String id) {
+    return 'Bridge ID: $id';
+  }
+
+  @override
+  String promptHistoryOtherBridgeRegistrations(String registrations) {
+    return '他の登録: $registrations';
+  }
+
+  @override
+  String get promptHistoryNoSyncTime => '同期時刻なし';
+
+  @override
   String get approvalQueue => '承認キュー';
 
   @override
@@ -1362,57 +1434,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get imageAttached => '画像添付';
-
-  @override
-  String get sectionBackup => 'バックアップ';
-
-  @override
-  String get backupPromptHistory => 'プロンプト履歴をバックアップ';
-
-  @override
-  String get restorePromptHistory => 'プロンプト履歴をリストア';
-
-  @override
-  String get backupSuccess => 'バックアップが完了しました';
-
-  @override
-  String backupFailed(String error) {
-    return 'バックアップに失敗しました: $error';
-  }
-
-  @override
-  String get restoreSuccess => 'リストアが完了しました';
-
-  @override
-  String restoreFailed(String error) {
-    return 'リストアに失敗しました: $error';
-  }
-
-  @override
-  String get restoreConfirmTitle => 'プロンプト履歴のリストア';
-
-  @override
-  String get restoreConfirmMessage =>
-      'ローカルのプロンプト履歴がバックアップの内容で上書きされます。この操作は元に戻せません。';
-
-  @override
-  String get restoreConfirmButton => 'リストア';
-
-  @override
-  String get noBackupFound => 'バックアップがありません';
-
-  @override
-  String backupInfo(String date) {
-    return '最終バックアップ: $date';
-  }
-
-  @override
-  String backupVersionInfo(String version, String size) {
-    return 'v$version · $size';
-  }
-
-  @override
-  String get connectToBackup => 'Bridge に接続するとバックアップが利用できます';
 
   @override
   String get usageConnectToView => 'Bridge に接続すると利用量を表示できます';

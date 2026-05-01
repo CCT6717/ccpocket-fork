@@ -15,6 +15,10 @@ import { DebugTraceStore } from "./debug-trace-store.js";
 import { RecordingStore } from "./recording-store.js";
 import { FirebaseAuthClient } from "./firebase-auth.js";
 import { PromptHistoryBackupStore } from "./prompt-history-backup.js";
+import {
+  promptHistoryStoreFileForPort,
+  PromptHistoryStore,
+} from "./prompt-history-store.js";
 import { resolvePlatformPath } from "./path-utils.js";
 
 export async function startServer() {
@@ -60,6 +64,12 @@ export async function startServer() {
   const RECORDING_ENABLED = !!process.env.BRIDGE_RECORDING;
   const recordingStore = RECORDING_ENABLED ? new RecordingStore() : undefined;
   const promptHistoryBackup = new PromptHistoryBackupStore();
+  const promptHistoryStore = new PromptHistoryStore(
+    promptHistoryStoreFileForPort(
+      PORT,
+      process.env.BRIDGE_PROMPT_HISTORY_FILE,
+    ),
+  );
   const MDNS_DISABLED = !!process.env.BRIDGE_DISABLE_MDNS;
   const mdns = MDNS_DISABLED ? undefined : new MdnsAdvertiser();
 
@@ -94,6 +104,12 @@ export async function startServer() {
     console.log("[bridge] Prompt history backup store initialized");
   }).catch((err) => {
     console.error("[bridge] Failed to initialize prompt history backup store:", err);
+  });
+
+  await promptHistoryStore.init().then(() => {
+    console.log("[bridge] Prompt history store initialized");
+  }).catch((err) => {
+    console.error("[bridge] Failed to initialize prompt history store:", err);
   });
 
   const startedAt = Date.now();
@@ -190,6 +206,7 @@ export async function startServer() {
     recordingStore,
     firebaseAuth,
     promptHistoryBackup,
+    promptHistoryStore,
   });
 
   httpServer.listen(PORT, HOST, () => {

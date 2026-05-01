@@ -487,6 +487,7 @@ class _CodexProviders extends StatelessWidget {
             initialPermissionMode: permissionMode,
             initialCodexApprovalPolicy: codexApprovalPolicy,
             initialCodexApprovalsReviewer: codexApprovalsReviewer,
+            initialProjectPath: projectPath,
           ),
         ),
         BlocProvider.value(value: streamingCubit),

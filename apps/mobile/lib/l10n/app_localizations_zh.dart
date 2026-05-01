@@ -1108,6 +1108,77 @@ class AppLocalizationsZh extends AppLocalizations {
   String get noPromptHistoryYet => '还没有提示词历史';
 
   @override
+  String get promptHistoryFilters => '筛选';
+
+  @override
+  String get promptHistoryFilterThisDevice => '在此设备使用过的历史';
+
+  @override
+  String get promptHistoryFilterThisProject => '当前打开的项目';
+
+  @override
+  String get promptHistoryFilterThisBridge => '已连接的 Bridge';
+
+  @override
+  String get promptHistoryFilterFavorites => '收藏';
+
+  @override
+  String get promptHistoryFilterCommands => '命令和技能';
+
+  @override
+  String get promptHistoryOpenProjectEmptyHint => '打开的项目筛选仅适用于新版应用记录的历史。';
+
+  @override
+  String get promptHistorySectionTitle => '提示词历史';
+
+  @override
+  String get promptHistorySyncTitle => '同步提示词历史';
+
+  @override
+  String get promptHistoryReplaceTitle => '用旧格式历史覆盖 Bridge';
+
+  @override
+  String get promptHistoryReplaceSubtitle =>
+      '旧格式历史由应用管理。新格式由 Bridge 管理历史。如果你已在主设备上迁移，通常不需要此操作。仅在备用设备误初始化 Bridge 历史时使用：它会用此设备的旧格式历史覆盖已连接 Bridge 的历史。';
+
+  @override
+  String get promptHistoryReplaceConfirmAction => '覆盖';
+
+  @override
+  String get promptHistoryReplaceDismissAction => '已迁移，隐藏';
+
+  @override
+  String get promptHistoryNotSyncedYet => '尚未同步';
+
+  @override
+  String promptHistoryLatestSync(String time) {
+    return '上次同步：$time';
+  }
+
+  @override
+  String promptHistorySyncedBridges(int count) {
+    return '已同步 $count 个 Bridge';
+  }
+
+  @override
+  String promptHistorySyncSummaryWithFailures(int synced, int failed) {
+    return '已同步 $synced 个，失败 $failed 个';
+  }
+
+  @override
+  String promptHistoryBridgeId(String id) {
+    return 'Bridge ID: $id';
+  }
+
+  @override
+  String promptHistoryOtherBridgeRegistrations(String registrations) {
+    return '其他注册: $registrations';
+  }
+
+  @override
+  String get promptHistoryNoSyncTime => '没有同步时间';
+
+  @override
   String get approvalQueue => '审批队列';
 
   @override
@@ -1348,56 +1419,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get imageAttached => '图片已附加';
-
-  @override
-  String get sectionBackup => '备份';
-
-  @override
-  String get backupPromptHistory => '备份提示词历史';
-
-  @override
-  String get restorePromptHistory => '恢复提示词历史';
-
-  @override
-  String get backupSuccess => '备份完成';
-
-  @override
-  String backupFailed(String error) {
-    return '备份失败：$error';
-  }
-
-  @override
-  String get restoreSuccess => '恢复完成';
-
-  @override
-  String restoreFailed(String error) {
-    return '恢复失败：$error';
-  }
-
-  @override
-  String get restoreConfirmTitle => '恢复提示词历史';
-
-  @override
-  String get restoreConfirmMessage => '这将使用备份替换本地所有提示词历史，且无法撤销。';
-
-  @override
-  String get restoreConfirmButton => '恢复';
-
-  @override
-  String get noBackupFound => '未找到备份';
-
-  @override
-  String backupInfo(String date) {
-    return '上次备份：$date';
-  }
-
-  @override
-  String backupVersionInfo(String version, String size) {
-    return 'v$version · $size';
-  }
-
-  @override
-  String get connectToBackup => '连接到 Bridge 后才能使用备份';
 
   @override
   String get usageConnectToView => '连接到 Bridge 后查看用量';

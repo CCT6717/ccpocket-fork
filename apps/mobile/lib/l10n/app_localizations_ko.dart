@@ -1133,6 +1133,78 @@ class AppLocalizationsKo extends AppLocalizations {
   String get noPromptHistoryYet => '아직 프롬프트 기록 없음';
 
   @override
+  String get promptHistoryFilters => '필터';
+
+  @override
+  String get promptHistoryFilterThisDevice => '이 기기에서 사용한 기록';
+
+  @override
+  String get promptHistoryFilterThisProject => '열려 있는 프로젝트';
+
+  @override
+  String get promptHistoryFilterThisBridge => '연결된 Bridge';
+
+  @override
+  String get promptHistoryFilterFavorites => '즐겨찾기';
+
+  @override
+  String get promptHistoryFilterCommands => '명령 및 스킬';
+
+  @override
+  String get promptHistoryOpenProjectEmptyHint =>
+      '열려 있는 프로젝트 필터는 새 앱에서 기록한 내역에만 적용됩니다.';
+
+  @override
+  String get promptHistorySectionTitle => '프롬프트 기록';
+
+  @override
+  String get promptHistorySyncTitle => '프롬프트 기록 동기화';
+
+  @override
+  String get promptHistoryReplaceTitle => '이전 방식 기록으로 Bridge 덮어쓰기';
+
+  @override
+  String get promptHistoryReplaceSubtitle =>
+      '이전 방식 기록은 앱에서 관리했습니다. 새 방식은 Bridge에서 기록을 관리합니다. 기본 기기에서 이미 마이그레이션했다면 보통 필요하지 않습니다. 보조 기기에서 Bridge 기록을 실수로 초기화한 경우, 연결된 Bridge 기록을 이 기기의 이전 방식 기록으로 덮어씁니다.';
+
+  @override
+  String get promptHistoryReplaceConfirmAction => '덮어쓰기';
+
+  @override
+  String get promptHistoryReplaceDismissAction => '이미 마이그레이션함';
+
+  @override
+  String get promptHistoryNotSyncedYet => '아직 동기화되지 않음';
+
+  @override
+  String promptHistoryLatestSync(String time) {
+    return '마지막 동기화: $time';
+  }
+
+  @override
+  String promptHistorySyncedBridges(int count) {
+    return '$count개 Bridge 동기화됨';
+  }
+
+  @override
+  String promptHistorySyncSummaryWithFailures(int synced, int failed) {
+    return '$synced개 동기화, $failed개 실패';
+  }
+
+  @override
+  String promptHistoryBridgeId(String id) {
+    return 'Bridge ID: $id';
+  }
+
+  @override
+  String promptHistoryOtherBridgeRegistrations(String registrations) {
+    return '다른 등록: $registrations';
+  }
+
+  @override
+  String get promptHistoryNoSyncTime => '동기화 시간 없음';
+
+  @override
   String get approvalQueue => '승인 대기열';
 
   @override
@@ -1374,57 +1446,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get imageAttached => '이미지 첨부됨';
-
-  @override
-  String get sectionBackup => '백업';
-
-  @override
-  String get backupPromptHistory => '프롬프트 기록 백업';
-
-  @override
-  String get restorePromptHistory => '프롬프트 기록 복원';
-
-  @override
-  String get backupSuccess => '백업 완료';
-
-  @override
-  String backupFailed(String error) {
-    return '백업 실패: $error';
-  }
-
-  @override
-  String get restoreSuccess => '복원 완료';
-
-  @override
-  String restoreFailed(String error) {
-    return '복원 실패: $error';
-  }
-
-  @override
-  String get restoreConfirmTitle => '프롬프트 기록 복원';
-
-  @override
-  String get restoreConfirmMessage =>
-      '모든 로컬 프롬프트 기록이 백업으로 대체됩니다. 이 작업은 되돌릴 수 없습니다.';
-
-  @override
-  String get restoreConfirmButton => '복원';
-
-  @override
-  String get noBackupFound => '백업 없음';
-
-  @override
-  String backupInfo(String date) {
-    return '마지막 백업: $date';
-  }
-
-  @override
-  String backupVersionInfo(String version, String size) {
-    return 'v$version · $size';
-  }
-
-  @override
-  String get connectToBackup => '백업을 사용하려면 Bridge에 연결하세요';
 
   @override
   String get usageConnectToView => '사용량을 보려면 Bridge에 연결하세요';

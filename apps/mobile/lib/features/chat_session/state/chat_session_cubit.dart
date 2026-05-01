@@ -82,6 +82,7 @@ class ChatSessionCubit extends Cubit<ChatSessionState> {
     SandboxMode? initialSandboxMode,
     CodexApprovalPolicy? initialCodexApprovalPolicy,
     String? initialCodexApprovalsReviewer,
+    String? initialProjectPath,
   }) : _bridge = bridge,
        _streamingCubit = streamingCubit,
        super(
@@ -120,6 +121,7 @@ class ChatSessionCubit extends Cubit<ChatSessionState> {
                .where((file) => file.isNotEmpty)
                .take(10)
                .toList(),
+           projectPath: initialProjectPath,
          ),
        ) {
     // Subscribe to messages for this session
@@ -470,6 +472,9 @@ class ChatSessionCubit extends Cubit<ChatSessionState> {
     // --- Apply state update ---
     final newClaudeSessionId =
         update.claudeSessionId ?? current.claudeSessionId;
+    final newProjectPath = update.projectPath?.trim().isNotEmpty == true
+        ? update.projectPath
+        : current.projectPath;
     if (originalMsg
         case InputAckMessage(:final clientMessageId) ||
             InputRejectedMessage(:final clientMessageId)
@@ -584,6 +589,7 @@ class ChatSessionCubit extends Cubit<ChatSessionState> {
         slashCommands: update.slashCommands ?? current.slashCommands,
         queuedInput: nextQueuedInput,
         claudeSessionId: newClaudeSessionId,
+        projectPath: newProjectPath,
         hiddenToolUseIds: hiddenToolUseIds,
       ),
     );

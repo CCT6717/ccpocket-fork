@@ -72,6 +72,7 @@ import type { FirebaseAuthClient } from "./firebase-auth.js";
 import { type PushLocale, normalizePushLocale, t } from "./push-i18n.js";
 import { fetchAllUsage } from "./usage.js";
 import type { PromptHistoryBackupStore } from "./prompt-history-backup.js";
+import type { PromptHistoryStore } from "./prompt-history-store.js";
 import { getPackageVersion } from "./version.js";
 import {
   isPathWithinAllowedDirectory,
@@ -105,6 +106,11 @@ const CODEX_MODELS: string[] = [
   "gpt-5.3-codex",
   "gpt-5.3-codex-spark",
 ];
+
+const OPT_IN_SERVER_MESSAGES = new Set<string>([
+  "conversation_queue",
+  "prompt_history_status",
+]);
 
 // ---- Codex mode mapping helpers ----
 
@@ -270,6 +276,7 @@ export interface BridgeServerOptions {
   recordingStore?: RecordingStore;
   firebaseAuth?: FirebaseAuthClient;
   promptHistoryBackup?: PromptHistoryBackupStore;
+  promptHistoryStore?: PromptHistoryStore;
   platform?: NodeJS.Platform;
 }
 
@@ -289,6 +296,7 @@ export class BridgeWebSocketServer {
   private worktreeStore: WorktreeStore;
   private pushRelay: PushRelayClient;
   private promptHistoryBackup: PromptHistoryBackupStore | null;
+  private promptHistoryStore: PromptHistoryStore | null;
 
   private recentSessionsRequestId = 0;
   private debugEvents = new Map<string, DebugTraceEvent[]>();
@@ -319,6 +327,7 @@ export class BridgeWebSocketServer {
       recordingStore,
       firebaseAuth,
       promptHistoryBackup,
+      promptHistoryStore,
       platform,
     } = options;
     this.apiKey = apiKey ?? null;
@@ -331,6 +340,7 @@ export class BridgeWebSocketServer {
     this.worktreeStore = new WorktreeStore();
     this.pushRelay = new PushRelayClient({ firebaseAuth });
     this.promptHistoryBackup = promptHistoryBackup ?? null;
+    this.promptHistoryStore = promptHistoryStore ?? null;
     this.platform = platform ?? process.platform;
 
     this.archiveStore = new ArchiveStore();
@@ -814,6 +824,7 @@ export class BridgeWebSocketServer {
         ws,
         new Set(msg.supportedServerMessages ?? []),
       );
+      this.sendPromptHistoryStatus(ws);
       return;
     }
 
@@ -4015,6 +4026,147 @@ export class BridgeWebSocketServer {
         break;
       }
 
+      case "record_prompt_history": {
+        if (!this.promptHistoryStore) {
+          this.send(ws, {
+            type: "prompt_history_mutation_result",
+            success: false,
+            error: "Prompt history store not available",
+          });
+          break;
+        }
+        try {
+          const entry = await this.promptHistoryStore.record({
+            text: msg.text,
+            projectPath: msg.projectPath,
+            clientId: msg.clientId,
+            clientName: msg.clientName,
+            sessionId: msg.sessionId,
+            usedAt: msg.usedAt,
+          });
+          this.send(ws, {
+            type: "prompt_history_mutation_result",
+            success: true,
+            bridgeInstanceId: this.promptHistoryStore.bridgeInstanceId,
+            revision: this.promptHistoryStore.revision,
+            entry,
+          });
+          this.broadcastPromptHistoryStatus();
+        } catch (err) {
+          this.send(ws, {
+            type: "prompt_history_mutation_result",
+            success: false,
+            error: err instanceof Error ? err.message : String(err),
+          });
+        }
+        break;
+      }
+
+      case "sync_prompt_history": {
+        if (!this.promptHistoryStore) {
+          this.send(ws, {
+            type: "prompt_history_sync_result",
+            success: false,
+            error: "Prompt history store not available",
+          });
+          break;
+        }
+        try {
+          if (msg.entries?.length) {
+            await this.promptHistoryStore.mergeClientEntries(msg.entries);
+          }
+          this.send(ws, {
+            type: "prompt_history_sync_result",
+            success: true,
+            bridgeInstanceId: this.promptHistoryStore.bridgeInstanceId,
+            revision: this.promptHistoryStore.revision,
+            syncedAt: new Date().toISOString(),
+            fullSnapshot: true,
+            entries: this.promptHistoryStore.list(msg.includeDeleted ?? true),
+          });
+          this.broadcastPromptHistoryStatus();
+        } catch (err) {
+          this.send(ws, {
+            type: "prompt_history_sync_result",
+            success: false,
+            error: err instanceof Error ? err.message : String(err),
+          });
+        }
+        break;
+      }
+
+      case "mutate_prompt_history": {
+        if (!this.promptHistoryStore) {
+          this.send(ws, {
+            type: "prompt_history_mutation_result",
+            success: false,
+            error: "Prompt history store not available",
+          });
+          break;
+        }
+        try {
+          const entry = await this.promptHistoryStore.mutate({
+            id: msg.id,
+            text: msg.text,
+            projectPath: msg.projectPath,
+            action: msg.action,
+            isFavorite: msg.isFavorite,
+            updatedAt: msg.updatedAt,
+          });
+          this.send(ws, {
+            type: "prompt_history_mutation_result",
+            success: entry != null,
+            bridgeInstanceId: this.promptHistoryStore.bridgeInstanceId,
+            revision: this.promptHistoryStore.revision,
+            entry: entry ?? undefined,
+            error: entry == null ? "Prompt not found" : undefined,
+          });
+          if (entry) this.broadcastPromptHistoryStatus();
+        } catch (err) {
+          this.send(ws, {
+            type: "prompt_history_mutation_result",
+            success: false,
+            error: err instanceof Error ? err.message : String(err),
+          });
+        }
+        break;
+      }
+
+      case "import_prompt_history_v1": {
+        if (!this.promptHistoryStore) {
+          this.send(ws, {
+            type: "prompt_history_sync_result",
+            success: false,
+            error: "Prompt history store not available",
+          });
+          break;
+        }
+        try {
+          const result = await this.promptHistoryStore.importEntries(
+            msg.entries,
+            msg.clientId,
+            msg.clientName,
+          );
+          this.send(ws, {
+            type: "prompt_history_sync_result",
+            success: true,
+            bridgeInstanceId: this.promptHistoryStore.bridgeInstanceId,
+            revision: this.promptHistoryStore.revision,
+            syncedAt: new Date().toISOString(),
+            fullSnapshot: true,
+            entries: result.entries,
+          });
+          this.broadcastPromptHistoryStatus();
+        } catch (err) {
+          this.send(ws, {
+            type: "prompt_history_sync_result",
+            success: false,
+            error: err instanceof Error ? err.message : String(err),
+          });
+        }
+        break;
+      }
+
       case "rename_session": {
         const name = (msg.name as string | null) || null;
         await this.handleRenameSession(ws, msg.sessionId, name, msg);
@@ -4147,6 +4299,23 @@ export class BridgeWebSocketServer {
     });
   }
 
+  private sendPromptHistoryStatus(ws: WebSocket): void {
+    if (!this.promptHistoryStore) return;
+    const entries = this.promptHistoryStore.list(true);
+    const updatedAt = entries.reduce<string | undefined>(
+      (latest, entry) =>
+        !latest || entry.updatedAt > latest ? entry.updatedAt : latest,
+      undefined,
+    );
+    this.send(ws, {
+      type: "prompt_history_status",
+      bridgeInstanceId: this.promptHistoryStore.bridgeInstanceId,
+      revision: this.promptHistoryStore.revision,
+      entryCount: entries.filter((entry) => !entry.deletedAt).length,
+      updatedAt,
+    });
+  }
+
   /** Broadcast session list to all connected clients. */
   private broadcastSessionList(): void {
     this.pruneDebugEvents();
@@ -4160,6 +4329,23 @@ export class BridgeWebSocketServer {
       codexProfiles: this.codexProfiles,
       defaultCodexProfile: this.defaultCodexProfile,
       bridgeVersion: getPackageVersion(),
+    });
+  }
+
+  private broadcastPromptHistoryStatus(): void {
+    if (!this.promptHistoryStore) return;
+    const entries = this.promptHistoryStore.list(true);
+    const updatedAt = entries.reduce<string | undefined>(
+      (latest, entry) =>
+        !latest || entry.updatedAt > latest ? entry.updatedAt : latest,
+      undefined,
+    );
+    this.broadcast({
+      type: "prompt_history_status",
+      bridgeInstanceId: this.promptHistoryStore.bridgeInstanceId,
+      revision: this.promptHistoryStore.revision,
+      entryCount: entries.filter((entry) => !entry.deletedAt).length,
+      updatedAt,
     });
   }
 
@@ -4571,11 +4757,10 @@ export class BridgeWebSocketServer {
     ws: WebSocket,
     msg: ServerMessage | Record<string, unknown>,
   ): boolean {
-    if (msg.type !== "conversation_queue") return true;
+    const type = typeof msg.type === "string" ? msg.type : "";
+    if (!OPT_IN_SERVER_MESSAGES.has(type)) return true;
     return (
-      this.clientSupportedServerMessages
-        .get(ws)
-        ?.has("conversation_queue") ?? false
+      this.clientSupportedServerMessages.get(ws)?.has(type) ?? false
     );
   }
 

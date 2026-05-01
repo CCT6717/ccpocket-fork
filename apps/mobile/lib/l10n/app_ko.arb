@@ -432,6 +432,52 @@
   "searchHint": "검색...",
   "noMatchingPrompts": "일치하는 프롬프트 없음",
   "noPromptHistoryYet": "아직 프롬프트 기록 없음",
+  "promptHistoryFilters": "필터",
+  "promptHistoryFilterThisDevice": "이 기기에서 사용한 기록",
+  "promptHistoryFilterThisProject": "열려 있는 프로젝트",
+  "promptHistoryFilterThisBridge": "연결된 Bridge",
+  "promptHistoryFilterFavorites": "즐겨찾기",
+  "promptHistoryFilterCommands": "명령 및 스킬",
+  "promptHistoryOpenProjectEmptyHint": "열려 있는 프로젝트 필터는 새 앱에서 기록한 내역에만 적용됩니다.",
+  "promptHistorySectionTitle": "프롬프트 기록",
+  "promptHistorySyncTitle": "프롬프트 기록 동기화",
+  "promptHistoryReplaceTitle": "이전 방식 기록으로 Bridge 덮어쓰기",
+  "promptHistoryReplaceSubtitle": "이전 방식 기록은 앱에서 관리했습니다. 새 방식은 Bridge에서 기록을 관리합니다. 기본 기기에서 이미 마이그레이션했다면 보통 필요하지 않습니다. 보조 기기에서 Bridge 기록을 실수로 초기화한 경우, 연결된 Bridge 기록을 이 기기의 이전 방식 기록으로 덮어씁니다.",
+  "promptHistoryReplaceConfirmAction": "덮어쓰기",
+  "promptHistoryReplaceDismissAction": "이미 마이그레이션함",
+  "promptHistoryNotSyncedYet": "아직 동기화되지 않음",
+  "promptHistoryLatestSync": "마지막 동기화: {time}",
+  "@promptHistoryLatestSync": {
+    "placeholders": {
+      "time": { "type": "String" }
+    }
+  },
+  "promptHistorySyncedBridges": "{count}개 Bridge 동기화됨",
+  "@promptHistorySyncedBridges": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "promptHistorySyncSummaryWithFailures": "{synced}개 동기화, {failed}개 실패",
+  "@promptHistorySyncSummaryWithFailures": {
+    "placeholders": {
+      "synced": { "type": "int" },
+      "failed": { "type": "int" }
+    }
+  },
+  "promptHistoryBridgeId": "Bridge ID: {id}",
+  "@promptHistoryBridgeId": {
+    "placeholders": {
+      "id": { "type": "String" }
+    }
+  },
+  "promptHistoryOtherBridgeRegistrations": "다른 등록: {registrations}",
+  "@promptHistoryOtherBridgeRegistrations": {
+    "placeholders": {
+      "registrations": { "type": "String" }
+    }
+  },
+  "promptHistoryNoSyncTime": "동기화 시간 없음",
   "approvalQueue": "승인 대기열",
   "resetQueue": "대기열 초기화",
   "swipeSkip": "건너뛰기",
@@ -515,51 +561,6 @@
   "notificationLanguageUpdated": "알림 언어가 업데이트됨",
   "defaultNotRecommended": "기본값(권장하지 않음)",
   "imageAttached": "이미지 첨부됨",
-  "sectionBackup": "백업",
-  "backupPromptHistory": "프롬프트 기록 백업",
-  "restorePromptHistory": "프롬프트 기록 복원",
-  "backupSuccess": "백업 완료",
-  "backupFailed": "백업 실패: {error}",
-  "@backupFailed": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  "restoreSuccess": "복원 완료",
-  "restoreFailed": "복원 실패: {error}",
-  "@restoreFailed": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  "restoreConfirmTitle": "프롬프트 기록 복원",
-  "restoreConfirmMessage": "모든 로컬 프롬프트 기록이 백업으로 대체됩니다. 이 작업은 되돌릴 수 없습니다.",
-  "restoreConfirmButton": "복원",
-  "noBackupFound": "백업 없음",
-  "backupInfo": "마지막 백업: {date}",
-  "@backupInfo": {
-    "placeholders": {
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "backupVersionInfo": "v{version} · {size}",
-  "@backupVersionInfo": {
-    "placeholders": {
-      "version": {
-        "type": "String"
-      },
-      "size": {
-        "type": "String"
-      }
-    }
-  },
-  "connectToBackup": "백업을 사용하려면 Bridge에 연결하세요",
   "usageConnectToView": "사용량을 보려면 Bridge에 연결하세요",
   "usageFetchFailed": "가져오기 실패",
   "usageFiveHour": "5시간",

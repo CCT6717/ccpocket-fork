@@ -1,18 +1,37 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
-
 import '../../../services/prompt_history_service.dart';
 
-part 'prompt_history_state.freezed.dart';
+class PromptHistoryState {
+  final List<PromptHistoryEntry> prompts;
+  final PromptSortOrder sortOrder;
+  final bool isLoading;
+  final bool hasMore;
+  final PromptHistoryFilters filters;
+  final bool filtersExpanded;
 
-@freezed
-abstract class PromptHistoryState with _$PromptHistoryState {
-  const factory PromptHistoryState({
-    @Default([]) List<PromptHistoryEntry> prompts,
-    @Default(PromptSortOrder.frequency) PromptSortOrder sortOrder,
-    String? projectFilter,
-    @Default('') String searchQuery,
-    @Default(false) bool isLoading,
-    @Default(true) bool hasMore,
-    @Default([]) List<String> availableProjects,
-  }) = _PromptHistoryState;
+  const PromptHistoryState({
+    this.prompts = const [],
+    this.sortOrder = PromptSortOrder.frequency,
+    this.isLoading = false,
+    this.hasMore = true,
+    this.filters = const PromptHistoryFilters(),
+    this.filtersExpanded = false,
+  });
+
+  PromptHistoryState copyWith({
+    List<PromptHistoryEntry>? prompts,
+    PromptSortOrder? sortOrder,
+    bool? isLoading,
+    bool? hasMore,
+    PromptHistoryFilters? filters,
+    bool? filtersExpanded,
+  }) {
+    return PromptHistoryState(
+      prompts: prompts ?? this.prompts,
+      sortOrder: sortOrder ?? this.sortOrder,
+      isLoading: isLoading ?? this.isLoading,
+      hasMore: hasMore ?? this.hasMore,
+      filters: filters ?? this.filters,
+      filtersExpanded: filtersExpanded ?? this.filtersExpanded,
+    );
+  }
 }

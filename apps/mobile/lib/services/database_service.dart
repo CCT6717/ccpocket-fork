@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -14,7 +12,7 @@ class DatabaseService {
   bool _initialized = false;
 
   static const _dbName = 'ccpocket.db';
-  static const _dbVersion = 1;
+  static const _dbVersion = 2;
 
   /// Get the database instance, initializing it if needed.
   ///
@@ -47,6 +45,11 @@ class DatabaseService {
   }
 
   Future<void> _onCreate(Database db, int version) async {
+    await _createPromptHistoryV1(db);
+    await _createPromptHistoryV2(db);
+  }
+
+  Future<void> _createPromptHistoryV1(Database db) async {
     await db.execute('''
       CREATE TABLE prompt_history (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -75,64 +78,69 @@ class DatabaseService {
     ''');
   }
 
-  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    // Future migrations go here
+  Future<void> _createPromptHistoryV2(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS prompt_history_cache (
+        id TEXT NOT NULL,
+        bridge_id TEXT NOT NULL,
+        bridge_url TEXT NOT NULL,
+        bridge_name TEXT NOT NULL DEFAULT '',
+        text TEXT NOT NULL,
+        project_path TEXT NOT NULL DEFAULT '',
+        total_use_count INTEGER NOT NULL DEFAULT 0,
+        is_favorite INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL,
+        last_used_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        favorite_updated_at TEXT,
+        deleted_at TEXT,
+        command_kind TEXT NOT NULL DEFAULT 'none',
+        client_stats_json TEXT NOT NULL DEFAULT '{}',
+        session_stats_json TEXT NOT NULL DEFAULT '{}',
+        synced_revision INTEGER NOT NULL DEFAULT 0,
+        synced_at TEXT NOT NULL,
+        PRIMARY KEY (id, bridge_id)
+      )
+    ''');
+
+    await db.execute('''
+      CREATE INDEX IF NOT EXISTS idx_prompt_history_cache_last_used
+      ON prompt_history_cache (last_used_at DESC)
+    ''');
+
+    await db.execute('''
+      CREATE INDEX IF NOT EXISTS idx_prompt_history_cache_project
+      ON prompt_history_cache (project_path)
+    ''');
+
+    await db.execute('''
+      CREATE INDEX IF NOT EXISTS idx_prompt_history_cache_bridge
+      ON prompt_history_cache (bridge_id)
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS prompt_history_sync_status (
+        bridge_id TEXT PRIMARY KEY,
+        bridge_url TEXT NOT NULL,
+        bridge_name TEXT NOT NULL DEFAULT '',
+        last_sync_at TEXT,
+        revision INTEGER NOT NULL DEFAULT 0,
+        entry_count INTEGER NOT NULL DEFAULT 0,
+        error TEXT
+      )
+    ''');
   }
 
-  /// The current database schema version.
-  int get dbVersion => _dbVersion;
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await _createPromptHistoryV2(db);
+    }
+  }
 
   /// Get the absolute path to the database file.
   Future<String> getDbPath() async {
     final path = await getDatabasesPath();
     return '$path/$_dbName';
-  }
-
-  /// Export the database file as bytes for backup.
-  ///
-  /// Closes the database connection before reading to ensure consistency.
-  /// The database will be re-initialized on next access.
-  Future<Uint8List?> exportDb() async {
-    if (kIsWeb) return null;
-    try {
-      await _database?.close();
-      _database = null;
-      _initialized = false;
-      final dbPath = await getDbPath();
-      final file = File(dbPath);
-      if (!await file.exists()) return null;
-      return file.readAsBytes();
-    } catch (e) {
-      logger.warning('[DatabaseService] exportDb failed', e);
-      return null;
-    }
-  }
-
-  /// Import a database file from bytes, replacing the current database.
-  ///
-  /// Closes the current database, writes to a temp file first for safety,
-  /// then renames to the actual DB path and re-initializes.
-  Future<bool> importDb(Uint8List data) async {
-    if (kIsWeb) return false;
-    try {
-      await _database?.close();
-      _database = null;
-      _initialized = false;
-      final dbPath = await getDbPath();
-      // Write to temp file first, then rename for atomicity
-      final tempPath = '$dbPath.importing';
-      final tempFile = File(tempPath);
-      await tempFile.writeAsBytes(data, flush: true);
-      await tempFile.rename(dbPath);
-      // Re-initialize to validate and run any needed migrations
-      _database = await _initDatabase();
-      _initialized = true;
-      return true;
-    } catch (e) {
-      logger.warning('[DatabaseService] importDb failed', e);
-      _initialized = false;
-      return false;
-    }
   }
 
   /// Close the database connection.

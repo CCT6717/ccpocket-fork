@@ -54,6 +54,12 @@ class BridgeService implements BridgeServiceBase {
       StreamController<PromptHistoryRestoreResultMessage>.broadcast();
   final _backupInfoController =
       StreamController<PromptHistoryBackupInfoMessage>.broadcast();
+  final _promptHistorySyncController =
+      StreamController<PromptHistorySyncResultMessage>.broadcast();
+  final _promptHistoryMutationController =
+      StreamController<PromptHistoryMutationResultMessage>.broadcast();
+  final _promptHistoryStatusController =
+      StreamController<PromptHistoryStatusMessage>.broadcast();
   final _fileContentController =
       StreamController<FileContentMessage>.broadcast();
   // ---- Git Operations (Phase 1-3) ----
@@ -95,6 +101,7 @@ class BridgeService implements BridgeServiceBase {
   List<String> _codexProfiles = [];
   String? _defaultCodexProfile;
   String? _bridgeVersion;
+  String? _promptHistoryBridgeId;
   UsageResultMessage? _lastUsageResult;
   final SessionRuntimeStore _runtimeStore = SessionRuntimeStore();
   final Map<String, int> _pendingHistoryDeltaSinceSeq = {};
@@ -164,6 +171,12 @@ class BridgeService implements BridgeServiceBase {
       _restoreResultController.stream;
   Stream<PromptHistoryBackupInfoMessage> get backupInfo =>
       _backupInfoController.stream;
+  Stream<PromptHistorySyncResultMessage> get promptHistorySyncResults =>
+      _promptHistorySyncController.stream;
+  Stream<PromptHistoryMutationResultMessage> get promptHistoryMutationResults =>
+      _promptHistoryMutationController.stream;
+  Stream<PromptHistoryStatusMessage> get promptHistoryStatus =>
+      _promptHistoryStatusController.stream;
   // Git Operations
   Stream<GitStageResultMessage> get gitStageResults =>
       _gitStageResultController.stream;
@@ -206,6 +219,7 @@ class BridgeService implements BridgeServiceBase {
   List<String> get codexProfiles => _codexProfiles;
   String? get defaultCodexProfile => _defaultCodexProfile;
   String? get bridgeVersion => _bridgeVersion;
+  String? get promptHistoryBridgeId => _promptHistoryBridgeId;
   UsageResultMessage? get lastUsageResult => _lastUsageResult;
   List<OfflinePendingAction> get offlinePendingActions =>
       _offlinePendingActions;
@@ -216,6 +230,12 @@ class BridgeService implements BridgeServiceBase {
 
   /// The last WebSocket URL used for connection (or reconnection).
   String? get lastUrl => _lastUrl;
+
+  void _rememberPromptHistoryBridgeId(String? value) {
+    if (value != null && value.isNotEmpty) {
+      _promptHistoryBridgeId = value;
+    }
+  }
 
   QueuedInputItem? deliveryPendingInputForSession(
     String sessionId, {
@@ -299,6 +319,7 @@ class BridgeService implements BridgeServiceBase {
     _channel?.sink.close();
     _channel = null;
     _lastUsageResult = null;
+    _promptHistoryBridgeId = null;
     _lastUrl = url;
 
     _setBridgeConnectionState(BridgeConnectionState.connecting);
@@ -403,6 +424,15 @@ class BridgeService implements BridgeServiceBase {
                 _restoreResultController.add(msg);
               case PromptHistoryBackupInfoMessage():
                 _backupInfoController.add(msg);
+              case PromptHistorySyncResultMessage():
+                _rememberPromptHistoryBridgeId(msg.bridgeInstanceId);
+                _promptHistorySyncController.add(msg);
+              case PromptHistoryMutationResultMessage():
+                _rememberPromptHistoryBridgeId(msg.bridgeInstanceId);
+                _promptHistoryMutationController.add(msg);
+              case PromptHistoryStatusMessage():
+                _rememberPromptHistoryBridgeId(msg.bridgeInstanceId);
+                _promptHistoryStatusController.add(msg);
               // Git Operations
               case GitStageResultMessage():
                 _gitStageResultController.add(msg);
@@ -1428,6 +1458,20 @@ class BridgeService implements BridgeServiceBase {
     send(ClientMessage.getUsage());
   }
 
+  void requestPromptHistorySync({
+    required String clientId,
+    String? clientName,
+    int? sinceRevision,
+  }) {
+    send(
+      ClientMessage.syncPromptHistory(
+        clientId: clientId,
+        clientName: clientName,
+        sinceRevision: sinceRevision,
+      ),
+    );
+  }
+
   void removeProjectHistory(String path) {
     send(ClientMessage.removeProjectHistory(path));
   }
@@ -1879,6 +1923,7 @@ class BridgeService implements BridgeServiceBase {
     _channel?.sink.close();
     _channel = null;
     _lastUsageResult = null;
+    _promptHistoryBridgeId = null;
     _setBridgeConnectionState(BridgeConnectionState.disconnected);
     _bridgeVersion = null;
     clearDiffImageCache();
@@ -1944,6 +1989,9 @@ class BridgeService implements BridgeServiceBase {
     _backupResultController.close();
     _restoreResultController.close();
     _backupInfoController.close();
+    _promptHistorySyncController.close();
+    _promptHistoryMutationController.close();
+    _promptHistoryStatusController.close();
     // Git Operations
     _gitStageResultController.close();
     _gitUnstageResultController.close();

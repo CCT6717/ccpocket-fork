@@ -856,6 +856,40 @@ sealed class ServerMessage {
         backedUpAt: json['backedUpAt'] as String?,
         sizeBytes: json['sizeBytes'] as int?,
       ),
+      'prompt_history_sync_result' => PromptHistorySyncResultMessage(
+        success: json['success'] as bool? ?? false,
+        bridgeInstanceId: json['bridgeInstanceId'] as String?,
+        revision: json['revision'] as int?,
+        syncedAt: json['syncedAt'] as String?,
+        fullSnapshot: json['fullSnapshot'] as bool? ?? false,
+        entries:
+            (json['entries'] as List?)
+                ?.map(
+                  (e) => PromptHistoryServerEntry.fromJson(
+                    e as Map<String, dynamic>,
+                  ),
+                )
+                .toList() ??
+            const [],
+        error: json['error'] as String?,
+      ),
+      'prompt_history_mutation_result' => PromptHistoryMutationResultMessage(
+        success: json['success'] as bool? ?? false,
+        bridgeInstanceId: json['bridgeInstanceId'] as String?,
+        revision: json['revision'] as int?,
+        entry: json['entry'] is Map<String, dynamic>
+            ? PromptHistoryServerEntry.fromJson(
+                json['entry'] as Map<String, dynamic>,
+              )
+            : null,
+        error: json['error'] as String?,
+      ),
+      'prompt_history_status' => PromptHistoryStatusMessage(
+        bridgeInstanceId: json['bridgeInstanceId'] as String? ?? '',
+        revision: json['revision'] as int? ?? 0,
+        entryCount: json['entryCount'] as int? ?? 0,
+        updatedAt: json['updatedAt'] as String?,
+      ),
       'rename_result' => RenameResultMessage(
         sessionId: json['sessionId'] as String? ?? '',
         name: json['name'] as String?,
@@ -2422,6 +2456,188 @@ class PromptHistoryBackupInfoMessage implements ServerMessage {
   });
 }
 
+class PromptHistoryServerEntry {
+  final String id;
+  final String text;
+  final String projectPath;
+  final int totalUseCount;
+  final bool isFavorite;
+  final String createdAt;
+  final String lastUsedAt;
+  final String updatedAt;
+  final String? favoriteUpdatedAt;
+  final String? deletedAt;
+  final String commandKind;
+  final Map<String, PromptHistoryClientStat> clientStats;
+  final Map<String, PromptHistorySessionStat> sessionStats;
+
+  const PromptHistoryServerEntry({
+    required this.id,
+    required this.text,
+    required this.projectPath,
+    required this.totalUseCount,
+    required this.isFavorite,
+    required this.createdAt,
+    required this.lastUsedAt,
+    required this.updatedAt,
+    this.favoriteUpdatedAt,
+    this.deletedAt,
+    required this.commandKind,
+    required this.clientStats,
+    required this.sessionStats,
+  });
+
+  factory PromptHistoryServerEntry.fromJson(Map<String, dynamic> json) {
+    return PromptHistoryServerEntry(
+      id: json['id'] as String? ?? '',
+      text: json['text'] as String? ?? '',
+      projectPath: json['projectPath'] as String? ?? '',
+      totalUseCount: json['totalUseCount'] as int? ?? 0,
+      isFavorite: json['isFavorite'] as bool? ?? false,
+      createdAt: json['createdAt'] as String? ?? '',
+      lastUsedAt: json['lastUsedAt'] as String? ?? '',
+      updatedAt: json['updatedAt'] as String? ?? '',
+      favoriteUpdatedAt: json['favoriteUpdatedAt'] as String?,
+      deletedAt: json['deletedAt'] as String?,
+      commandKind: json['commandKind'] as String? ?? 'none',
+      clientStats:
+          (json['clientStats'] as Map<String, dynamic>?)?.map(
+            (key, value) => MapEntry(
+              key,
+              PromptHistoryClientStat.fromJson(value as Map<String, dynamic>),
+            ),
+          ) ??
+          const {},
+      sessionStats:
+          (json['sessionStats'] as Map<String, dynamic>?)?.map(
+            (key, value) => MapEntry(
+              key,
+              PromptHistorySessionStat.fromJson(value as Map<String, dynamic>),
+            ),
+          ) ??
+          const {},
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'text': text,
+    'projectPath': projectPath,
+    'totalUseCount': totalUseCount,
+    'isFavorite': isFavorite,
+    'createdAt': createdAt,
+    'lastUsedAt': lastUsedAt,
+    'updatedAt': updatedAt,
+    'favoriteUpdatedAt': ?favoriteUpdatedAt,
+    'deletedAt': ?deletedAt,
+    'commandKind': commandKind,
+    'clientStats': clientStats.map(
+      (key, value) => MapEntry(key, value.toJson()),
+    ),
+    'sessionStats': sessionStats.map(
+      (key, value) => MapEntry(key, value.toJson()),
+    ),
+  };
+}
+
+class PromptHistoryClientStat {
+  final int useCount;
+  final String lastUsedAt;
+  final String? clientName;
+
+  const PromptHistoryClientStat({
+    required this.useCount,
+    required this.lastUsedAt,
+    this.clientName,
+  });
+
+  factory PromptHistoryClientStat.fromJson(Map<String, dynamic> json) {
+    return PromptHistoryClientStat(
+      useCount: json['useCount'] as int? ?? 0,
+      lastUsedAt: json['lastUsedAt'] as String? ?? '',
+      clientName: json['clientName'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'useCount': useCount,
+    'lastUsedAt': lastUsedAt,
+    'clientName': ?clientName,
+  };
+}
+
+class PromptHistorySessionStat {
+  final int useCount;
+  final String lastUsedAt;
+
+  const PromptHistorySessionStat({
+    required this.useCount,
+    required this.lastUsedAt,
+  });
+
+  factory PromptHistorySessionStat.fromJson(Map<String, dynamic> json) {
+    return PromptHistorySessionStat(
+      useCount: json['useCount'] as int? ?? 0,
+      lastUsedAt: json['lastUsedAt'] as String? ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'useCount': useCount,
+    'lastUsedAt': lastUsedAt,
+  };
+}
+
+class PromptHistorySyncResultMessage implements ServerMessage {
+  final bool success;
+  final String? bridgeInstanceId;
+  final int? revision;
+  final String? syncedAt;
+  final bool fullSnapshot;
+  final List<PromptHistoryServerEntry> entries;
+  final String? error;
+
+  const PromptHistorySyncResultMessage({
+    required this.success,
+    this.bridgeInstanceId,
+    this.revision,
+    this.syncedAt,
+    this.fullSnapshot = false,
+    this.entries = const [],
+    this.error,
+  });
+}
+
+class PromptHistoryMutationResultMessage implements ServerMessage {
+  final bool success;
+  final String? bridgeInstanceId;
+  final int? revision;
+  final PromptHistoryServerEntry? entry;
+  final String? error;
+
+  const PromptHistoryMutationResultMessage({
+    required this.success,
+    this.bridgeInstanceId,
+    this.revision,
+    this.entry,
+    this.error,
+  });
+}
+
+class PromptHistoryStatusMessage implements ServerMessage {
+  final String bridgeInstanceId;
+  final int revision;
+  final int entryCount;
+  final String? updatedAt;
+
+  const PromptHistoryStatusMessage({
+    required this.bridgeInstanceId,
+    required this.revision,
+    required this.entryCount,
+    this.updatedAt,
+  });
+}
+
 class MessageImagesResultMessage implements ServerMessage {
   final String messageUuid;
   final List<ImageRef> images;
@@ -3116,6 +3332,7 @@ class ClientMessage {
       'conversation_queue',
       'history_delta',
       'history_snapshot',
+      'prompt_history_status',
     ],
   }) {
     return ClientMessage._(<String, dynamic>{
@@ -3600,6 +3817,67 @@ class ClientMessage {
 
   factory ClientMessage.getPromptHistoryBackupInfo() =>
       ClientMessage._({'type': 'get_prompt_history_backup_info'});
+
+  factory ClientMessage.recordPromptHistory({
+    required String text,
+    required String clientId,
+    String? projectPath,
+    String? clientName,
+    String? sessionId,
+    String? usedAt,
+  }) => ClientMessage._(<String, dynamic>{
+    'type': 'record_prompt_history',
+    'text': text,
+    'projectPath': ?projectPath,
+    'clientId': clientId,
+    'clientName': ?clientName,
+    'sessionId': ?sessionId,
+    'usedAt': ?usedAt,
+  });
+
+  factory ClientMessage.syncPromptHistory({
+    required String clientId,
+    String? clientName,
+    int? sinceRevision,
+    bool includeDeleted = true,
+    List<PromptHistoryServerEntry> entries = const [],
+  }) => ClientMessage._(<String, dynamic>{
+    'type': 'sync_prompt_history',
+    'clientId': clientId,
+    'clientName': ?clientName,
+    'sinceRevision': ?sinceRevision,
+    'includeDeleted': includeDeleted,
+    if (entries.isNotEmpty)
+      'entries': entries.map((entry) => entry.toJson()).toList(),
+  });
+
+  factory ClientMessage.mutatePromptHistory({
+    String? id,
+    String? text,
+    String? projectPath,
+    required String action,
+    bool? isFavorite,
+    String? updatedAt,
+  }) => ClientMessage._(<String, dynamic>{
+    'type': 'mutate_prompt_history',
+    'id': ?id,
+    'text': ?text,
+    'projectPath': ?projectPath,
+    'action': action,
+    'isFavorite': ?isFavorite,
+    'updatedAt': ?updatedAt,
+  });
+
+  factory ClientMessage.importPromptHistoryV1({
+    required String clientId,
+    String? clientName,
+    required List<PromptHistoryServerEntry> entries,
+  }) => ClientMessage._(<String, dynamic>{
+    'type': 'import_prompt_history_v1',
+    'clientId': clientId,
+    'clientName': ?clientName,
+    'entries': entries.map((entry) => entry.toJson()).toList(),
+  });
 
   factory ClientMessage.archiveSession({
     required String sessionId,

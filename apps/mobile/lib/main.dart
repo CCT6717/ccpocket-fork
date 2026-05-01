@@ -142,6 +142,16 @@ void main() async {
   StoreScreenshotState.draftService = draftService;
   final dbService = DatabaseService();
   final promptHistoryService = PromptHistoryService(dbService);
+  bridge.connectionStatus.listen((state) {
+    if (state == BridgeConnectionState.connected) {
+      unawaited(
+        promptHistoryService.syncAll(
+          machineManager: machineManagerService,
+          bridgeService: bridge,
+        ),
+      );
+    }
+  });
   final appIconService = AppIconService();
   final revenueCatService = RevenueCatService();
   unawaited(revenueCatService.initialize());

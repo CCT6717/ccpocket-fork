@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/logger.dart';
+import '../../../services/bridge_service.dart';
 import '../../../services/prompt_history_service.dart';
 import 'prompt_history_state.dart';
 
@@ -8,36 +9,55 @@ import 'prompt_history_state.dart';
 const _pageSize = 30;
 
 /// Manages the prompt history bottom sheet state.
-///
-/// Created when the sheet is displayed and disposed when it closes.
 class PromptHistoryCubit extends Cubit<PromptHistoryState> {
   final PromptHistoryService _service;
+  final BridgeService? _bridgeService;
+  final String? _currentProjectPath;
+  final String? _currentBridgeId;
 
-  PromptHistoryCubit(this._service) : super(const PromptHistoryState());
+  PromptHistoryCubit(
+    this._service, {
+    BridgeService? bridgeService,
+    String? currentProjectPath,
+    String? currentBridgeId,
+    PromptHistoryFilters initialFilters = const PromptHistoryFilters(),
+  }) : _bridgeService = bridgeService,
+       _currentProjectPath = currentProjectPath,
+       _currentBridgeId = currentBridgeId,
+       super(PromptHistoryState(filters: initialFilters));
 
-  /// Load prompt history with current filters (resets to first page).
-  Future<void> load() async {
+  Future<void> load({bool syncFirst = false}) async {
     emit(state.copyWith(isLoading: true));
 
     try {
-      final results = await Future.wait([
-        _service.getPrompts(
-          sort: state.sortOrder,
-          projectPath: state.projectFilter,
-          searchQuery: state.searchQuery.isEmpty ? null : state.searchQuery,
-          limit: _pageSize,
-          offset: 0,
-        ),
-        _service.getProjectPaths(),
-      ]);
+      final bridge = _bridgeService;
+      if (syncFirst && bridge != null && bridge.lastUrl != null) {
+        final bridgeUrl = bridge.lastUrl!;
+        final bridgeId =
+            bridge.promptHistoryBridgeId ?? _service.bridgeIdForUrl(bridgeUrl);
+        if (bridgeId != null) {
+          await _service.syncBridge(
+            PromptHistorySyncTarget(
+              bridgeId: bridgeId,
+              bridgeUrl: bridgeUrl,
+              bridgeName: bridgeId,
+            ),
+          );
+        }
+      }
 
-      final prompts = results[0] as List<PromptHistoryEntry>;
-      final projects = results[1] as List<String>;
+      final prompts = await _service.getPrompts(
+        sort: state.sortOrder,
+        filters: state.filters,
+        currentProjectPath: _currentProjectPath,
+        currentBridgeId: _currentBridgeId,
+        limit: _pageSize,
+        offset: 0,
+      );
 
       emit(
         state.copyWith(
           prompts: prompts,
-          availableProjects: projects,
           isLoading: false,
           hasMore: prompts.length >= _pageSize,
         ),
@@ -48,7 +68,6 @@ class PromptHistoryCubit extends Cubit<PromptHistoryState> {
     }
   }
 
-  /// Load the next page of prompt history and append to existing results.
   Future<void> loadMore() async {
     if (!state.hasMore || state.isLoading) return;
 
@@ -57,8 +76,9 @@ class PromptHistoryCubit extends Cubit<PromptHistoryState> {
     try {
       final prompts = await _service.getPrompts(
         sort: state.sortOrder,
-        projectPath: state.projectFilter,
-        searchQuery: state.searchQuery.isEmpty ? null : state.searchQuery,
+        filters: state.filters,
+        currentProjectPath: _currentProjectPath,
+        currentBridgeId: _currentBridgeId,
         limit: _pageSize,
         offset: state.prompts.length,
       );
@@ -76,34 +96,50 @@ class PromptHistoryCubit extends Cubit<PromptHistoryState> {
     }
   }
 
-  /// Change sort order and reload.
-  Future<void> setSortOrder(PromptSortOrder order) async {
-    emit(state.copyWith(sortOrder: order));
+  Future<void> cycleSortOrder() async {
+    final next = switch (state.sortOrder) {
+      PromptSortOrder.frequency => PromptSortOrder.recency,
+      PromptSortOrder.recency => PromptSortOrder.favoritesFirst,
+      PromptSortOrder.favoritesFirst => PromptSortOrder.frequency,
+    };
+    emit(state.copyWith(sortOrder: next));
     await load();
   }
 
-  /// Set project filter and reload.
-  /// Pass `null` for "all projects".
-  Future<void> setProjectFilter(String? projectPath) async {
-    emit(state.copyWith(projectFilter: projectPath));
+  Future<void> restorePreferences({
+    required PromptHistoryFilters filters,
+    required bool filtersExpanded,
+    bool syncFirst = false,
+  }) async {
+    emit(state.copyWith(filters: filters, filtersExpanded: filtersExpanded));
+    await load(syncFirst: syncFirst);
+  }
+
+  Future<void> toggleFiltersExpanded() async {
+    final next = !state.filtersExpanded;
+    await _service.setFiltersExpanded(next);
+    emit(state.copyWith(filtersExpanded: next));
+  }
+
+  Future<void> setFilters(
+    PromptHistoryFilters filters, {
+    bool persist = true,
+    bool syncFirst = false,
+  }) async {
+    if (persist) {
+      await _service.setDefaultFilters(filters);
+    }
+    emit(state.copyWith(filters: filters));
+    await load(syncFirst: syncFirst);
+  }
+
+  Future<void> toggleFavorite(String id) async {
+    await _service.toggleFavorite(id, bridgeService: _bridgeService);
     await load();
   }
 
-  /// Set search query and reload.
-  Future<void> setSearchQuery(String query) async {
-    emit(state.copyWith(searchQuery: query));
-    await load();
-  }
-
-  /// Toggle favorite status and reload.
-  Future<void> toggleFavorite(int id) async {
-    await _service.toggleFavorite(id);
-    await load();
-  }
-
-  /// Delete a prompt entry and reload.
-  Future<void> delete(int id) async {
-    await _service.delete(id);
+  Future<void> delete(String id) async {
+    await _service.delete(id, bridgeService: _bridgeService);
     await load();
   }
 }

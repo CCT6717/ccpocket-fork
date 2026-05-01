@@ -503,6 +503,52 @@
   "searchSessionsHint": "搜索会话...",
   "noMatchingPrompts": "没有匹配的提示词",
   "noPromptHistoryYet": "还没有提示词历史",
+  "promptHistoryFilters": "筛选",
+  "promptHistoryFilterThisDevice": "在此设备使用过的历史",
+  "promptHistoryFilterThisProject": "当前打开的项目",
+  "promptHistoryFilterThisBridge": "已连接的 Bridge",
+  "promptHistoryFilterFavorites": "收藏",
+  "promptHistoryFilterCommands": "命令和技能",
+  "promptHistoryOpenProjectEmptyHint": "打开的项目筛选仅适用于新版应用记录的历史。",
+  "promptHistorySectionTitle": "提示词历史",
+  "promptHistorySyncTitle": "同步提示词历史",
+  "promptHistoryReplaceTitle": "用旧格式历史覆盖 Bridge",
+  "promptHistoryReplaceSubtitle": "旧格式历史由应用管理。新格式由 Bridge 管理历史。如果你已在主设备上迁移，通常不需要此操作。仅在备用设备误初始化 Bridge 历史时使用：它会用此设备的旧格式历史覆盖已连接 Bridge 的历史。",
+  "promptHistoryReplaceConfirmAction": "覆盖",
+  "promptHistoryReplaceDismissAction": "已迁移，隐藏",
+  "promptHistoryNotSyncedYet": "尚未同步",
+  "promptHistoryLatestSync": "上次同步：{time}",
+  "@promptHistoryLatestSync": {
+    "placeholders": {
+      "time": { "type": "String" }
+    }
+  },
+  "promptHistorySyncedBridges": "已同步 {count} 个 Bridge",
+  "@promptHistorySyncedBridges": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "promptHistorySyncSummaryWithFailures": "已同步 {synced} 个，失败 {failed} 个",
+  "@promptHistorySyncSummaryWithFailures": {
+    "placeholders": {
+      "synced": { "type": "int" },
+      "failed": { "type": "int" }
+    }
+  },
+  "promptHistoryBridgeId": "Bridge ID: {id}",
+  "@promptHistoryBridgeId": {
+    "placeholders": {
+      "id": { "type": "String" }
+    }
+  },
+  "promptHistoryOtherBridgeRegistrations": "其他注册: {registrations}",
+  "@promptHistoryOtherBridgeRegistrations": {
+    "placeholders": {
+      "registrations": { "type": "String" }
+    }
+  },
+  "promptHistoryNoSyncTime": "没有同步时间",
 
   "approvalQueue": "审批队列",
   "resetQueue": "重置队列",
@@ -641,52 +687,6 @@
   "defaultNotRecommended": "默认（不推荐）",
 
   "imageAttached": "图片已附加",
-
-  "sectionBackup": "备份",
-  "backupPromptHistory": "备份提示词历史",
-  "restorePromptHistory": "恢复提示词历史",
-  "backupSuccess": "备份完成",
-  "backupFailed": "备份失败：{error}",
-  "@backupFailed": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  "restoreSuccess": "恢复完成",
-  "restoreFailed": "恢复失败：{error}",
-  "@restoreFailed": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  "restoreConfirmTitle": "恢复提示词历史",
-  "restoreConfirmMessage": "这将使用备份替换本地所有提示词历史，且无法撤销。",
-  "restoreConfirmButton": "恢复",
-  "noBackupFound": "未找到备份",
-  "backupInfo": "上次备份：{date}",
-  "@backupInfo": {
-    "placeholders": {
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "backupVersionInfo": "v{version} · {size}",
-  "@backupVersionInfo": {
-    "placeholders": {
-      "version": {
-        "type": "String"
-      },
-      "size": {
-        "type": "String"
-      }
-    }
-  },
-  "connectToBackup": "连接到 Bridge 后才能使用备份",
 
   "usageConnectToView": "连接到 Bridge 后查看用量",
   "usageFetchFailed": "获取失败",

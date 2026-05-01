@@ -20,9 +20,10 @@ import '../../models/new_session_tab.dart';
 import '../../providers/machine_manager_cubit.dart';
 import '../../router/app_router.dart';
 import '../../services/bridge_service.dart';
-import '../../services/database_service.dart';
 import '../../services/in_app_review_service.dart';
+import '../../services/machine_manager_service.dart';
 import '../../services/platform_environment_service.dart';
+import '../../services/prompt_history_service.dart';
 import '../../services/revenuecat_service.dart';
 import '../../services/support_banner_service.dart';
 import '../../widgets/workspace_pane_chrome.dart';
@@ -38,7 +39,7 @@ import 'widgets/new_session_tabs_bottom_sheet.dart';
 import 'widgets/speech_locale_bottom_sheet.dart';
 import 'widgets/terminal_app_bottom_sheet.dart';
 import 'widgets/theme_bottom_sheet.dart';
-import 'widgets/backup_section.dart';
+import 'widgets/prompt_history_section.dart';
 import 'widgets/usage_section.dart';
 
 @RoutePage()
@@ -706,11 +707,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 UsageSection(bridgeService: bridge),
                 const SizedBox(height: 8),
 
-                // ── Backup ──
-                BackupSection(
-                  bridgeService: bridge,
-                  databaseService: context.read<DatabaseService>(),
-                ),
+                // ── Prompt History 2.0 ──
+                _PromptHistorySectionSlot(bridgeService: bridge),
                 const SizedBox(height: 8),
               ],
 
@@ -1637,5 +1635,40 @@ class _MacOSNativeAppTile extends StatelessWidget {
         mode: LaunchMode.externalApplication,
       ),
     );
+  }
+}
+
+class _PromptHistorySectionSlot extends StatelessWidget {
+  const _PromptHistorySectionSlot({required this.bridgeService});
+
+  final BridgeService bridgeService;
+
+  @override
+  Widget build(BuildContext context) {
+    final promptHistoryService = _readOptional<PromptHistoryService>(context);
+    final machineManagerService = _readOptional<MachineManagerService>(context);
+
+    if (promptHistoryService == null || machineManagerService == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      children: [
+        PromptHistorySection(
+          bridgeService: bridgeService,
+          promptHistoryService: promptHistoryService,
+          machineManagerService: machineManagerService,
+        ),
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+
+  T? _readOptional<T>(BuildContext context) {
+    try {
+      return context.read<T>();
+    } on ProviderNotFoundException {
+      return null;
+    }
   }
 }

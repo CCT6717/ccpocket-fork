@@ -1170,6 +1170,79 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noPromptHistoryYet => 'No prompt history yet';
 
   @override
+  String get promptHistoryFilters => 'Filters';
+
+  @override
+  String get promptHistoryFilterThisDevice => 'Used on this device';
+
+  @override
+  String get promptHistoryFilterThisProject => 'Open project';
+
+  @override
+  String get promptHistoryFilterThisBridge => 'Connected Bridge';
+
+  @override
+  String get promptHistoryFilterFavorites => 'Favorites';
+
+  @override
+  String get promptHistoryFilterCommands => 'Commands and skills';
+
+  @override
+  String get promptHistoryOpenProjectEmptyHint =>
+      'Open project filtering only works for history recorded by the newer app.';
+
+  @override
+  String get promptHistorySectionTitle => 'Prompt History';
+
+  @override
+  String get promptHistorySyncTitle => 'Sync prompt history';
+
+  @override
+  String get promptHistoryReplaceTitle =>
+      'Overwrite Bridge with old-format history';
+
+  @override
+  String get promptHistoryReplaceSubtitle =>
+      'Old-format history was managed by the app. The new format is managed by Bridge. This is usually unnecessary if you already migrated on your main device. Use it when a secondary device accidentally initialized Bridge history; it overwrites the connected Bridge history with this device\'s old-format history.';
+
+  @override
+  String get promptHistoryReplaceConfirmAction => 'Overwrite';
+
+  @override
+  String get promptHistoryReplaceDismissAction => 'Already migrated';
+
+  @override
+  String get promptHistoryNotSyncedYet => 'Not synced yet';
+
+  @override
+  String promptHistoryLatestSync(String time) {
+    return 'Last sync: $time';
+  }
+
+  @override
+  String promptHistorySyncedBridges(int count) {
+    return 'Synced Bridges: $count';
+  }
+
+  @override
+  String promptHistorySyncSummaryWithFailures(int synced, int failed) {
+    return '$synced synced, $failed failed';
+  }
+
+  @override
+  String promptHistoryBridgeId(String id) {
+    return 'Bridge ID: $id';
+  }
+
+  @override
+  String promptHistoryOtherBridgeRegistrations(String registrations) {
+    return 'Other registrations: $registrations';
+  }
+
+  @override
+  String get promptHistoryNoSyncTime => 'No sync time';
+
+  @override
   String get approvalQueue => 'Approval Queue';
 
   @override
@@ -1418,57 +1491,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get imageAttached => 'Image attached';
-
-  @override
-  String get sectionBackup => 'BACKUP';
-
-  @override
-  String get backupPromptHistory => 'Backup Prompt History';
-
-  @override
-  String get restorePromptHistory => 'Restore Prompt History';
-
-  @override
-  String get backupSuccess => 'Backup completed';
-
-  @override
-  String backupFailed(String error) {
-    return 'Backup failed: $error';
-  }
-
-  @override
-  String get restoreSuccess => 'Restore completed';
-
-  @override
-  String restoreFailed(String error) {
-    return 'Restore failed: $error';
-  }
-
-  @override
-  String get restoreConfirmTitle => 'Restore Prompt History';
-
-  @override
-  String get restoreConfirmMessage =>
-      'This will replace all local prompt history with the backup. This cannot be undone.';
-
-  @override
-  String get restoreConfirmButton => 'Restore';
-
-  @override
-  String get noBackupFound => 'No backup found';
-
-  @override
-  String backupInfo(String date) {
-    return 'Last backup: $date';
-  }
-
-  @override
-  String backupVersionInfo(String version, String size) {
-    return 'v$version · $size';
-  }
-
-  @override
-  String get connectToBackup => 'Connect to Bridge to use backup';
 
   @override
   String get usageConnectToView => 'Connect to Bridge to view usage';

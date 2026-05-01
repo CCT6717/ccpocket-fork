@@ -457,6 +457,7 @@ class _ChatScreenProviders extends StatelessWidget {
             initialRecentPeekedFiles: recentPeekedFiles,
             initialPermissionMode: permissionMode,
             initialSandboxMode: sandboxMode,
+            initialProjectPath: projectPath,
           ),
         ),
         BlocProvider.value(value: streamingCubit),

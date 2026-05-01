@@ -2166,6 +2166,126 @@ abstract class AppLocalizations {
   /// **'プロンプト履歴はまだありません'**
   String get noPromptHistoryYet;
 
+  /// No description provided for @promptHistoryFilters.
+  ///
+  /// In ja, this message translates to:
+  /// **'フィルター'**
+  String get promptHistoryFilters;
+
+  /// No description provided for @promptHistoryFilterThisDevice.
+  ///
+  /// In ja, this message translates to:
+  /// **'この端末で使った履歴'**
+  String get promptHistoryFilterThisDevice;
+
+  /// No description provided for @promptHistoryFilterThisProject.
+  ///
+  /// In ja, this message translates to:
+  /// **'開いているプロジェクト'**
+  String get promptHistoryFilterThisProject;
+
+  /// No description provided for @promptHistoryFilterThisBridge.
+  ///
+  /// In ja, this message translates to:
+  /// **'接続中のBridge'**
+  String get promptHistoryFilterThisBridge;
+
+  /// No description provided for @promptHistoryFilterFavorites.
+  ///
+  /// In ja, this message translates to:
+  /// **'お気に入り'**
+  String get promptHistoryFilterFavorites;
+
+  /// No description provided for @promptHistoryFilterCommands.
+  ///
+  /// In ja, this message translates to:
+  /// **'コマンドとスキル'**
+  String get promptHistoryFilterCommands;
+
+  /// No description provided for @promptHistoryOpenProjectEmptyHint.
+  ///
+  /// In ja, this message translates to:
+  /// **'開いているプロジェクトのフィルターは、新しいアプリで記録した履歴にのみ有効です。'**
+  String get promptHistoryOpenProjectEmptyHint;
+
+  /// No description provided for @promptHistorySectionTitle.
+  ///
+  /// In ja, this message translates to:
+  /// **'プロンプト履歴'**
+  String get promptHistorySectionTitle;
+
+  /// No description provided for @promptHistorySyncTitle.
+  ///
+  /// In ja, this message translates to:
+  /// **'プロンプト履歴を同期'**
+  String get promptHistorySyncTitle;
+
+  /// No description provided for @promptHistoryReplaceTitle.
+  ///
+  /// In ja, this message translates to:
+  /// **'旧方式履歴でBridgeを上書き'**
+  String get promptHistoryReplaceTitle;
+
+  /// No description provided for @promptHistoryReplaceSubtitle.
+  ///
+  /// In ja, this message translates to:
+  /// **'旧方式履歴はアプリ側で管理されていました。新方式ではBridge側で履歴を管理します。メイン端末で移行済みの場合は通常不要です。サブ端末でBridgeの履歴を初期化してしまった場合に、接続中のBridge履歴をこの端末の旧方式履歴で上書きします。'**
+  String get promptHistoryReplaceSubtitle;
+
+  /// No description provided for @promptHistoryReplaceConfirmAction.
+  ///
+  /// In ja, this message translates to:
+  /// **'上書き'**
+  String get promptHistoryReplaceConfirmAction;
+
+  /// No description provided for @promptHistoryReplaceDismissAction.
+  ///
+  /// In ja, this message translates to:
+  /// **'移行済みとして非表示'**
+  String get promptHistoryReplaceDismissAction;
+
+  /// No description provided for @promptHistoryNotSyncedYet.
+  ///
+  /// In ja, this message translates to:
+  /// **'まだ同期していません'**
+  String get promptHistoryNotSyncedYet;
+
+  /// No description provided for @promptHistoryLatestSync.
+  ///
+  /// In ja, this message translates to:
+  /// **'最終同期: {time}'**
+  String promptHistoryLatestSync(String time);
+
+  /// No description provided for @promptHistorySyncedBridges.
+  ///
+  /// In ja, this message translates to:
+  /// **'{count}件のBridgeを同期済み'**
+  String promptHistorySyncedBridges(int count);
+
+  /// No description provided for @promptHistorySyncSummaryWithFailures.
+  ///
+  /// In ja, this message translates to:
+  /// **'{synced}件同期、{failed}件失敗'**
+  String promptHistorySyncSummaryWithFailures(int synced, int failed);
+
+  /// No description provided for @promptHistoryBridgeId.
+  ///
+  /// In ja, this message translates to:
+  /// **'Bridge ID: {id}'**
+  String promptHistoryBridgeId(String id);
+
+  /// No description provided for @promptHistoryOtherBridgeRegistrations.
+  ///
+  /// In ja, this message translates to:
+  /// **'他の登録: {registrations}'**
+  String promptHistoryOtherBridgeRegistrations(String registrations);
+
+  /// No description provided for @promptHistoryNoSyncTime.
+  ///
+  /// In ja, this message translates to:
+  /// **'同期時刻なし'**
+  String get promptHistoryNoSyncTime;
+
   /// No description provided for @approvalQueue.
   ///
   /// In ja, this message translates to:
@@ -2633,90 +2753,6 @@ abstract class AppLocalizations {
   /// In ja, this message translates to:
   /// **'画像添付'**
   String get imageAttached;
-
-  /// No description provided for @sectionBackup.
-  ///
-  /// In ja, this message translates to:
-  /// **'バックアップ'**
-  String get sectionBackup;
-
-  /// No description provided for @backupPromptHistory.
-  ///
-  /// In ja, this message translates to:
-  /// **'プロンプト履歴をバックアップ'**
-  String get backupPromptHistory;
-
-  /// No description provided for @restorePromptHistory.
-  ///
-  /// In ja, this message translates to:
-  /// **'プロンプト履歴をリストア'**
-  String get restorePromptHistory;
-
-  /// No description provided for @backupSuccess.
-  ///
-  /// In ja, this message translates to:
-  /// **'バックアップが完了しました'**
-  String get backupSuccess;
-
-  /// No description provided for @backupFailed.
-  ///
-  /// In ja, this message translates to:
-  /// **'バックアップに失敗しました: {error}'**
-  String backupFailed(String error);
-
-  /// No description provided for @restoreSuccess.
-  ///
-  /// In ja, this message translates to:
-  /// **'リストアが完了しました'**
-  String get restoreSuccess;
-
-  /// No description provided for @restoreFailed.
-  ///
-  /// In ja, this message translates to:
-  /// **'リストアに失敗しました: {error}'**
-  String restoreFailed(String error);
-
-  /// No description provided for @restoreConfirmTitle.
-  ///
-  /// In ja, this message translates to:
-  /// **'プロンプト履歴のリストア'**
-  String get restoreConfirmTitle;
-
-  /// No description provided for @restoreConfirmMessage.
-  ///
-  /// In ja, this message translates to:
-  /// **'ローカルのプロンプト履歴がバックアップの内容で上書きされます。この操作は元に戻せません。'**
-  String get restoreConfirmMessage;
-
-  /// No description provided for @restoreConfirmButton.
-  ///
-  /// In ja, this message translates to:
-  /// **'リストア'**
-  String get restoreConfirmButton;
-
-  /// No description provided for @noBackupFound.
-  ///
-  /// In ja, this message translates to:
-  /// **'バックアップがありません'**
-  String get noBackupFound;
-
-  /// No description provided for @backupInfo.
-  ///
-  /// In ja, this message translates to:
-  /// **'最終バックアップ: {date}'**
-  String backupInfo(String date);
-
-  /// No description provided for @backupVersionInfo.
-  ///
-  /// In ja, this message translates to:
-  /// **'v{version} · {size}'**
-  String backupVersionInfo(String version, String size);
-
-  /// No description provided for @connectToBackup.
-  ///
-  /// In ja, this message translates to:
-  /// **'Bridge に接続するとバックアップが利用できます'**
-  String get connectToBackup;
 
   /// No description provided for @usageConnectToView.
   ///

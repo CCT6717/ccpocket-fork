@@ -503,6 +503,52 @@
   "searchHint": "検索...",
   "noMatchingPrompts": "一致するプロンプトがありません",
   "noPromptHistoryYet": "プロンプト履歴はまだありません",
+  "promptHistoryFilters": "フィルター",
+  "promptHistoryFilterThisDevice": "この端末で使った履歴",
+  "promptHistoryFilterThisProject": "開いているプロジェクト",
+  "promptHistoryFilterThisBridge": "接続中のBridge",
+  "promptHistoryFilterFavorites": "お気に入り",
+  "promptHistoryFilterCommands": "コマンドとスキル",
+  "promptHistoryOpenProjectEmptyHint": "開いているプロジェクトのフィルターは、新しいアプリで記録した履歴にのみ有効です。",
+  "promptHistorySectionTitle": "プロンプト履歴",
+  "promptHistorySyncTitle": "プロンプト履歴を同期",
+  "promptHistoryReplaceTitle": "旧方式履歴でBridgeを上書き",
+  "promptHistoryReplaceSubtitle": "旧方式履歴はアプリ側で管理されていました。新方式ではBridge側で履歴を管理します。メイン端末で移行済みの場合は通常不要です。サブ端末でBridgeの履歴を初期化してしまった場合に、接続中のBridge履歴をこの端末の旧方式履歴で上書きします。",
+  "promptHistoryReplaceConfirmAction": "上書き",
+  "promptHistoryReplaceDismissAction": "移行済みとして非表示",
+  "promptHistoryNotSyncedYet": "まだ同期していません",
+  "promptHistoryLatestSync": "最終同期: {time}",
+  "@promptHistoryLatestSync": {
+    "placeholders": {
+      "time": { "type": "String" }
+    }
+  },
+  "promptHistorySyncedBridges": "{count}件のBridgeを同期済み",
+  "@promptHistorySyncedBridges": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "promptHistorySyncSummaryWithFailures": "{synced}件同期、{failed}件失敗",
+  "@promptHistorySyncSummaryWithFailures": {
+    "placeholders": {
+      "synced": { "type": "int" },
+      "failed": { "type": "int" }
+    }
+  },
+  "promptHistoryBridgeId": "Bridge ID: {id}",
+  "@promptHistoryBridgeId": {
+    "placeholders": {
+      "id": { "type": "String" }
+    }
+  },
+  "promptHistoryOtherBridgeRegistrations": "他の登録: {registrations}",
+  "@promptHistoryOtherBridgeRegistrations": {
+    "placeholders": {
+      "registrations": { "type": "String" }
+    }
+  },
+  "promptHistoryNoSyncTime": "同期時刻なし",
 
   "approvalQueue": "承認キュー",
   "resetQueue": "キューをリセット",
@@ -601,42 +647,6 @@
   "defaultNotRecommended": "Default（非推奨）",
 
   "imageAttached": "画像添付",
-
-  "sectionBackup": "バックアップ",
-  "backupPromptHistory": "プロンプト履歴をバックアップ",
-  "restorePromptHistory": "プロンプト履歴をリストア",
-  "backupSuccess": "バックアップが完了しました",
-  "backupFailed": "バックアップに失敗しました: {error}",
-  "@backupFailed": {
-    "placeholders": {
-      "error": {"type": "String"}
-    }
-  },
-  "restoreSuccess": "リストアが完了しました",
-  "restoreFailed": "リストアに失敗しました: {error}",
-  "@restoreFailed": {
-    "placeholders": {
-      "error": {"type": "String"}
-    }
-  },
-  "restoreConfirmTitle": "プロンプト履歴のリストア",
-  "restoreConfirmMessage": "ローカルのプロンプト履歴がバックアップの内容で上書きされます。この操作は元に戻せません。",
-  "restoreConfirmButton": "リストア",
-  "noBackupFound": "バックアップがありません",
-  "backupInfo": "最終バックアップ: {date}",
-  "@backupInfo": {
-    "placeholders": {
-      "date": {"type": "String"}
-    }
-  },
-  "backupVersionInfo": "v{version} · {size}",
-  "@backupVersionInfo": {
-    "placeholders": {
-      "version": {"type": "String"},
-      "size": {"type": "String"}
-    }
-  },
-  "connectToBackup": "Bridge に接続するとバックアップが利用できます",
 
   "usageConnectToView": "Bridge に接続すると利用量を表示できます",
   "usageFetchFailed": "取得に失敗しました",

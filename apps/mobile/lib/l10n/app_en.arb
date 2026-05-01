@@ -455,6 +455,52 @@
   "searchHint": "Search...",
   "noMatchingPrompts": "No matching prompts",
   "noPromptHistoryYet": "No prompt history yet",
+  "promptHistoryFilters": "Filters",
+  "promptHistoryFilterThisDevice": "Used on this device",
+  "promptHistoryFilterThisProject": "Open project",
+  "promptHistoryFilterThisBridge": "Connected Bridge",
+  "promptHistoryFilterFavorites": "Favorites",
+  "promptHistoryFilterCommands": "Commands and skills",
+  "promptHistoryOpenProjectEmptyHint": "Open project filtering only works for history recorded by the newer app.",
+  "promptHistorySectionTitle": "Prompt History",
+  "promptHistorySyncTitle": "Sync prompt history",
+  "promptHistoryReplaceTitle": "Overwrite Bridge with old-format history",
+  "promptHistoryReplaceSubtitle": "Old-format history was managed by the app. The new format is managed by Bridge. This is usually unnecessary if you already migrated on your main device. Use it when a secondary device accidentally initialized Bridge history; it overwrites the connected Bridge history with this device's old-format history.",
+  "promptHistoryReplaceConfirmAction": "Overwrite",
+  "promptHistoryReplaceDismissAction": "Already migrated",
+  "promptHistoryNotSyncedYet": "Not synced yet",
+  "promptHistoryLatestSync": "Last sync: {time}",
+  "@promptHistoryLatestSync": {
+    "placeholders": {
+      "time": { "type": "String" }
+    }
+  },
+  "promptHistorySyncedBridges": "Synced Bridges: {count}",
+  "@promptHistorySyncedBridges": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "promptHistorySyncSummaryWithFailures": "{synced} synced, {failed} failed",
+  "@promptHistorySyncSummaryWithFailures": {
+    "placeholders": {
+      "synced": { "type": "int" },
+      "failed": { "type": "int" }
+    }
+  },
+  "promptHistoryBridgeId": "Bridge ID: {id}",
+  "@promptHistoryBridgeId": {
+    "placeholders": {
+      "id": { "type": "String" }
+    }
+  },
+  "promptHistoryOtherBridgeRegistrations": "Other registrations: {registrations}",
+  "@promptHistoryOtherBridgeRegistrations": {
+    "placeholders": {
+      "registrations": { "type": "String" }
+    }
+  },
+  "promptHistoryNoSyncTime": "No sync time",
 
   "approvalQueue": "Approval Queue",
   "resetQueue": "Reset queue",
@@ -543,42 +589,6 @@
   "defaultNotRecommended": "Default (not recommended)",
 
   "imageAttached": "Image attached",
-
-  "sectionBackup": "BACKUP",
-  "backupPromptHistory": "Backup Prompt History",
-  "restorePromptHistory": "Restore Prompt History",
-  "backupSuccess": "Backup completed",
-  "backupFailed": "Backup failed: {error}",
-  "@backupFailed": {
-    "placeholders": {
-      "error": {"type": "String"}
-    }
-  },
-  "restoreSuccess": "Restore completed",
-  "restoreFailed": "Restore failed: {error}",
-  "@restoreFailed": {
-    "placeholders": {
-      "error": {"type": "String"}
-    }
-  },
-  "restoreConfirmTitle": "Restore Prompt History",
-  "restoreConfirmMessage": "This will replace all local prompt history with the backup. This cannot be undone.",
-  "restoreConfirmButton": "Restore",
-  "noBackupFound": "No backup found",
-  "backupInfo": "Last backup: {date}",
-  "@backupInfo": {
-    "placeholders": {
-      "date": {"type": "String"}
-    }
-  },
-  "backupVersionInfo": "v{version} · {size}",
-  "@backupVersionInfo": {
-    "placeholders": {
-      "version": {"type": "String"},
-      "size": {"type": "String"}
-    }
-  },
-  "connectToBackup": "Connect to Bridge to use backup",
 
   "usageConnectToView": "Connect to Bridge to view usage",
   "usageFetchFailed": "Failed to fetch",

@@ -66,6 +66,52 @@ describe("parseClientMessage", () => {
     ).toBeNull();
   });
 
+  it("parses prompt history sync messages", () => {
+    const msg = parseClientMessage(
+      JSON.stringify({
+        type: "sync_prompt_history",
+        clientId: "phone",
+        clientName: "iPhone",
+        sinceRevision: 3,
+        includeDeleted: true,
+        entries: [{ text: "/test", projectPath: "/repo", totalUseCount: 2 }],
+      }),
+    );
+    expect(msg).toEqual({
+      type: "sync_prompt_history",
+      clientId: "phone",
+      clientName: "iPhone",
+      sinceRevision: 3,
+      includeDeleted: true,
+      entries: [{ text: "/test", projectPath: "/repo", totalUseCount: 2 }],
+    });
+  });
+
+  it("rejects prompt history entries without text", () => {
+    expect(
+      parseClientMessage(
+        JSON.stringify({
+          type: "import_prompt_history_v1",
+          clientId: "phone",
+          entries: [{ projectPath: "/repo" }],
+        }),
+      ),
+    ).toBeNull();
+  });
+
+  it("rejects migration import modes because v1 import is replace-only", () => {
+    expect(
+      parseClientMessage(
+        JSON.stringify({
+          type: "import_prompt_history_v1",
+          clientId: "phone",
+          mode: "merge",
+          entries: [{ text: "/test", projectPath: "/repo" }],
+        }),
+      ),
+    ).toBeNull();
+  });
+
   it("parses start message", () => {
     const msg = parseClientMessage('{"type":"start","projectPath":"/tmp/foo"}');
     expect(msg).toEqual({ type: "start", projectPath: "/tmp/foo" });

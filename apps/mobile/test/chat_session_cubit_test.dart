@@ -134,12 +134,17 @@ void main() {
     mockBridge.dispose();
   });
 
-  ChatSessionCubit createCubit(String sessionId, {Provider? provider}) {
+  ChatSessionCubit createCubit(
+    String sessionId, {
+    Provider? provider,
+    String? initialProjectPath,
+  }) {
     return ChatSessionCubit(
       sessionId: sessionId,
       provider: provider,
       bridge: mockBridge,
       streamingCubit: streamingCubit,
+      initialProjectPath: initialProjectPath,
     );
   }
 
@@ -166,6 +171,36 @@ void main() {
       await Future.microtask(() {});
 
       expect(cubit.state.status, ProcessStatus.running);
+    });
+
+    test(
+      'initial project path is available before bridge metadata arrives',
+      () {
+        final cubit = createCubit(
+          's1',
+          initialProjectPath: '/Users/me/Workspace/ccpocket',
+        );
+        addTearDown(cubit.close);
+
+        expect(cubit.state.projectPath, '/Users/me/Workspace/ccpocket');
+      },
+    );
+
+    test('system message updates project path metadata', () async {
+      final cubit = createCubit('s1');
+      addTearDown(cubit.close);
+      await Future.microtask(() {});
+
+      mockBridge.emitMessage(
+        const SystemMessage(
+          subtype: 'session_created',
+          projectPath: '/Users/me/Workspace/ccpocket',
+        ),
+        sessionId: 's1',
+      );
+      await Future.microtask(() {});
+
+      expect(cubit.state.projectPath, '/Users/me/Workspace/ccpocket');
     });
 
     test(

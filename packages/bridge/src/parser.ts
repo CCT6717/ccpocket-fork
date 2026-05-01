@@ -1,5 +1,9 @@
 import type { GalleryImageInfo } from "./gallery-store.js";
 import type { ImageRef } from "./image-store.js";
+import type {
+  PromptHistoryEntry,
+  PromptHistoryImportEntry,
+} from "./prompt-history-store.js";
 import type { WindowInfo } from "./screenshot.js";
 import type { WorktreeInfo } from "./worktree.js";
 
@@ -254,6 +258,38 @@ export type ClientMessage =
     }
   | { type: "restore_prompt_history" }
   | { type: "get_prompt_history_backup_info" }
+  | {
+      type: "record_prompt_history";
+      text: string;
+      projectPath?: string;
+      clientId: string;
+      clientName?: string;
+      sessionId?: string;
+      usedAt?: string;
+    }
+  | {
+      type: "sync_prompt_history";
+      clientId: string;
+      clientName?: string;
+      sinceRevision?: number;
+      entries?: PromptHistoryImportEntry[];
+      includeDeleted?: boolean;
+    }
+  | {
+      type: "mutate_prompt_history";
+      id?: string;
+      text?: string;
+      projectPath?: string;
+      action: "favorite" | "delete" | "restore";
+      isFavorite?: boolean;
+      updatedAt?: string;
+    }
+  | {
+      type: "import_prompt_history_v1";
+      clientId: string;
+      clientName?: string;
+      entries: PromptHistoryImportEntry[];
+    }
   | {
       type: "archive_session";
       sessionId: string;
@@ -571,6 +607,31 @@ export type ServerMessage =
       sizeBytes?: number;
     }
   | {
+      type: "prompt_history_sync_result";
+      success: boolean;
+      bridgeInstanceId?: string;
+      revision?: number;
+      syncedAt?: string;
+      fullSnapshot?: boolean;
+      entries?: PromptHistoryEntry[];
+      error?: string;
+    }
+  | {
+      type: "prompt_history_mutation_result";
+      success: boolean;
+      bridgeInstanceId?: string;
+      revision?: number;
+      entry?: PromptHistoryEntry;
+      error?: string;
+    }
+  | {
+      type: "prompt_history_status";
+      bridgeInstanceId: string;
+      revision: number;
+      entryCount: number;
+      updatedAt?: string;
+    }
+  | {
       type: "rename_result";
       sessionId: string;
       name: string | null;
@@ -666,6 +727,38 @@ export function parseClientMessage(data: string): ClientMessage | null {
     const hasOnlyKeys = (allowedKeys: readonly string[]): boolean => {
       const allowed = new Set(allowedKeys);
       return Object.keys(msg).every((key) => allowed.has(key));
+    };
+    const isPromptHistoryEntry = (value: unknown): boolean => {
+      if (!value || typeof value !== "object") return false;
+      const entry = value as Record<string, unknown>;
+      if (typeof entry.text !== "string") return false;
+      if (
+        entry.projectPath !== undefined &&
+        typeof entry.projectPath !== "string"
+      )
+        return false;
+      if (
+        entry.id !== undefined &&
+        typeof entry.id !== "string"
+      )
+        return false;
+      if (
+        entry.useCount !== undefined &&
+        (!Number.isInteger(entry.useCount) || Number(entry.useCount) < 0)
+      )
+        return false;
+      if (
+        entry.totalUseCount !== undefined &&
+        (!Number.isInteger(entry.totalUseCount) ||
+          Number(entry.totalUseCount) < 0)
+      )
+        return false;
+      if (
+        entry.isFavorite !== undefined &&
+        typeof entry.isFavorite !== "boolean"
+      )
+        return false;
+      return true;
     };
 
     switch (msg.type) {
@@ -1163,6 +1256,71 @@ export function parseClientMessage(data: string): ClientMessage | null {
       case "restore_prompt_history":
         break;
       case "get_prompt_history_backup_info":
+        break;
+      case "record_prompt_history":
+        if (typeof msg.text !== "string") return null;
+        if (typeof msg.clientId !== "string") return null;
+        if (
+          msg.projectPath !== undefined &&
+          typeof msg.projectPath !== "string"
+        )
+          return null;
+        if (msg.clientName !== undefined && typeof msg.clientName !== "string")
+          return null;
+        if (msg.sessionId !== undefined && typeof msg.sessionId !== "string")
+          return null;
+        if (msg.usedAt !== undefined && typeof msg.usedAt !== "string")
+          return null;
+        break;
+      case "sync_prompt_history":
+        if (typeof msg.clientId !== "string") return null;
+        if (msg.clientName !== undefined && typeof msg.clientName !== "string")
+          return null;
+        if (
+          msg.sinceRevision !== undefined &&
+          (!Number.isInteger(msg.sinceRevision) || Number(msg.sinceRevision) < 0)
+        )
+          return null;
+        if (
+          msg.entries !== undefined &&
+          (!Array.isArray(msg.entries) ||
+            !msg.entries.every(isPromptHistoryEntry))
+        )
+          return null;
+        if (
+          msg.includeDeleted !== undefined &&
+          typeof msg.includeDeleted !== "boolean"
+        )
+          return null;
+        break;
+      case "mutate_prompt_history":
+        if (!["favorite", "delete", "restore"].includes(String(msg.action)))
+          return null;
+        if (msg.id !== undefined && typeof msg.id !== "string") return null;
+        if (msg.text !== undefined && typeof msg.text !== "string") return null;
+        if (
+          msg.projectPath !== undefined &&
+          typeof msg.projectPath !== "string"
+        )
+          return null;
+        if (
+          msg.isFavorite !== undefined &&
+          typeof msg.isFavorite !== "boolean"
+        )
+          return null;
+        if (msg.updatedAt !== undefined && typeof msg.updatedAt !== "string")
+          return null;
+        break;
+      case "import_prompt_history_v1":
+        if (typeof msg.clientId !== "string") return null;
+        if (msg.clientName !== undefined && typeof msg.clientName !== "string")
+          return null;
+        if (msg.mode !== undefined) return null;
+        if (
+          !Array.isArray(msg.entries) ||
+          !msg.entries.every(isPromptHistoryEntry)
+        )
+          return null;
         break;
       case "refresh_branch":
         if (typeof msg.sessionId !== "string") return null;

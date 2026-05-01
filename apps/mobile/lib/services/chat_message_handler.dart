@@ -49,6 +49,7 @@ class ChatStateUpdate {
   final bool markUserMessagesSent;
   final bool markUserMessagesFailed;
   final String? userStatusClientMessageId;
+  final String? projectPath;
 
   /// When true, messages transition to [MessageStatus.queued] instead of
   /// [MessageStatus.sent].  The server accepted the message but the agent was
@@ -95,6 +96,7 @@ class ChatStateUpdate {
     this.markUserMessagesSent = false,
     this.markUserMessagesFailed = false,
     this.userStatusClientMessageId,
+    this.projectPath,
     this.markUserMessagesQueued = false,
     this.sideEffects = const {},
     this.claudeSessionId,
@@ -124,6 +126,8 @@ const _unsupportedActions = <String, UnsupportedAction>{
   'archive_session': UnsupportedAction.showUpdateHint,
   'read_file': UnsupportedAction.showUpdateHint,
   'steer_queued_input': UnsupportedAction.showUpdateHint,
+  'mutate_prompt_history': UnsupportedAction.showUpdateHint,
+  'import_prompt_history_v1': UnsupportedAction.showUpdateHint,
   // Git Operations (Phase 1-3)
   'git_stage': UnsupportedAction.showUpdateHint,
   'git_unstage': UnsupportedAction.showUpdateHint,
@@ -789,6 +793,7 @@ class ChatMessageHandler {
       inPlanMode: inPlanMode,
       slashCommands: commands,
       claudeSessionId: sessionId,
+      projectPath: msg is SystemMessage ? msg.projectPath : null,
     );
   }
 

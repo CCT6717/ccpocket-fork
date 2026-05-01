@@ -14,6 +14,7 @@ import '../../../hooks/use_list_auto_complete.dart';
 import '../../../hooks/use_voice_input.dart';
 import '../../../models/messages.dart';
 import '../../../providers/bridge_cubits.dart';
+import '../../../services/bridge_service.dart';
 import '../../../services/prompt_history_service.dart';
 import '../../../utils/diff_parser.dart';
 import '../../../widgets/chat_input_bar.dart';
@@ -627,6 +628,8 @@ class ChatInputWithOverlays extends HookWidget {
         context.read<PromptHistoryService>().recordPrompt(
           finalText,
           projectPath: projectPath,
+          bridgeService: context.read<BridgeService>(),
+          sessionId: sessionId,
         );
       }
     }
@@ -907,6 +910,7 @@ class ChatInputWithOverlays extends HookWidget {
 
     void showPromptHistory() {
       final service = context.read<PromptHistoryService>();
+      final bridge = context.read<BridgeService>();
       final projectPath = context.read<ChatSessionCubit>().state.projectPath;
       showModalBottomSheet(
         context: context,
@@ -916,7 +920,11 @@ class ChatInputWithOverlays extends HookWidget {
             BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.7),
         builder: (_) => PromptHistorySheet(
           service: service,
+          bridgeService: bridge,
           currentProjectPath: projectPath,
+          currentBridgeId:
+              bridge.promptHistoryBridgeId ??
+              service.bridgeIdForUrl(bridge.lastUrl),
           onSelect: (text) {
             inputController.text = text;
             inputController.selection = TextSelection.fromPosition(

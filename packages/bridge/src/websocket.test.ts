@@ -426,6 +426,35 @@ describe("BridgeWebSocketServer resume/get_history flow", () => {
     bridge.close();
   });
 
+  it("suppresses prompt_history_status for clients that did not opt in", async () => {
+    const bridge = new BridgeWebSocketServer({ server: httpServer });
+    const ws = {
+      readyState: OPEN_STATE,
+      send: vi.fn(),
+    } as any;
+    const msg = {
+      type: "prompt_history_status",
+      bridgeInstanceId: "bridge-1",
+      revision: 1,
+      entryCount: 2,
+    };
+
+    (bridge as any).send(ws, msg);
+    expect(ws.send).not.toHaveBeenCalled();
+
+    await (bridge as any).handleClientMessage(
+      {
+        type: "client_capabilities",
+        supportedServerMessages: ["prompt_history_status"],
+      },
+      ws,
+    );
+    (bridge as any).send(ws, msg);
+    expect(ws.send).toHaveBeenCalledWith(JSON.stringify(msg));
+
+    bridge.close();
+  });
+
   it("rejects start when selected codex profile does not exist", async () => {
     const bridge = new BridgeWebSocketServer({ server: httpServer });
     const ws = {
