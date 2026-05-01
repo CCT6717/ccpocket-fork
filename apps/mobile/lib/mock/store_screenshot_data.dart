@@ -7,58 +7,92 @@ import 'mock_scenarios.dart';
 // Store Screenshot Scenarios
 // =============================================================================
 
-/// 01: Session list with 1 running + named recent sessions
-final storeSessionListRecentScenario = MockScenario(
-  name: 'Session List (Recent)',
+/// 01: Self-hosted agents running on Mac/Linux, controlled from mobile.
+final storeSelfHostedAgentsScenario = MockScenario(
+  name: 'Self-Hosted Agents',
   icon: Icons.history,
-  description: '01: Minimal running, named recent sessions',
+  description: '01: Self-hosted Codex sessions controlled from mobile',
   steps: [],
   section: MockScenarioSection.storeScreenshot,
+  provider: MockScenarioProvider.codex,
 );
 
-/// 02: Session list with 3 running sessions (2 tool approval + 1 plan approval)
-final storeSessionListScenario = MockScenario(
-  name: 'Session List',
+/// Backward-compatible alias for older screenshot automation.
+final storeSessionListRecentScenario = storeSelfHostedAgentsScenario;
+
+/// 02: Recent sessions from Codex CLI, Codex App, and Claude Code.
+final storeRecentSessionsScenario = MockScenario(
+  name: 'Recent Sessions',
+  icon: Icons.devices,
+  description: '02: Continue Codex sessions across devices',
+  steps: [],
+  section: MockScenarioSection.storeScreenshot,
+  provider: MockScenarioProvider.codex,
+);
+
+/// 03: Session list with 3 running sessions (2 tool approval + 1 plan approval)
+final storeApprovalListScenario = MockScenario(
+  name: 'Approval List',
   icon: Icons.home_outlined,
-  description: '02: Running sessions with approvals',
+  description: '03: Running Codex sessions with approvals',
   steps: [],
   section: MockScenarioSection.storeScreenshot,
+  provider: MockScenarioProvider.codex,
 );
 
-/// 03: Chat session with multi-question approval UI
+/// Backward-compatible alias for older screenshot automation.
+final storeSessionListScenario = storeApprovalListScenario;
+
+/// 04: Chat session with multi-question approval UI.
 final storeChatMultiQuestionScenario = MockScenario(
   name: 'Multi-Question Approval',
   icon: Icons.quiz,
-  description: '03: Mobile-optimized approval UI with multiple questions',
+  description: '04: Mobile-optimized Codex approval UI',
   steps: [],
   section: MockScenarioSection.storeScreenshot,
+  provider: MockScenarioProvider.codex,
 );
 
-/// 04: Chat session with markdown bullet list in input field
+/// Legacy scenario kept for local mock preview coverage.
 final storeChatMarkdownInputScenario = MockScenario(
   name: 'Markdown Input',
   icon: Icons.format_list_bulleted,
-  description: '04: Bullet list in chat input field',
+  description: 'Legacy: Bullet list in chat input field',
   steps: [],
   section: MockScenarioSection.storeScreenshot,
 );
 
-/// 05: Chat session with image attachment + bottom sheet
-final storeChatImageAttachScenario = MockScenario(
-  name: 'Image Attach',
-  icon: Icons.image,
-  description: '05: Image attachment with bottom sheet',
+/// 05: Phone-width project Explorer.
+final storeProjectExplorerScenario = MockScenario(
+  name: 'Project Explorer',
+  icon: Icons.folder_copy_outlined,
+  description: '05: Browse Codex project files from phone',
   steps: [],
   section: MockScenarioSection.storeScreenshot,
+  provider: MockScenarioProvider.codex,
 );
 
-/// 06: Diff screen with realistic git diff
-final storeDiffScenario = MockScenario(
-  name: 'Git Diff',
+/// 06: Git review and actions.
+final storeGitActionsScenario = MockScenario(
+  name: 'Git Actions',
   icon: Icons.difference,
-  description: '06: Git diff viewer',
+  description: '06: Review and ship Codex-edited changes',
   steps: [],
   section: MockScenarioSection.storeScreenshot,
+  provider: MockScenarioProvider.codex,
+);
+
+/// Backward-compatible alias for older screenshot automation.
+final storeDiffScenario = storeGitActionsScenario;
+
+/// 07: MCP images and Mac screenshots in context.
+final storeImagesScreenshotsScenario = MockScenario(
+  name: 'Images & Screenshots',
+  icon: Icons.screenshot_monitor,
+  description: '07: Give Codex MCP images and Mac screenshots',
+  steps: [],
+  section: MockScenarioSection.storeScreenshot,
+  provider: MockScenarioProvider.codex,
 );
 
 /// Line-number width test: files with 1-digit to 5-digit line numbers.
@@ -70,68 +104,84 @@ final storeDiffLineNumberScenario = MockScenario(
   section: MockScenarioSection.chat,
 );
 
-/// 07: Session list with New Session bottom sheet open
+/// Legacy scenario kept for local mock preview coverage.
 final storeNewSessionScenario = MockScenario(
   name: 'New Session',
   icon: Icons.add_circle_outline,
-  description: '07: New session bottom sheet',
+  description: 'Legacy: New session bottom sheet',
   steps: [],
   section: MockScenarioSection.storeScreenshot,
+);
+
+/// 08: Offline pending message and reconnect state.
+final storeNetworkResilienceScenario = MockScenario(
+  name: 'Network Resilience',
+  icon: Icons.wifi_off_outlined,
+  description: '08: Keep Codex prompts pending until reconnect',
+  steps: [],
+  section: MockScenarioSection.storeScreenshot,
+  provider: MockScenarioProvider.codex,
 );
 
 /// iPad 01: Workspace with chat + git pane
 final storeIpadWorkspaceOverviewScenario = MockScenario(
   name: 'Workspace Overview',
   icon: Icons.space_dashboard_outlined,
-  description: 'iPad 01: Three-pane workspace with Git review',
+  description: 'iPad 01: Three-pane Codex workspace with Git review',
   steps: [],
   section: MockScenarioSection.storeScreenshot,
+  provider: MockScenarioProvider.codex,
 );
 
 /// iPad 02: Workspace with chat + explorer pane
 final storeIpadWorkspaceExplorerScenario = MockScenario(
   name: 'Workspace Explorer',
   icon: Icons.folder_copy_outlined,
-  description: 'iPad 02: Three-pane workspace with file explorer',
+  description: 'iPad 02: Three-pane Codex workspace with file explorer',
   steps: [],
   section: MockScenarioSection.storeScreenshot,
+  provider: MockScenarioProvider.codex,
 );
 
 /// iPad 03: Approval UI in context with session list
 final storeIpadApprovalContextScenario = MockScenario(
   name: 'Approval In Context',
   icon: Icons.rule_folder_outlined,
-  description: 'iPad 03: Approval workflow beside the session list',
+  description: 'iPad 03: Codex approval workflow beside the session list',
   steps: [],
   section: MockScenarioSection.storeScreenshot,
+  provider: MockScenarioProvider.codex,
 );
 
 /// iPad 04: Multiple sessions waiting for approval
 final storeIpadApprovalQueueScenario = MockScenario(
   name: 'Approval Queue',
   icon: Icons.pending_actions_outlined,
-  description: 'iPad 04: Multiple running sessions waiting for approval',
+  description: 'iPad 04: Multiple Codex sessions waiting for approval',
   steps: [],
   section: MockScenarioSection.storeScreenshot,
+  provider: MockScenarioProvider.codex,
 );
 
 /// iPad 05: Workspace overview in dark theme
 final storeIpadDarkWorkspaceScenario = MockScenario(
   name: 'Dark Workspace',
   icon: Icons.dark_mode_outlined,
-  description: 'iPad 05: Three-pane workspace in dark theme',
+  description: 'iPad 05: Codex workspace in dark theme',
   steps: [],
   section: MockScenarioSection.storeScreenshot,
+  provider: MockScenarioProvider.codex,
 );
 
 final List<MockScenario> storeScreenshotScenarios = [
-  storeSessionListRecentScenario,
-  storeSessionListScenario,
+  storeSelfHostedAgentsScenario,
+  storeRecentSessionsScenario,
+  storeApprovalListScenario,
   storeChatMultiQuestionScenario,
-  storeChatMarkdownInputScenario,
-  storeChatImageAttachScenario,
-  storeDiffScenario,
-  storeNewSessionScenario,
+  storeProjectExplorerScenario,
+  storeGitActionsScenario,
+  storeImagesScreenshotsScenario,
+  storeNetworkResilienceScenario,
   storeIpadWorkspaceOverviewScenario,
   storeIpadWorkspaceExplorerScenario,
   storeIpadApprovalContextScenario,
@@ -146,7 +196,7 @@ final List<MockScenario> storeScreenshotScenarios = [
 List<SessionInfo> storeRunningSessions() => [
   SessionInfo(
     id: 'store-run-1',
-    provider: 'claude',
+    provider: 'codex',
     projectPath: '/Users/dev/projects/shopify-app',
     status: 'running',
     createdAt: DateTime.now()
@@ -157,7 +207,7 @@ List<SessionInfo> storeRunningSessions() => [
         .toIso8601String(),
     gitBranch: 'feat/checkout-redesign',
     lastMessage:
-        'Implementing the new checkout flow with Stripe integration...',
+        'Refactoring the checkout flow and preparing the diff for review...',
   ),
   SessionInfo(
     id: 'store-run-2',
@@ -180,8 +230,8 @@ List<SessionInfo> storeRunningSessions() => [
   ),
   SessionInfo(
     id: 'store-run-3',
-    provider: 'claude',
-    projectPath: '/Users/dev/projects/my-portfolio',
+    provider: 'codex',
+    projectPath: '/Users/dev/projects/mobile-app',
     status: 'waiting_approval',
     createdAt: DateTime.now()
         .subtract(const Duration(minutes: 5))
@@ -189,12 +239,13 @@ List<SessionInfo> storeRunningSessions() => [
     lastActivityAt: DateTime.now()
         .subtract(const Duration(minutes: 1))
         .toIso8601String(),
-    gitBranch: 'feat/dark-mode',
-    lastMessage: "I've designed the implementation plan for dark mode support.",
+    gitBranch: 'feat/offline-queue',
+    lastMessage:
+        "I've designed the implementation plan for offline resend support.",
     pendingPermission: const PermissionRequestMessage(
       toolUseId: 'store-plan-1',
       toolName: 'ExitPlanMode',
-      input: {'plan': 'Dark Mode Implementation Plan'},
+      input: {'plan': 'Offline resend implementation plan'},
     ),
   ),
 ];
@@ -203,7 +254,7 @@ List<SessionInfo> storeRunningSessions() => [
 List<SessionInfo> storeRunningSessionsMinimal() => [
   SessionInfo(
     id: 'store-run-min-1',
-    provider: 'claude',
+    provider: 'codex',
     projectPath: '/Users/dev/projects/shopify-app',
     status: 'running',
     createdAt: DateTime.now()
@@ -213,8 +264,7 @@ List<SessionInfo> storeRunningSessionsMinimal() => [
         .subtract(const Duration(minutes: 1))
         .toIso8601String(),
     gitBranch: 'feat/checkout-redesign',
-    lastMessage:
-        'Implementing the new checkout flow with Stripe integration...',
+    lastMessage: 'Refactoring checkout and preparing Git changes for review...',
   ),
 ];
 
@@ -225,10 +275,10 @@ List<SessionInfo> storeRunningSessionsMinimal() => [
 List<RecentSession> storeRecentSessions() => [
   RecentSession(
     sessionId: 'store-recent-1',
-    provider: 'claude',
+    provider: 'codex',
     name: 'Stripe Checkout Redesign',
-    summary: 'Redesign the checkout flow with Stripe integration',
-    firstPrompt: 'Redesign the checkout page with Stripe Elements',
+    summary: 'Codex refactored the checkout flow with Stripe integration',
+    firstPrompt: 'Use Codex to redesign the checkout page with Stripe Elements',
     created: DateTime.now()
         .subtract(const Duration(hours: 1))
         .toIso8601String(),
@@ -241,10 +291,10 @@ List<RecentSession> storeRecentSessions() => [
   ),
   RecentSession(
     sessionId: 'store-recent-2',
-    provider: 'claude',
+    provider: 'codex',
     name: 'WebSocket Bug Fix',
-    summary: 'Fix WebSocket reconnection on network change',
-    firstPrompt: 'WebSocket drops when switching from WiFi to cellular',
+    summary: 'Codex fixed WebSocket reconnection on network change',
+    firstPrompt: 'Fix the WebSocket drop when switching from WiFi to cellular',
     created: DateTime.now()
         .subtract(const Duration(hours: 3))
         .toIso8601String(),
@@ -258,6 +308,7 @@ List<RecentSession> storeRecentSessions() => [
   RecentSession(
     sessionId: 'store-recent-3',
     provider: 'codex',
+    name: 'JSON Parser',
     summary: 'Implement streaming JSON parser for large files',
     firstPrompt: 'Add a streaming JSON parser that handles files over 1GB',
     created: DateTime.now()
@@ -272,9 +323,9 @@ List<RecentSession> storeRecentSessions() => [
   ),
   RecentSession(
     sessionId: 'store-recent-4',
-    provider: 'claude',
+    provider: 'codex',
     name: 'CI/CD Pipeline',
-    summary: 'Set up CI/CD pipeline with GitHub Actions',
+    summary: 'Codex set up CI/CD with GitHub Actions',
     firstPrompt: 'Create a CI/CD pipeline for build, test, and deploy',
     created: DateTime.now()
         .subtract(const Duration(days: 1, hours: 2))
@@ -290,8 +341,9 @@ List<RecentSession> storeRecentSessions() => [
     sessionId: 'store-recent-5',
     provider: 'claude',
     name: 'OAuth 2.0 Migration',
-    summary: 'Refactor auth module to use OAuth 2.0 PKCE flow',
-    firstPrompt: 'Migrate the authentication from session-based to OAuth 2.0',
+    summary: 'Claude Code session is also available in the same list',
+    firstPrompt:
+        'Migrate authentication from session-based auth to OAuth 2.0 PKCE',
     created: DateTime.now()
         .subtract(const Duration(days: 1, hours: 8))
         .toIso8601String(),
@@ -305,6 +357,7 @@ List<RecentSession> storeRecentSessions() => [
   RecentSession(
     sessionId: 'store-recent-6',
     provider: 'codex',
+    name: 'CLI Test Coverage',
     summary: 'Write unit tests for CLI argument parser',
     firstPrompt: 'Add comprehensive tests for the argument parsing module',
     created: DateTime.now().subtract(const Duration(days: 2)).toIso8601String(),
@@ -317,7 +370,7 @@ List<RecentSession> storeRecentSessions() => [
   ),
   RecentSession(
     sessionId: 'store-recent-7',
-    provider: 'claude',
+    provider: 'codex',
     name: 'Responsive Layout',
     summary: 'Add responsive layout for tablet and desktop',
     firstPrompt: 'Make the app responsive across phone, tablet, and desktop',
@@ -341,14 +394,14 @@ final List<ServerMessage> storeChatMultiQuestion = [
   const SystemMessage(
     subtype: 'init',
     sessionId: 'store-chat-mq',
-    model: 'claude-sonnet-4-20250514',
+    model: 'gpt-5.5-codex',
     projectPath: '/Users/dev/projects/shopify-app',
   ),
   const StatusMessage(status: ProcessStatus.running),
   const UserInputMessage(
     text:
-        'Set up the new notification system. Use Firebase Cloud Messaging '
-        'and handle both foreground and background notifications.',
+        'Codex, finish the checkout refactor and ask before changing the '
+        'database migration, analytics events, or payment retry behavior.',
   ),
   AssistantServerMessage(
     message: AssistantMessage(
@@ -357,8 +410,8 @@ final List<ServerMessage> storeChatMultiQuestion = [
       content: [
         const TextContent(
           text:
-              "I'll set up FCM for push notifications. Before I begin, I have "
-              "a few questions about how you'd like to configure the system.",
+              "I reviewed the checkout flow and found three decisions that "
+              "should be confirmed before I edit the remaining files.",
         ),
         const ToolUseContent(
           id: 'store-mq-ask-1',
@@ -367,66 +420,64 @@ final List<ServerMessage> storeChatMultiQuestion = [
             'questions': [
               {
                 'question':
-                    'How should notifications be displayed when the app is in the foreground?',
-                'header': 'Foreground',
+                    'How should I handle existing carts during the migration?',
+                'header': 'Migration',
                 'options': [
                   {
-                    'label': 'In-app banner (Recommended)',
+                    'label': 'Preserve carts (Recommended)',
                     'description':
-                        'Show a custom overlay banner at the top of the screen.',
+                        'Keep active carts and migrate line items in place.',
                   },
                   {
-                    'label': 'System notification',
+                    'label': 'Create fresh carts',
                     'description':
-                        'Display as a standard OS notification even when active.',
+                        'Start new checkout sessions after the deploy.',
                   },
                   {
-                    'label': 'Silent with badge',
-                    'description':
-                        'No visible alert, only update the badge count.',
+                    'label': 'Ask again later',
+                    'description': 'Leave migration code unchanged for now.',
                   },
                 ],
                 'multiSelect': false,
               },
               {
-                'question': 'Which notification channels should I create?',
-                'header': 'Channels',
+                'question': 'Which checks should I run before committing?',
+                'header': 'Checks',
                 'options': [
                   {
-                    'label': 'Order updates',
+                    'label': 'Unit tests',
                     'description':
-                        'Shipping, delivery, and order status changes.',
+                        'Run the focused checkout and payment test suites.',
                   },
                   {
-                    'label': 'Promotions',
-                    'description': 'Sales, discounts, and marketing campaigns.',
+                    'label': 'Type check',
+                    'description': 'Verify generated types and API contracts.',
                   },
                   {
-                    'label': 'System alerts',
+                    'label': 'Lint',
                     'description':
-                        'Security, account, and maintenance notifications.',
+                        'Run formatting and lint checks before staging.',
                   },
                 ],
                 'multiSelect': true,
               },
               {
-                'question': 'Should I add notification analytics tracking?',
-                'header': 'Analytics',
+                'question': 'Should I stage the edited checkout files?',
+                'header': 'Git',
                 'options': [
                   {
-                    'label': 'Firebase Analytics (Recommended)',
+                    'label': 'Stage checkout files (Recommended)',
                     'description':
-                        'Track open rate, engagement, and delivery via Firebase.',
+                        'Prepare the current diff for commit review.',
                   },
                   {
-                    'label': 'Custom analytics',
+                    'label': 'Leave unstaged',
                     'description':
-                        'Send events to your existing analytics backend.',
+                        'Keep the diff visible without changing the index.',
                   },
                   {
-                    'label': 'No tracking',
-                    'description':
-                        'Skip analytics for now. Can be added later.',
+                    'label': 'Revert risky file',
+                    'description': 'Revert only the payment retry module.',
                   },
                 ],
                 'multiSelect': false,
@@ -435,7 +486,7 @@ final List<ServerMessage> storeChatMultiQuestion = [
           },
         ),
       ],
-      model: 'claude-sonnet-4-20250514',
+      model: 'gpt-5.5-codex',
     ),
   ),
   const PermissionRequestMessage(
@@ -445,62 +496,61 @@ final List<ServerMessage> storeChatMultiQuestion = [
       'questions': [
         {
           'question':
-              'How should notifications be displayed when the app is in the foreground?',
-          'header': 'Foreground',
+              'How should I handle existing carts during the migration?',
+          'header': 'Migration',
           'options': [
             {
-              'label': 'In-app banner (Recommended)',
+              'label': 'Preserve carts (Recommended)',
               'description':
-                  'Show a custom overlay banner at the top of the screen.',
+                  'Keep active carts and migrate line items in place.',
             },
             {
-              'label': 'System notification',
-              'description':
-                  'Display as a standard OS notification even when active.',
+              'label': 'Create fresh carts',
+              'description': 'Start new checkout sessions after the deploy.',
             },
             {
-              'label': 'Silent with badge',
-              'description': 'No visible alert, only update the badge count.',
+              'label': 'Ask again later',
+              'description': 'Leave migration code unchanged for now.',
             },
           ],
           'multiSelect': false,
         },
         {
-          'question': 'Which notification channels should I create?',
-          'header': 'Channels',
+          'question': 'Which checks should I run before committing?',
+          'header': 'Checks',
           'options': [
             {
-              'label': 'Order updates',
-              'description': 'Shipping, delivery, and order status changes.',
-            },
-            {
-              'label': 'Promotions',
-              'description': 'Sales, discounts, and marketing campaigns.',
-            },
-            {
-              'label': 'System alerts',
+              'label': 'Unit tests',
               'description':
-                  'Security, account, and maintenance notifications.',
+                  'Run the focused checkout and payment test suites.',
+            },
+            {
+              'label': 'Type check',
+              'description': 'Verify generated types and API contracts.',
+            },
+            {
+              'label': 'Lint',
+              'description': 'Run formatting and lint checks before staging.',
             },
           ],
           'multiSelect': true,
         },
         {
-          'question': 'Should I add notification analytics tracking?',
-          'header': 'Analytics',
+          'question': 'Should I stage the edited checkout files?',
+          'header': 'Git',
           'options': [
             {
-              'label': 'Firebase Analytics (Recommended)',
+              'label': 'Stage checkout files (Recommended)',
+              'description': 'Prepare the current diff for commit review.',
+            },
+            {
+              'label': 'Leave unstaged',
               'description':
-                  'Track open rate, engagement, and delivery via Firebase.',
+                  'Keep the diff visible without changing the index.',
             },
             {
-              'label': 'Custom analytics',
-              'description': 'Send events to your existing analytics backend.',
-            },
-            {
-              'label': 'No tracking',
-              'description': 'Skip analytics for now. Can be added later.',
+              'label': 'Revert risky file',
+              'description': 'Revert only the payment retry module.',
             },
           ],
           'multiSelect': false,
@@ -521,12 +571,12 @@ final List<ServerMessage> storeChatMarkdownInput = [
   const SystemMessage(
     subtype: 'init',
     sessionId: 'store-chat-md',
-    model: 'claude-sonnet-4-20250514',
+    model: 'gpt-5.5-codex',
     projectPath: '/Users/dev/projects/shopify-app',
   ),
   const StatusMessage(status: ProcessStatus.idle),
   const UserInputMessage(
-    text: 'Show me the current project structure and key entry points.',
+    text: 'Codex, inspect the checkout module before editing.',
   ),
   AssistantServerMessage(
     message: AssistantMessage(
@@ -535,7 +585,7 @@ final List<ServerMessage> storeChatMarkdownInput = [
       content: [
         const TextContent(
           text:
-              "Here's your project structure:\n\n"
+              "I found the key checkout files:\n\n"
               "```\n"
               "shopify-app/\n"
               "├── lib/\n"
@@ -550,14 +600,15 @@ final List<ServerMessage> storeChatMarkdownInput = [
               "│       └── stripe_service.dart\n"
               "└── test/\n"
               "```\n\n"
-              "Key entry points:\n"
+              "Likely edit points:\n"
               "- **`lib/main.dart`** — App initialization and provider setup\n"
               "- **`lib/app.dart`** — MaterialApp configuration and routing\n"
               "- **`lib/features/checkout/`** — Checkout flow (Stripe integration)\n\n"
-              "What would you like to work on?",
+              "I can refactor the payment logic, update tests, and stage the "
+              "resulting diff when you're ready.",
         ),
       ],
-      model: 'claude-sonnet-4-20250514',
+      model: 'gpt-5.5-codex',
     ),
   ),
   const ResultMessage(
