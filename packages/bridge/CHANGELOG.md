@@ -2,6 +2,13 @@
 
 All notable changes to `@ccpocket/bridge` will be documented in this file.
 
+## [1.50.0] - 2026-05-02
+
+### Added
+- Add automatic session renaming after the first agent response when enabled by the client.
+- Generate concise session names with the same Codex assist model used for commit messages.
+- Persist generated names through the existing Claude and Codex rename paths.
+
 ## [1.49.0] - 2026-05-01
 
 ### Added
