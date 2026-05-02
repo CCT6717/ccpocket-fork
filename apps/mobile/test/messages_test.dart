@@ -3,6 +3,46 @@ import 'package:ccpocket/models/messages.dart';
 import 'dart:convert';
 
 void main() {
+  group('FileContentMessage', () {
+    test('parses legacy text file content as text kind', () {
+      final msg = ServerMessage.fromJson({
+        'type': 'file_content',
+        'filePath': 'README.md',
+        'content': '# Hello',
+        'language': 'markdown',
+        'totalLines': 1,
+      });
+
+      expect(msg, isA<FileContentMessage>());
+      final file = msg as FileContentMessage;
+      expect(file.kind, 'text');
+      expect(file.content, '# Hello');
+      expect(file.language, 'markdown');
+      expect(file.totalLines, 1);
+      expect(file.base64, isNull);
+    });
+
+    test('parses image file content metadata', () {
+      final msg = ServerMessage.fromJson({
+        'type': 'file_content',
+        'filePath': 'docs/image.png',
+        'kind': 'image',
+        'content': '',
+        'base64': 'aGVsbG8=',
+        'mimeType': 'image/png',
+        'sizeBytes': 5,
+      });
+
+      expect(msg, isA<FileContentMessage>());
+      final file = msg as FileContentMessage;
+      expect(file.kind, 'image');
+      expect(file.content, '');
+      expect(file.base64, 'aGVsbG8=');
+      expect(file.mimeType, 'image/png');
+      expect(file.sizeBytes, 5);
+    });
+  });
+
   group('ToolUseSummaryMessage', () {
     test('parses from JSON correctly', () {
       final json = {

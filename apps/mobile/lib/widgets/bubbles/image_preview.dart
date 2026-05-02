@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../models/messages.dart';
 import '../workspace_pane_chrome.dart';
@@ -191,8 +192,13 @@ Uint8List? _decodeDataImageUrl(String url) {
 class FullScreenImageViewer extends StatelessWidget {
   final String? url;
   final Uint8List? bytes;
-  const FullScreenImageViewer({super.key, this.url, this.bytes})
-    : assert(url != null || bytes != null);
+  final bool isSvg;
+  const FullScreenImageViewer({
+    super.key,
+    this.url,
+    this.bytes,
+    this.isSvg = false,
+  }) : assert(url != null || bytes != null);
 
   @override
   Widget build(BuildContext context) {
@@ -211,7 +217,9 @@ class FullScreenImageViewer extends StatelessWidget {
           minScale: 0.5,
           maxScale: 4.0,
           child: bytes != null
-              ? Image.memory(bytes!, fit: BoxFit.contain)
+              ? isSvg
+                    ? SvgPicture.memory(bytes!, fit: BoxFit.contain)
+                    : Image.memory(bytes!, fit: BoxFit.contain)
               : ExtendedImage.network(
                   url!,
                   fit: BoxFit.contain,

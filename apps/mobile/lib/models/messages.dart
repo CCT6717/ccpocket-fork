@@ -729,11 +729,15 @@ sealed class ServerMessage {
       ),
       'file_content' => FileContentMessage(
         filePath: json['filePath'] as String,
+        kind: json['kind'] as String? ?? 'text',
         content: json['content'] as String? ?? '',
         language: json['language'] as String?,
         error: json['error'] as String?,
         totalLines: json['totalLines'] as int?,
         truncated: json['truncated'] as bool? ?? false,
+        base64: json['base64'] as String?,
+        mimeType: json['mimeType'] as String?,
+        sizeBytes: json['sizeBytes'] as int?,
       ),
       'file_list' => FileListMessage(
         files: (json['files'] as List).cast<String>(),
@@ -2153,18 +2157,26 @@ class FileListMessage implements ServerMessage {
 
 class FileContentMessage implements ServerMessage {
   final String filePath;
+  final String kind;
   final String content;
   final String? language;
   final String? error;
   final int? totalLines;
   final bool truncated;
+  final String? base64;
+  final String? mimeType;
+  final int? sizeBytes;
   const FileContentMessage({
     required this.filePath,
+    this.kind = 'text',
     required this.content,
     this.language,
     this.error,
     this.totalLines,
     this.truncated = false,
+    this.base64,
+    this.mimeType,
+    this.sizeBytes,
   });
 }
 

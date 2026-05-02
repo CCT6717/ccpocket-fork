@@ -3065,12 +3065,42 @@ export class BridgeWebSocketServer {
               });
               return;
             }
+            const resolvedFileStat = fileStat.isSymbolicLink()
+              ? await stat(absPath)
+              : fileStat;
+            const ext = extname(absPath).toLowerCase();
+            if (BridgeWebSocketServer.FILE_PEEK_IMAGE_EXTENSIONS.has(ext)) {
+              const mimeType = BridgeWebSocketServer.mimeTypeForExt(ext);
+              if (resolvedFileStat.size > BridgeWebSocketServer.MAX_IMAGE_SIZE) {
+                this.send(ws, {
+                  type: "file_content",
+                  filePath: msg.filePath,
+                  kind: "image",
+                  content: "",
+                  mimeType,
+                  sizeBytes: resolvedFileStat.size,
+                  error: "Image too large to preview. Maximum size is 5 MB.",
+                });
+                return;
+              }
+              const buf = await readFile(absPath);
+              this.send(ws, {
+                type: "file_content",
+                filePath: msg.filePath,
+                kind: "image",
+                content: "",
+                base64: buf.toString("base64"),
+                mimeType,
+                sizeBytes: buf.length,
+              });
+              return;
+            }
             const maxLines =
               typeof msg.maxLines === "number" && msg.maxLines > 0
                 ? msg.maxLines
                 : 5000;
             const raw = await readFile(absPath, "utf-8");
-            const ext = extname(absPath).replace(/^\./, "").toLowerCase();
+            const textExt = ext.replace(/^\./, "").toLowerCase();
             const languageMap: Record<string, string> = {
               ts: "typescript",
               tsx: "typescript",
@@ -3105,7 +3135,7 @@ export class BridgeWebSocketServer {
               makefile: "makefile",
               gradle: "groovy",
             };
-            const language = languageMap[ext] ?? (ext || undefined);
+            const language = languageMap[textExt] ?? (textExt || undefined);
             const lines = raw.split("\n");
             const truncated = lines.length > maxLines;
             const content = truncated
@@ -3114,6 +3144,7 @@ export class BridgeWebSocketServer {
             this.send(ws, {
               type: "file_content",
               filePath: msg.filePath,
+              kind: "text",
               content,
               language,
               totalLines: lines.length,
@@ -5023,6 +5054,15 @@ export class BridgeWebSocketServer {
     ".webp",
     ".ico",
     ".bmp",
+    ".svg",
+  ]);
+
+  private static readonly FILE_PEEK_IMAGE_EXTENSIONS = new Set([
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".gif",
+    ".webp",
     ".svg",
   ]);
 

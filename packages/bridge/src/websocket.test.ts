@@ -1,5 +1,11 @@
 import { createServer } from "node:http";
-import { mkdirSync, mkdtempSync, rmSync, symlinkSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -1046,6 +1052,94 @@ describe("BridgeWebSocketServer resume/get_history flow", () => {
     expect(created.projectPath).toBe("D:\\Users\\alice\\src\\ccpocket");
 
     bridge.close();
+  });
+
+  it("returns base64 image data for image file peek", async () => {
+    const projectPath = mkdtempSync(resolve(tmpdir(), "ccpocket-bridge-"));
+    const pngBase64 =
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+    writeFileSync(resolve(projectPath, "pixel.png"), Buffer.from(pngBase64, "base64"));
+
+    const bridge = new BridgeWebSocketServer({
+      server: httpServer,
+      allowedDirs: [projectPath],
+    });
+    const ws = {
+      readyState: OPEN_STATE,
+      send: vi.fn(),
+    } as any;
+
+    try {
+      await (bridge as any).handleClientMessage(
+        {
+          type: "read_file",
+          projectPath,
+          filePath: "pixel.png",
+        },
+        ws,
+      );
+
+      await new Promise((resolveDelay) => setTimeout(resolveDelay, 25));
+
+      const sends = ws.send.mock.calls.map((c: unknown[]) =>
+        JSON.parse(c[0] as string),
+      );
+      expect(sends).toContainEqual({
+        type: "file_content",
+        filePath: "pixel.png",
+        kind: "image",
+        content: "",
+        base64: pngBase64,
+        mimeType: "image/png",
+        sizeBytes: Buffer.from(pngBase64, "base64").length,
+      });
+    } finally {
+      bridge.close();
+      rmSync(projectPath, { recursive: true, force: true });
+    }
+  });
+
+  it("keeps text file peek responses as text content", async () => {
+    const projectPath = mkdtempSync(resolve(tmpdir(), "ccpocket-bridge-"));
+    writeFileSync(resolve(projectPath, "README.md"), "# Hello\n\nWorld\n");
+
+    const bridge = new BridgeWebSocketServer({
+      server: httpServer,
+      allowedDirs: [projectPath],
+    });
+    const ws = {
+      readyState: OPEN_STATE,
+      send: vi.fn(),
+    } as any;
+
+    try {
+      await (bridge as any).handleClientMessage(
+        {
+          type: "read_file",
+          projectPath,
+          filePath: "README.md",
+        },
+        ws,
+      );
+
+      await new Promise((resolveDelay) => setTimeout(resolveDelay, 25));
+
+      const sends = ws.send.mock.calls.map((c: unknown[]) =>
+        JSON.parse(c[0] as string),
+      );
+      expect(sends).toContainEqual({
+        type: "file_content",
+        filePath: "README.md",
+        kind: "text",
+        content: "# Hello\n\nWorld\n",
+        language: "markdown",
+        totalLines: 4,
+        truncated: false,
+      });
+    } finally {
+      bridge.close();
+      rmSync(projectPath, { recursive: true, force: true });
+    }
   });
 
   it("returns a friendly error for symbolic links to directories", async () => {

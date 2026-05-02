@@ -3008,7 +3008,8 @@ final _filePeek = MockScenario(
                   '1. Modified `lib/main.dart` to add the title parameter\n'
                   '2. The config is defined in `pubspec.yaml`\n'
                   '3. Bridge server entry point is at `packages/bridge/src/index.ts`\n'
-                  '4. See `README.md` for documentation\n\n'
+                  '4. See `README.md` for documentation\n'
+                  '5. Preview image output at `docs/images/release-card-v1.86.1-en.png`\n\n'
                   'You can also check `package.json` for the npm scripts configuration.',
             ),
           ],
@@ -3044,9 +3045,35 @@ final _filePeek = MockScenario(
         toolName: 'Read',
       ),
     ),
+    // Fourth message: image file read result
+    MockStep(
+      delay: const Duration(milliseconds: 2900),
+      message: AssistantServerMessage(
+        message: AssistantMessage(
+          id: 'mock-file-peek-image',
+          role: 'assistant',
+          content: [
+            const ToolUseContent(
+              id: 'tool-read-image',
+              name: 'Read',
+              input: {'file_path': 'docs/images/release-card-v1.86.1-en.png'},
+            ),
+          ],
+          model: 'claude-sonnet-4-20250514',
+        ),
+      ),
+    ),
+    MockStep(
+      delay: const Duration(milliseconds: 3100),
+      message: const ToolResultMessage(
+        toolUseId: 'tool-read-image',
+        content: 'PNG image preview available.',
+        toolName: 'Read',
+      ),
+    ),
     // Final summary
     MockStep(
-      delay: const Duration(milliseconds: 3200),
+      delay: const Duration(milliseconds: 3500),
       message: AssistantServerMessage(
         message: AssistantMessage(
           id: 'mock-file-peek-4',
@@ -3067,7 +3094,7 @@ final _filePeek = MockScenario(
       ),
     ),
     MockStep(
-      delay: const Duration(milliseconds: 3500),
+      delay: const Duration(milliseconds: 3800),
       message: ResultMessage(
         subtype: 'success',
         cost: 0.0156,
@@ -3077,7 +3104,7 @@ final _filePeek = MockScenario(
       ),
     ),
     MockStep(
-      delay: const Duration(milliseconds: 3700),
+      delay: const Duration(milliseconds: 4000),
       message: const StatusMessage(status: ProcessStatus.idle),
     ),
   ],

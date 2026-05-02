@@ -7,6 +7,7 @@ import 'bridge_service.dart';
 
 class MockBridgeService extends BridgeService {
   final _mockMessageController = StreamController<ServerMessage>.broadcast();
+  final _fileListController = StreamController<List<String>>.broadcast();
   final List<Timer> _timers = [];
   String? mockHttpBaseUrl;
 
@@ -211,14 +212,17 @@ class MockBridgeService extends BridgeService {
         );
       case 'read_file':
         final filePath = json['filePath'] as String? ?? '';
+        final image = _mockImageFile(filePath);
         _scheduleMessage(
           const Duration(milliseconds: 400),
-          FileContentMessage(
-            filePath: filePath,
-            content: _mockFileContent(filePath),
-            language: _mockFileLanguage(filePath),
-            totalLines: _mockFileContent(filePath).split('\n').length,
-          ),
+          image ??
+              FileContentMessage(
+                filePath: filePath,
+                kind: 'text',
+                content: _mockFileContent(filePath),
+                language: _mockFileLanguage(filePath),
+                totalLines: _mockFileContent(filePath).split('\n').length,
+              ),
         );
       // ---- Git Operations (mock, stateful) ----
       case 'get_diff':
@@ -372,14 +376,16 @@ class MockBridgeService extends BridgeService {
   }
 
   @override
-  Stream<List<String>> get fileList => const Stream.empty();
+  Stream<List<String>> get fileList => _fileListController.stream;
 
   @override
   Stream<List<SessionInfo>> get sessionList => const Stream.empty();
 
   @override
   void requestFileList(String projectPath) {
-    // No-op for mock
+    if (!_fileListController.isClosed) {
+      _fileListController.add(_mockProjectFiles);
+    }
   }
 
   @override
@@ -497,6 +503,43 @@ class MockBridgeService extends BridgeService {
       _ => 'File content for: $filePath\n\nThis is a mock file preview.',
     };
   }
+
+  static FileContentMessage? _mockImageFile(String filePath) {
+    final ext = filePath.split('.').lastOrNull?.toLowerCase();
+    final mimeType = switch (ext) {
+      'png' => 'image/png',
+      'jpg' || 'jpeg' => 'image/jpeg',
+      'gif' => 'image/gif',
+      'webp' => 'image/webp',
+      'svg' => 'image/svg+xml',
+      _ => null,
+    };
+    if (mimeType == null) return null;
+
+    final base64 = ext == 'svg'
+        ? base64Encode(utf8.encode(_mockSvgImage))
+        : _mockPngBase64;
+    return FileContentMessage(
+      filePath: filePath,
+      kind: 'image',
+      content: '',
+      base64: base64,
+      mimeType: mimeType,
+      sizeBytes: base64Decode(base64).length,
+    );
+  }
+
+  static const String _mockPngBase64 =
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGA'
+      'WjR9awAAAABJRU5ErkJggg==';
+
+  static const String _mockSvgImage = '''
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180" viewBox="0 0 320 180">
+  <rect width="320" height="180" rx="18" fill="#1f6feb"/>
+  <circle cx="246" cy="58" r="32" fill="#79c0ff"/>
+  <path d="M42 134h236L204 76l-52 42-32-26z" fill="#f0f6fc"/>
+</svg>
+''';
 
   // --- Path-specific mock contents (matched by exact path) ---
 
@@ -776,6 +819,20 @@ void main() {
     }
     _timers.clear();
     _mockMessageController.close();
+    _fileListController.close();
     super.dispose();
   }
 }
+
+const _mockProjectFiles = [
+  'README.md',
+  'package.json',
+  'pubspec.yaml',
+  'docs/architecture.md',
+  'docs/images/install-banner.png',
+  'docs/images/install-qr-app-store.png',
+  'docs/images/release-card-v1.86.1-en.png',
+  'apps/mobile/lib/main.dart',
+  'apps/mobile/test/widget_test.dart',
+  'packages/bridge/src/index.ts',
+];

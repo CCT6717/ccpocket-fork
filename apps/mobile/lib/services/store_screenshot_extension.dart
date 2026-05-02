@@ -204,7 +204,10 @@ void registerStoreScreenshotExtensions() {
       try {
         navState.push(
           MaterialPageRoute(
-            builder: (_) => _MockScenarioChatRoute(scenario: scenario),
+            builder: (_) => _MockScenarioChatRoute(
+              scenario: scenario,
+              projectPath: params['projectPath'] ?? '/mock/preview',
+            ),
           ),
         );
         return MarionetteExtensionResult.success({
@@ -1531,7 +1534,11 @@ SessionInfo _buildWorkspaceApprovalSession({
 /// without a parent BuildContext (used by call_custom_extension).
 class _MockScenarioChatRoute extends StatefulWidget {
   final MockScenario scenario;
-  const _MockScenarioChatRoute({required this.scenario});
+  final String projectPath;
+  const _MockScenarioChatRoute({
+    required this.scenario,
+    required this.projectPath,
+  });
 
   @override
   State<_MockScenarioChatRoute> createState() => _MockScenarioChatRouteState();
@@ -1580,11 +1587,11 @@ class _MockScenarioChatRouteState extends State<_MockScenarioChatRoute> {
         child: switch (widget.scenario.provider) {
           MockScenarioProvider.codex => CodexSessionScreen(
             sessionId: sessionId,
-            projectPath: '/mock/preview',
+            projectPath: widget.projectPath,
           ),
           MockScenarioProvider.claude => ClaudeSessionScreen(
             sessionId: sessionId,
-            projectPath: '/mock/preview',
+            projectPath: widget.projectPath,
           ),
         },
       ),

@@ -498,11 +498,15 @@ export type ServerMessage =
   | {
       type: "file_content";
       filePath: string;
+      kind?: "text" | "image";
       content: string;
       language?: string;
       error?: string;
       totalLines?: number;
       truncated?: boolean;
+      base64?: string;
+      mimeType?: string;
+      sizeBytes?: number;
     }
   | { type: "file_list"; files: string[] }
   | { type: "project_history"; projects: string[] }

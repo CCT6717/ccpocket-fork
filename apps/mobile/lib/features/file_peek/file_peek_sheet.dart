@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../models/messages.dart';
@@ -15,6 +17,7 @@ import '../../theme/markdown_style.dart'
         handleMarkdownLink,
         highlightToTextSpans,
         markdownBuilders;
+import '../../widgets/bubbles/image_preview.dart';
 import '../../widgets/workspace_pane_chrome.dart';
 
 /// Resolves a potentially partial file path against the project's file list,
@@ -266,6 +269,7 @@ class _FilePeekContentState extends State<_FilePeekContent> {
     final appColors = Theme.of(context).extension<AppColors>()!;
     final fileName = widget.filePath.split('/').lastOrNull ?? widget.filePath;
     final isMarkdown = widget.filePath.endsWith('.md');
+    final isImage = _result?.kind == 'image';
 
     return Column(
       children: [
@@ -316,7 +320,14 @@ class _FilePeekContentState extends State<_FilePeekContent> {
                   ],
                 ),
               ),
-              if (isMarkdown && !_loading && _result?.error == null)
+              if (isImage && !_loading && _result?.error == null)
+                IconButton(
+                  key: const ValueKey('file_peek_image_fullscreen_button'),
+                  icon: const Icon(Icons.open_in_full, size: 18),
+                  onPressed: _openImageFullScreen,
+                  visualDensity: VisualDensity.compact,
+                ),
+              if (isMarkdown && !isImage && !_loading && _result?.error == null)
                 IconButton(
                   icon: Icon(
                     Icons.text_fields,
@@ -363,6 +374,21 @@ class _FilePeekContentState extends State<_FilePeekContent> {
               ),
             ),
           ),
+        if (_result != null && _result!.kind == 'image')
+          Padding(
+            padding: const EdgeInsets.only(left: 42, top: 2, bottom: 4),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                [
+                  if (_result!.sizeBytes != null)
+                    _formatFileSize(_result!.sizeBytes!),
+                  if (_result!.mimeType != null) _result!.mimeType!,
+                ].join(' · '),
+                style: TextStyle(fontSize: 11, color: appColors.subtleText),
+              ),
+            ),
+          ),
         const Divider(height: 1),
         // Content
         Expanded(
@@ -370,12 +396,37 @@ class _FilePeekContentState extends State<_FilePeekContent> {
               ? const Center(child: CircularProgressIndicator.adaptive())
               : _result?.error != null
               ? _buildError(appColors)
+              : _result?.kind == 'image'
+              ? _buildImageContent(appColors)
               : (isMarkdown && !_showRaw)
               ? _buildMarkdownPreview()
               : _buildCodeContent(appColors),
         ),
       ],
     );
+  }
+
+  void _openImageFullScreen() {
+    final bytes = _imageBytes();
+    if (bytes == null) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => FullScreenImageViewer(
+          bytes: bytes,
+          isSvg: _result?.mimeType == 'image/svg+xml',
+        ),
+      ),
+    );
+  }
+
+  Uint8List? _imageBytes() {
+    final base64 = _result?.base64;
+    if (base64 == null || base64.isEmpty) return null;
+    try {
+      return base64Decode(base64);
+    } catch (_) {
+      return null;
+    }
   }
 
   Widget _buildError(AppColors appColors) {
@@ -408,6 +459,20 @@ class _FilePeekContentState extends State<_FilePeekContent> {
       inlineSyntaxes: colorCodeInlineSyntaxes,
       builders: markdownBuilders,
       padding: const EdgeInsets.all(16),
+    );
+  }
+
+  Widget _buildImageContent(AppColors appColors) {
+    final bytes = _imageBytes();
+    if (bytes == null) {
+      return Center(
+        child: Icon(Icons.broken_image, size: 40, color: appColors.subtleText),
+      );
+    }
+    return _FilePeekImagePreview(
+      bytes: bytes,
+      isSvg: _result?.mimeType == 'image/svg+xml',
+      onOpenFullScreen: _openImageFullScreen,
     );
   }
 
@@ -509,5 +574,51 @@ class _FilePeekContentState extends State<_FilePeekContent> {
       walkSpan(span);
     }
     return result;
+  }
+}
+
+String _formatFileSize(int bytes) {
+  if (bytes < 1024) return '$bytes B';
+  if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+  return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+}
+
+class _FilePeekImagePreview extends StatelessWidget {
+  final Uint8List bytes;
+  final bool isSvg;
+  final VoidCallback onOpenFullScreen;
+
+  const _FilePeekImagePreview({
+    required this.bytes,
+    required this.isSvg,
+    required this.onOpenFullScreen,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      key: const ValueKey('file_peek_image_preview'),
+      behavior: HitTestBehavior.opaque,
+      onTap: onOpenFullScreen,
+      child: Container(
+        color: Colors.black,
+        alignment: Alignment.center,
+        child: InteractiveViewer(
+          minScale: 0.5,
+          maxScale: 4.0,
+          child: isSvg
+              ? SvgPicture.memory(bytes, fit: BoxFit.contain)
+              : Image.memory(
+                  bytes,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, _, _) => const Icon(
+                    Icons.broken_image,
+                    color: Colors.white54,
+                    size: 48,
+                  ),
+                ),
+        ),
+      ),
+    );
   }
 }
