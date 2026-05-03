@@ -861,6 +861,7 @@ class _CodexChatBody extends HookWidget {
                 onBackToSessions: onBackToSessions,
                 hideSessionBackButton: hideSessionBackButton,
               );
+              final showMessageHistoryAction = !isSinglePane;
               final double defaultTitleSpacing = isSinglePane
                   ? NavigationToolbar.kMiddleSpacing
                   : (leading == null ? 16 : 12);
@@ -981,6 +982,32 @@ class _CodexChatBody extends HookWidget {
                             );
                           },
                         ),
+                      if (showMessageHistoryAction)
+                        IconButton(
+                          key: const ValueKey('appbar_message_history_button'),
+                          icon: Icon(
+                            Icons.history,
+                            size: 18,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(
+                            minWidth: 32,
+                            minHeight: 32,
+                          ),
+                          tooltip: l.messageHistory,
+                          onPressed: () {
+                            _showUserMessageHistory(
+                              context,
+                              scrollToUserEntry,
+                              sessionId,
+                              chatInputController,
+                              draftService,
+                            );
+                          },
+                        ),
                       PopupMenuButton<String>(
                         key: const ValueKey('session_overflow_menu'),
                         icon: Icon(
@@ -1036,16 +1063,20 @@ class _CodexChatBody extends HookWidget {
                                 contentPadding: EdgeInsets.zero,
                               ),
                             ),
-                            const PopupMenuItem(
-                              key: ValueKey('menu_message_history'),
-                              value: 'history',
-                              child: ListTile(
-                                leading: Icon(Icons.chat_outlined, size: 20),
-                                title: Text('Message History'),
-                                dense: true,
-                                contentPadding: EdgeInsets.zero,
+                            if (!showMessageHistoryAction)
+                              PopupMenuItem(
+                                key: const ValueKey('menu_message_history'),
+                                value: 'history',
+                                child: ListTile(
+                                  leading: const Icon(
+                                    Icons.chat_outlined,
+                                    size: 20,
+                                  ),
+                                  title: Text(l.messageHistory),
+                                  dense: true,
+                                  contentPadding: EdgeInsets.zero,
+                                ),
                               ),
-                            ),
                             if (effectiveProjectPath != null)
                               const PopupMenuItem(
                                 key: ValueKey('menu_screenshot'),
