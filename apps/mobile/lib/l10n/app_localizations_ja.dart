@@ -773,6 +773,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get queuedInputForNextTurn => '次のターンに送信予定';
 
   @override
+  String get sessionCardQueuedInput => 'キュー中';
+
+  @override
   String queuedInputImageCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

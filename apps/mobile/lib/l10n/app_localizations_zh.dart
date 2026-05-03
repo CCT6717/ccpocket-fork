@@ -763,6 +763,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get queuedInputForNextTurn => '已排队到下一轮';
 
   @override
+  String get sessionCardQueuedInput => '已排队';
+
+  @override
   String queuedInputImageCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

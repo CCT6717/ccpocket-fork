@@ -1536,6 +1536,12 @@ abstract class AppLocalizations {
   /// **'次のターンに送信予定'**
   String get queuedInputForNextTurn;
 
+  /// No description provided for @sessionCardQueuedInput.
+  ///
+  /// In ja, this message translates to:
+  /// **'キュー中'**
+  String get sessionCardQueuedInput;
+
   /// No description provided for @queuedInputImageCount.
   ///
   /// In ja, this message translates to:

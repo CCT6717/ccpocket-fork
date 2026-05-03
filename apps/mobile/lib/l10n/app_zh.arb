@@ -327,6 +327,7 @@
   "queuedInputForReconnect": "已加入重连队列",
   "queuedInputPendingDelivery": "等待发送确认",
   "queuedInputForNextTurn": "已排队到下一轮",
+  "sessionCardQueuedInput": "已排队",
   "queuedInputImageCount": "{count, plural, other{{count} 张图片}}",
   "@queuedInputImageCount": {
     "placeholders": {

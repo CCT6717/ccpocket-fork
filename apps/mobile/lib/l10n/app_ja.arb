@@ -337,6 +337,7 @@
   "queuedInputForReconnect": "再接続待ちキュー",
   "queuedInputPendingDelivery": "送信確認中",
   "queuedInputForNextTurn": "次のターンに送信予定",
+  "sessionCardQueuedInput": "キュー中",
   "queuedInputImageCount": "{count, plural, other{画像{count}枚}}",
   "@queuedInputImageCount": {
     "placeholders": {

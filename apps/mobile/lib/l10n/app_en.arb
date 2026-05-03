@@ -309,6 +309,7 @@
   "queuedInputForReconnect": "Queued for reconnect",
   "queuedInputPendingDelivery": "Pending delivery",
   "queuedInputForNextTurn": "Queued for next turn",
+  "sessionCardQueuedInput": "Queued",
   "queuedInputImageCount": "{count, plural, =1{{count} image} other{{count} images}}",
   "@queuedInputImageCount": {
     "placeholders": {

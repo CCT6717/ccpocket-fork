@@ -301,6 +301,7 @@
   "queuedInputForReconnect": "재연결 대기열에 추가됨",
   "queuedInputPendingDelivery": "전송 확인 중",
   "queuedInputForNextTurn": "다음 턴 대기열에 추가됨",
+  "sessionCardQueuedInput": "대기 중",
   "queuedInputImageCount": "{count, plural, other{이미지 {count}개}}",
   "@queuedInputImageCount": {
     "placeholders": {

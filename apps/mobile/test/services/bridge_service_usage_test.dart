@@ -295,6 +295,70 @@ void main() {
       bridge.dispose();
     });
 
+    test('conversation queue updates cached session queued input', () async {
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      final socketReady = Completer<WebSocket>();
+
+      server.transform(WebSocketTransformer()).listen((socket) {
+        socketReady.complete(socket);
+      });
+
+      final bridge = BridgeService();
+      bridge.connect('ws://127.0.0.1:${server.port}');
+
+      final socket = await socketReady.future;
+      socket.add(
+        jsonEncode({
+          'type': 'session_list',
+          'sessions': [
+            {
+              'id': 's1',
+              'provider': 'codex',
+              'projectPath': '/tmp/project',
+              'status': 'running',
+            },
+          ],
+        }),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      socket.add(
+        jsonEncode({
+          'type': 'conversation_queue',
+          'sessionId': 's1',
+          'limit': 1,
+          'items': [
+            {
+              'itemId': 'q1',
+              'text': 'Queued while busy',
+              'createdAt': '2026-04-28T00:00:00.000Z',
+            },
+          ],
+        }),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      expect(bridge.sessions.single.queuedInput?.itemId, 'q1');
+      expect(bridge.sessions.single.queuedInput?.text, 'Queued while busy');
+
+      socket.add(
+        jsonEncode({
+          'type': 'conversation_queue',
+          'sessionId': 's1',
+          'limit': 1,
+          'items': [],
+        }),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      expect(bridge.sessions.single.queuedInput, isNull);
+
+      bridge.disconnect();
+      await socket.close();
+      await server.close(force: true);
+      bridge.dispose();
+    });
+
     test('input_ack alone does not advance cached history sequence', () async {
       final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
       final socketReady = Completer<WebSocket>();

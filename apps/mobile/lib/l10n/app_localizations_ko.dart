@@ -770,6 +770,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get queuedInputForNextTurn => '다음 턴 대기열에 추가됨';
 
   @override
+  String get sessionCardQueuedInput => '대기 중';
+
+  @override
   String queuedInputImageCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
