@@ -19,6 +19,7 @@ import '../../utils/tool_categories.dart';
 import '../../features/file_peek/file_path_syntax.dart';
 import 'error_bubble.dart';
 import '../plan_detail_sheet.dart';
+import '../google_search_text_selection.dart';
 import 'inline_edit_diff.dart';
 import 'message_action_bar.dart';
 import 'plan_card.dart';
@@ -218,24 +219,28 @@ class _DefaultLayout extends StatelessWidget {
                   ? SelectableText(
                       text,
                       style: Theme.of(context).textTheme.bodyMedium,
+                      contextMenuBuilder:
+                          googleSearchSelectableTextContextMenuBuilder,
                     )
-                  : MarkdownBody(
-                      data: text,
-                      selectable: true,
-                      styleSheet: buildMarkdownStyle(context),
-                      onTapLink: handleMarkdownLink,
-                      inlineSyntaxes: [
-                        if (onFileTap != null) ...[
-                          FilePathSyntax(knownPathSuffixes: fileSuffixes),
-                          BareFilePathSyntax(knownPathSuffixes: fileSuffixes),
+                  : GoogleSearchSelectionArea(
+                      child: MarkdownBody(
+                        data: text,
+                        selectable: !googleSearchSelectionMenuEnabled,
+                        styleSheet: buildMarkdownStyle(context),
+                        onTapLink: handleMarkdownLink,
+                        inlineSyntaxes: [
+                          if (onFileTap != null) ...[
+                            FilePathSyntax(knownPathSuffixes: fileSuffixes),
+                            BareFilePathSyntax(knownPathSuffixes: fileSuffixes),
+                          ],
+                          ...colorCodeInlineSyntaxes,
                         ],
-                        ...colorCodeInlineSyntaxes,
-                      ],
-                      builders: {
-                        if (onFileTap != null)
-                          'filePath': FilePathBuilder(onTap: onFileTap),
-                        ...markdownBuilders,
-                      },
+                        builders: {
+                          if (onFileTap != null)
+                            'filePath': FilePathBuilder(onTap: onFileTap),
+                          ...markdownBuilders,
+                        },
+                      ),
                     ),
             ),
             ToolUseContent(:final id, :final name, :final input) =>
@@ -648,6 +653,7 @@ class _ToolUseCard extends StatelessWidget {
           color: appColors.toolResultTextExpanded,
           height: 1.4,
         ),
+        contextMenuBuilder: googleSearchSelectableTextContextMenuBuilder,
       );
     }
 
