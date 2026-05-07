@@ -6,6 +6,7 @@ import {
   symlinkSync,
   writeFileSync,
 } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -1216,6 +1217,114 @@ describe("BridgeWebSocketServer resume/get_history flow", () => {
     expect(created.projectPath).toBe("D:\\Users\\alice\\src\\ccpocket");
 
     bridge.close();
+  });
+
+  it("returns unstaged diff for mixed ASCII and non-ASCII untracked paths", async () => {
+    const projectPath = mkdtempSync(resolve(tmpdir(), "ccpocket-diff-"));
+    execFileSync("git", ["init"], { cwd: projectPath });
+    execFileSync("git", ["config", "user.email", "test@test.com"], {
+      cwd: projectPath,
+    });
+    execFileSync("git", ["config", "user.name", "Test"], { cwd: projectPath });
+    writeFileSync(resolve(projectPath, "initial.txt"), "initial\n");
+    execFileSync("git", ["add", "initial.txt"], { cwd: projectPath });
+    execFileSync("git", ["commit", "-m", "initial"], { cwd: projectPath });
+    mkdirSync(resolve(projectPath, "docs"));
+    writeFileSync(resolve(projectPath, "docs", "啊.md"), "hello\n");
+    writeFileSync(resolve(projectPath, "normal.txt"), "normal\n");
+
+    const bridge = new BridgeWebSocketServer({
+      server: httpServer,
+      allowedDirs: [projectPath],
+    });
+    const ws = {
+      readyState: OPEN_STATE,
+      send: vi.fn(),
+    } as any;
+
+    try {
+      await (bridge as any).handleClientMessage(
+        {
+          type: "get_diff",
+          projectPath,
+          staged: false,
+        },
+        ws,
+      );
+
+      await expect
+        .poll(() =>
+          ws.send.mock.calls
+            .map((c: unknown[]) => JSON.parse(c[0] as string))
+            .find((m: any) => m.type === "diff_result"),
+        )
+        .toBeDefined();
+
+      const diffResult = ws.send.mock.calls
+        .map((c: unknown[]) => JSON.parse(c[0] as string))
+        .find((m: any) => m.type === "diff_result");
+      expect(diffResult.error).toBeUndefined();
+      expect(diffResult.diff).toContain("diff --git a/docs/啊.md b/docs/啊.md");
+      expect(diffResult.diff).toContain("diff --git a/normal.txt b/normal.txt");
+      expect(diffResult.diff).not.toContain("\\345\\225");
+    } finally {
+      bridge.close();
+      rmSync(projectPath, { recursive: true, force: true });
+    }
+  });
+
+  it("returns all diff for mixed staged and non-ASCII untracked paths", async () => {
+    const projectPath = mkdtempSync(resolve(tmpdir(), "ccpocket-diff-"));
+    execFileSync("git", ["init"], { cwd: projectPath });
+    execFileSync("git", ["config", "user.email", "test@test.com"], {
+      cwd: projectPath,
+    });
+    execFileSync("git", ["config", "user.name", "Test"], { cwd: projectPath });
+    writeFileSync(resolve(projectPath, "initial.txt"), "initial\n");
+    execFileSync("git", ["add", "initial.txt"], { cwd: projectPath });
+    execFileSync("git", ["commit", "-m", "initial"], { cwd: projectPath });
+    writeFileSync(resolve(projectPath, "initial.txt"), "changed\n");
+    execFileSync("git", ["add", "initial.txt"], { cwd: projectPath });
+    mkdirSync(resolve(projectPath, "docs"));
+    writeFileSync(resolve(projectPath, "docs", "啊.md"), "hello\n");
+
+    const bridge = new BridgeWebSocketServer({
+      server: httpServer,
+      allowedDirs: [projectPath],
+    });
+    const ws = {
+      readyState: OPEN_STATE,
+      send: vi.fn(),
+    } as any;
+
+    try {
+      await (bridge as any).handleClientMessage(
+        {
+          type: "get_diff",
+          projectPath,
+        },
+        ws,
+      );
+
+      await expect
+        .poll(() =>
+          ws.send.mock.calls
+            .map((c: unknown[]) => JSON.parse(c[0] as string))
+            .find((m: any) => m.type === "diff_result"),
+        )
+        .toBeDefined();
+
+      const diffResult = ws.send.mock.calls
+        .map((c: unknown[]) => JSON.parse(c[0] as string))
+        .find((m: any) => m.type === "diff_result");
+      expect(diffResult.error).toBeUndefined();
+      expect(diffResult.diff).toContain("diff --git a/initial.txt b/initial.txt");
+      expect(diffResult.diff).toContain("diff --git a/docs/啊.md b/docs/啊.md");
+      expect(diffResult.diff).not.toContain("\\345\\225");
+    } finally {
+      bridge.close();
+      rmSync(projectPath, { recursive: true, force: true });
+    }
   });
 
   it("returns base64 image data for image file peek", async () => {
