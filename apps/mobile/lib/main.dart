@@ -48,7 +48,9 @@ import 'services/draft_service.dart';
 import 'services/fcm_service.dart';
 import 'services/in_app_review_service.dart';
 import 'services/machine_manager_service.dart';
+import 'services/mock_preview_extension.dart';
 import 'services/notification_service.dart';
+import 'services/performance_probe_extension.dart';
 import 'services/prompt_history_service.dart';
 import 'services/revenuecat_service.dart';
 import 'services/ssh_bridge_tunnel_service.dart';
@@ -89,6 +91,8 @@ void main() async {
   if (kDebugMode && !kIsWeb) {
     MarionetteBinding.ensureInitialized();
     registerStoreScreenshotExtensions();
+    registerMockPreviewExtensions();
+    registerPerformanceProbeExtensions();
   } else {
     WidgetsFlutterBinding.ensureInitialized();
   }
