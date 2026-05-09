@@ -11,6 +11,7 @@ import '../core/logger.dart';
 import '../l10n/app_localizations.dart';
 import '../widgets/google_search_text_selection.dart';
 import 'app_theme.dart';
+import 'code_text_style.dart';
 
 final _syntaxHighlight = _SyntaxHighlightRegistry();
 final markdownPerformanceProbe = MarkdownPerformanceProbe();
@@ -79,12 +80,12 @@ MarkdownStyleSheet buildMarkdownStyle(BuildContext context) {
   final appColors = Theme.of(context).extension<AppColors>()!;
   final theme = Theme.of(context);
   final baseStyle = theme.textTheme.bodyMedium ?? const TextStyle();
+  final codeSettings = codeTextSettingsOf(context);
 
   return MarkdownStyleSheet.fromTheme(theme).copyWith(
     p: baseStyle,
-    code: baseStyle.copyWith(
-      fontFamily: 'monospace',
-      fontSize: 13,
+    code: codeSettings.style(
+      color: baseStyle.color,
       backgroundColor: appColors.codeBackground,
     ),
     codeblockDecoration: BoxDecoration(
@@ -146,9 +147,8 @@ class ColorCodeBuilder extends MarkdownElementBuilder {
     if (color == null) return null;
 
     final appColors = Theme.of(context).extension<AppColors>()!;
-    final codeStyle = (preferredStyle ?? const TextStyle()).copyWith(
-      fontFamily: 'monospace',
-      fontSize: 13,
+    final codeStyle = codeTextSettingsOf(context).style(
+      color: preferredStyle?.color,
       backgroundColor: appColors.codeBackground,
     );
 
@@ -212,12 +212,9 @@ class FencedCodeBlockBuilder extends MarkdownElementBuilder {
     final hasExplicitLanguage = language != null;
 
     final appColors = Theme.of(context).extension<AppColors>()!;
-    final baseStyle = (preferredStyle ?? const TextStyle()).copyWith(
-      fontFamily: 'monospace',
-      fontSize: 13,
-      height: 1.45,
-      color: Theme.of(context).colorScheme.onSurface,
-    );
+    final baseStyle = codeTextSettingsOf(
+      context,
+    ).style(height: 1.45, color: Theme.of(context).colorScheme.onSurface);
     final highlightedSpans = highlightToTextSpans(
       context: context,
       source: source,

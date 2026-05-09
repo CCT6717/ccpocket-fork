@@ -1415,6 +1415,15 @@ class AppLocalizationsJa extends AppLocalizations {
       'OSの文字サイズ設定に、このアプリ倍率をさらに掛けます。100%はOS設定のままです。';
 
   @override
+  String get codeFontSize => 'コード文字サイズ';
+
+  @override
+  String get codeFontFamily => 'コードフォント';
+
+  @override
+  String get codeFontPreview => 'プレビュー';
+
+  @override
   String get indentSize => 'インデント幅';
 
   @override

@@ -1397,6 +1397,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get textDensityDescription => '在系统文字大小的基础上再应用此应用倍率。100% 保持系统设置不变。';
 
   @override
+  String get codeFontSize => '代码字体大小';
+
+  @override
+  String get codeFontFamily => '代码字体';
+
+  @override
+  String get codeFontPreview => '预览';
+
+  @override
   String get indentSize => '缩进大小';
 
   @override

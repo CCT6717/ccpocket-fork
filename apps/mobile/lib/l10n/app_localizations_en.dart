@@ -1475,6 +1475,15 @@ class AppLocalizationsEn extends AppLocalizations {
       'Multiplies the system text size by this app scale. 100% keeps the OS setting unchanged.';
 
   @override
+  String get codeFontSize => 'Code font size';
+
+  @override
+  String get codeFontFamily => 'Code font';
+
+  @override
+  String get codeFontPreview => 'Preview';
+
+  @override
   String get indentSize => 'Indent size';
 
   @override

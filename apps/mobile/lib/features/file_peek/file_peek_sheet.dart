@@ -10,6 +10,7 @@ import '../../l10n/app_localizations.dart';
 import '../../models/messages.dart';
 import '../../services/bridge_service.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/code_text_style.dart';
 import '../../theme/markdown_style.dart'
     show
         buildMarkdownStyle,
@@ -482,12 +483,9 @@ class _FilePeekContentState extends State<_FilePeekContent> {
     final lines = content.split('\n');
     final gutterWidth = '${lines.length}'.length;
 
-    final baseStyle = TextStyle(
-      fontFamily: 'monospace',
-      fontSize: 13,
-      height: 1.5,
-      color: Theme.of(context).colorScheme.onSurface,
-    );
+    final baseStyle = codeTextSettingsOf(
+      context,
+    ).style(height: 1.5, color: Theme.of(context).colorScheme.onSurface);
 
     final gutterStyle = baseStyle.copyWith(
       color: appColors.subtleText.withValues(alpha: 0.5),

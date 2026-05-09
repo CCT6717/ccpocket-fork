@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/logger.dart';
 import '../../../models/app_icon.dart';
+import '../../../models/code_font_family.dart';
 import '../../../models/git_diff_interaction_mode.dart';
 import '../../../models/messages.dart';
 import '../../../models/new_session_tab.dart';
@@ -18,6 +19,7 @@ import '../../../services/bridge_service.dart';
 import '../../../services/fcm_service.dart';
 import '../../../services/machine_manager_service.dart';
 import '../../../services/revenuecat_service.dart';
+import '../../../theme/code_text_style.dart';
 import 'settings_state.dart';
 
 /// Manages user settings with SharedPreferences persistence.
@@ -58,6 +60,8 @@ class SettingsCubit extends Cubit<SettingsState> {
   static const _keyAutoRenameCodexSessions = 'autoRenameCodexSessions';
   static const _keyAutoRenameClaudeSessions = 'autoRenameClaudeSessions';
   static const _keyTextScale = 'settings_text_scale';
+  static const _keyCodeFontSize = 'settings_code_font_size';
+  static const _keyCodeFontFamily = 'settings_code_font_family';
   static const minTextScale = 0.8;
   static const maxTextScale = 1.0;
   // Legacy key for migration
@@ -180,6 +184,11 @@ class SettingsCubit extends Cubit<SettingsState> {
     final shorebirdTrack = prefs.getString(keyShorebirdTrack) ?? 'stable';
     final indentSize = prefs.getInt(_keyIndentSize) ?? 2;
     final textScale = prefs.getDouble(_keyTextScale) ?? 1.0;
+    final codeFontSize =
+        prefs.getDouble(_keyCodeFontSize) ?? defaultCodeFontSize;
+    final codeFontFamily = codeFontFamilyFromRaw(
+      prefs.getString(_keyCodeFontFamily),
+    );
     final hideVoiceInput = prefs.getBool(_keyHideVoiceInput) ?? false;
     final gitDiffInteractionMode = gitDiffInteractionModeFromRaw(
       prefs.getString(_keyGitDiffInteractionMode),
@@ -234,6 +243,8 @@ class SettingsCubit extends Cubit<SettingsState> {
       shorebirdTrack: shorebirdTrack,
       indentSize: indentSize.clamp(1, 4),
       textScale: textScale.clamp(minTextScale, maxTextScale),
+      codeFontSize: codeFontSize.clamp(minCodeFontSize, maxCodeFontSize),
+      codeFontFamily: codeFontFamily,
       hideVoiceInput: hideVoiceInput,
       gitDiffInteractionMode: gitDiffInteractionMode,
       gitDiffFocusAutoLandscape: gitDiffFocusAutoLandscape,
@@ -323,6 +334,17 @@ class SettingsCubit extends Cubit<SettingsState> {
     final clamped = scale.clamp(minTextScale, maxTextScale);
     _prefs.setDouble(_keyTextScale, clamped);
     emit(state.copyWith(textScale: clamped));
+  }
+
+  void setCodeFontSize(double size) {
+    final clamped = size.clamp(minCodeFontSize, maxCodeFontSize);
+    _prefs.setDouble(_keyCodeFontSize, clamped);
+    emit(state.copyWith(codeFontSize: clamped));
+  }
+
+  void setCodeFontFamily(CodeFontFamily family) {
+    _prefs.setString(_keyCodeFontFamily, family.id);
+    emit(state.copyWith(codeFontFamily: family));
   }
 
   void setShorebirdTrack(String track) {

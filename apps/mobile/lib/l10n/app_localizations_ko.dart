@@ -1428,6 +1428,15 @@ class AppLocalizationsKo extends AppLocalizations {
       '시스템 텍스트 크기에 앱 배율을 곱합니다. 100%는 OS 설정을 그대로 유지합니다.';
 
   @override
+  String get codeFontSize => '코드 글꼴 크기';
+
+  @override
+  String get codeFontFamily => '코드 글꼴';
+
+  @override
+  String get codeFontPreview => '미리 보기';
+
+  @override
   String get indentSize => '들여쓰기 크기';
 
   @override

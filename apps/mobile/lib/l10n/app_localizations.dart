@@ -2694,6 +2694,24 @@ abstract class AppLocalizations {
   /// **'OSの文字サイズ設定に、このアプリ倍率をさらに掛けます。100%はOS設定のままです。'**
   String get textDensityDescription;
 
+  /// No description provided for @codeFontSize.
+  ///
+  /// In ja, this message translates to:
+  /// **'コード文字サイズ'**
+  String get codeFontSize;
+
+  /// No description provided for @codeFontFamily.
+  ///
+  /// In ja, this message translates to:
+  /// **'コードフォント'**
+  String get codeFontFamily;
+
+  /// No description provided for @codeFontPreview.
+  ///
+  /// In ja, this message translates to:
+  /// **'プレビュー'**
+  String get codeFontPreview;
+
   /// No description provided for @indentSize.
   ///
   /// In ja, this message translates to:

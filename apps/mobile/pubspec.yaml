@@ -162,3 +162,13 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+  fonts:
+    - family: JetBrainsMono
+      fonts:
+        - asset: assets/fonts/code/JetBrainsMono-Regular.ttf
+    - family: IoskeleyMono
+      fonts:
+        - asset: assets/fonts/code/IoskeleyMono-Regular.ttf
+    - family: DejaVuSansMono
+      fonts:
+        - asset: assets/fonts/code/DejaVuSansMono.ttf
