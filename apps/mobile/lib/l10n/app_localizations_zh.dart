@@ -211,6 +211,147 @@ class AppLocalizationsZh extends AppLocalizations {
   String get password => '密码';
 
   @override
+  String get machineEditAddTitle => '添加机器';
+
+  @override
+  String get machineEditEditTitle => '编辑机器';
+
+  @override
+  String get machineEditDismissKeyboardTooltip => '收起键盘';
+
+  @override
+  String get machineEditBasicInfo => '基本信息';
+
+  @override
+  String get machineEditName => '名称';
+
+  @override
+  String get machineEditNameHint => 'Home Mac';
+
+  @override
+  String get machineEditHostLabel => 'Host（IP 或主机名）';
+
+  @override
+  String get machineEditHostHint => '100.64.1.2';
+
+  @override
+  String get machineEditPort => 'Port';
+
+  @override
+  String get machineEditBridgePortHint => '8765';
+
+  @override
+  String get machineEditApiKey => 'API Key';
+
+  @override
+  String get machineEditOptional => '可选';
+
+  @override
+  String get machineEditUseSecureConnection => '使用安全连接';
+
+  @override
+  String get machineEditUseSecureConnectionSubtitle =>
+      '使用 WSS 连接，并用 HTTPS 进行健康检查';
+
+  @override
+  String get machineEditSshConfiguration => 'SSH 设置';
+
+  @override
+  String get machineEditEnableSshRemoteStartup => '启用 SSH 远程启动';
+
+  @override
+  String get machineEditEnableSshRemoteStartupSubtitle =>
+      '离线时远程启动 Bridge Server';
+
+  @override
+  String get machineEditSshUsername => 'SSH Username';
+
+  @override
+  String get machineEditSshUsernameHint => 'myuser';
+
+  @override
+  String get machineEditSshPort => 'SSH Port';
+
+  @override
+  String get machineEditSshPortHint => '22';
+
+  @override
+  String get machineEditTargetAuthentication => '目标认证';
+
+  @override
+  String get machineEditPrivateKey => 'Private Key';
+
+  @override
+  String get machineEditSshPrivateKeyPem => 'SSH Private Key (PEM)';
+
+  @override
+  String get machineEditOpenSshPrivateKeyHint =>
+      '-----BEGIN OPENSSH PRIVATE KEY-----';
+
+  @override
+  String get machineEditSavedPrivateKeyIndicator =>
+      '将使用已保存的 Private Key。输入新内容会替换它。';
+
+  @override
+  String get machineEditUseSshJumpHost => '使用 SSH Jump Host';
+
+  @override
+  String get machineEditUseSshJumpHostSubtitle => '通过 bastion 或中间 SSH 主机连接';
+
+  @override
+  String get machineEditSshJumpHost => 'SSH Jump Host';
+
+  @override
+  String get machineEditJumpHost => 'Jump Host';
+
+  @override
+  String get machineEditJumpHostHint => 'bastion.example.com';
+
+  @override
+  String get machineEditJumpPort => 'Jump Port';
+
+  @override
+  String get machineEditJumpUsername => 'Jump Username';
+
+  @override
+  String get machineEditJumpUsernameHint => '留空则使用 SSH Username';
+
+  @override
+  String get machineEditJumpHostAuthentication => 'Jump Host 认证';
+
+  @override
+  String get machineEditJumpHostAuthenticationSubtitle => '留空则复用目标 SSH 认证信息';
+
+  @override
+  String get machineEditJumpPassword => 'Jump Password';
+
+  @override
+  String get machineEditSavedJumpHostPasswordIndicator =>
+      '将使用已保存的 Jump Host 密码。输入新内容会替换它。';
+
+  @override
+  String get machineEditJumpPrivateKeyPem => 'Jump Private Key (PEM)';
+
+  @override
+  String get machineEditSavedJumpHostPrivateKeyIndicator =>
+      '将使用已保存的 Jump Host Private Key。输入新内容会替换它。';
+
+  @override
+  String get machineEditTesting => '正在测试...';
+
+  @override
+  String get machineEditTestConnection => '测试连接';
+
+  @override
+  String get machineEditConnectionSuccessful => '连接成功';
+
+  @override
+  String get machineEditFillSshCredentials => '请输入 SSH 认证信息';
+
+  @override
+  String get machineEditAddAndConnect => '添加并连接';
+
+  @override
   String get deleteMachine => '删除机器';
 
   @override

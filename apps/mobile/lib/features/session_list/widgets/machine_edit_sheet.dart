@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../l10n/app_localizations.dart';
 import '../../../models/machine.dart';
 import '../../../services/ssh_startup_service.dart';
 import '../../../theme/app_theme.dart';
@@ -199,9 +200,10 @@ class _MachineEditSheetState extends State<MachineEditSheet> {
   }
 
   Future<void> _testConnection() async {
+    final l = AppLocalizations.of(context);
     if (!_sshConfigValid) {
       setState(() {
-        _testResult = 'Please fill in SSH credentials';
+        _testResult = l.machineEditFillSshCredentials;
         _testSuccess = false;
       });
       return;
@@ -252,7 +254,9 @@ class _MachineEditSheetState extends State<MachineEditSheet> {
       );
 
       setState(() {
-        _testResult = result.success ? 'Connection successful!' : result.error;
+        _testResult = result.success
+            ? l.machineEditConnectionSuccessful
+            : result.error;
         _testSuccess = result.success;
       });
     } catch (e) {
@@ -346,6 +350,7 @@ class _MachineEditSheetState extends State<MachineEditSheet> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final appColors = theme.extension<AppColors>()!;
+    final l = AppLocalizations.of(context);
 
     return DraggableScrollableSheet(
       initialChildSize: 0.85,
@@ -379,13 +384,15 @@ class _MachineEditSheetState extends State<MachineEditSheet> {
                 child: Row(
                   children: [
                     Text(
-                      isEditing ? 'Edit Machine' : 'Add Machine',
+                      isEditing
+                          ? l.machineEditEditTitle
+                          : l.machineEditAddTitle,
                       style: theme.textTheme.titleLarge,
                     ),
                     const Spacer(),
                     IconButton(
                       key: const ValueKey('dismiss_keyboard_button'),
-                      tooltip: 'Dismiss keyboard',
+                      tooltip: l.machineEditDismissKeyboardTooltip,
                       onPressed: () =>
                           FocusManager.instance.primaryFocus?.unfocus(),
                       icon: const Icon(Icons.keyboard_hide),
@@ -409,15 +416,15 @@ class _MachineEditSheetState extends State<MachineEditSheet> {
                   padding: const EdgeInsets.all(16),
                   children: [
                     // Basic Info
-                    _SectionHeader(title: 'Basic Info'),
+                    _SectionHeader(title: l.machineEditBasicInfo),
                     const SizedBox(height: 12),
 
                     TextField(
                       controller: _nameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Name',
-                        hintText: 'Home Mac',
-                        prefixIcon: Icon(Icons.label),
+                      decoration: InputDecoration(
+                        labelText: l.machineEditName,
+                        hintText: l.machineEditNameHint,
+                        prefixIcon: const Icon(Icons.label),
                         border: OutlineInputBorder(),
                       ),
                     ),
@@ -425,10 +432,10 @@ class _MachineEditSheetState extends State<MachineEditSheet> {
 
                     TextField(
                       controller: _hostController,
-                      decoration: const InputDecoration(
-                        labelText: 'Host (IP or hostname)',
-                        hintText: '100.64.1.2',
-                        prefixIcon: Icon(Icons.computer),
+                      decoration: InputDecoration(
+                        labelText: l.machineEditHostLabel,
+                        hintText: l.machineEditHostHint,
+                        prefixIcon: const Icon(Icons.computer),
                         border: OutlineInputBorder(),
                       ),
                     ),
@@ -439,10 +446,10 @@ class _MachineEditSheetState extends State<MachineEditSheet> {
                         Expanded(
                           child: TextField(
                             controller: _portController,
-                            decoration: const InputDecoration(
-                              labelText: 'Port',
-                              hintText: '8765',
-                              prefixIcon: Icon(Icons.numbers),
+                            decoration: InputDecoration(
+                              labelText: l.machineEditPort,
+                              hintText: l.machineEditBridgePortHint,
+                              prefixIcon: const Icon(Icons.numbers),
                               border: OutlineInputBorder(),
                             ),
                             keyboardType: TextInputType.number,
@@ -452,10 +459,10 @@ class _MachineEditSheetState extends State<MachineEditSheet> {
                         Expanded(
                           child: TextField(
                             controller: _apiKeyController,
-                            decoration: const InputDecoration(
-                              labelText: 'API Key',
-                              hintText: 'Optional',
-                              prefixIcon: Icon(Icons.key),
+                            decoration: InputDecoration(
+                              labelText: l.machineEditApiKey,
+                              hintText: l.machineEditOptional,
+                              prefixIcon: const Icon(Icons.key),
                               border: OutlineInputBorder(),
                             ),
                             obscureText: true,
@@ -476,12 +483,12 @@ class _MachineEditSheetState extends State<MachineEditSheet> {
                         ),
                       ),
                       child: SwitchListTile(
-                        title: const Text(
-                          'Use secure connection',
-                          style: TextStyle(fontWeight: FontWeight.w500),
+                        title: Text(
+                          l.machineEditUseSecureConnection,
+                          style: const TextStyle(fontWeight: FontWeight.w500),
                         ),
                         subtitle: Text(
-                          'Connect with WSS and use HTTPS for health checks',
+                          l.machineEditUseSecureConnectionSubtitle,
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: colorScheme.onSurfaceVariant,
                           ),
@@ -498,7 +505,7 @@ class _MachineEditSheetState extends State<MachineEditSheet> {
                     const SizedBox(height: 24),
 
                     // SSH Configuration
-                    _SectionHeader(title: 'SSH Configuration'),
+                    _SectionHeader(title: l.machineEditSshConfiguration),
                     const SizedBox(height: 12),
 
                     Container(
@@ -515,12 +522,14 @@ class _MachineEditSheetState extends State<MachineEditSheet> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           SwitchListTile(
-                            title: const Text(
-                              'Enable SSH remote startup',
-                              style: TextStyle(fontWeight: FontWeight.w500),
+                            title: Text(
+                              l.machineEditEnableSshRemoteStartup,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                             subtitle: Text(
-                              'Remotely start Bridge Server when offline',
+                              l.machineEditEnableSshRemoteStartupSubtitle,
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: colorScheme.onSurfaceVariant,
                               ),
@@ -544,10 +553,10 @@ class _MachineEditSheetState extends State<MachineEditSheet> {
                             flex: 2,
                             child: TextField(
                               controller: _sshUsernameController,
-                              decoration: const InputDecoration(
-                                labelText: 'SSH Username',
-                                hintText: 'myuser',
-                                prefixIcon: Icon(Icons.person),
+                              decoration: InputDecoration(
+                                labelText: l.machineEditSshUsername,
+                                hintText: l.machineEditSshUsernameHint,
+                                prefixIcon: const Icon(Icons.person),
                                 border: OutlineInputBorder(),
                               ),
                             ),
@@ -556,9 +565,9 @@ class _MachineEditSheetState extends State<MachineEditSheet> {
                           Expanded(
                             child: TextField(
                               controller: _sshPortController,
-                              decoration: const InputDecoration(
-                                labelText: 'SSH Port',
-                                hintText: '22',
+                              decoration: InputDecoration(
+                                labelText: l.machineEditSshPort,
+                                hintText: l.machineEditSshPortHint,
                                 border: OutlineInputBorder(),
                               ),
                               keyboardType: TextInputType.number,
@@ -568,21 +577,21 @@ class _MachineEditSheetState extends State<MachineEditSheet> {
                       ),
                       const SizedBox(height: 12),
 
-                      _SectionHeader(title: 'Target Authentication'),
+                      _SectionHeader(title: l.machineEditTargetAuthentication),
                       const SizedBox(height: 12),
 
                       SegmentedButton<SshAuthType>(
                         key: const ValueKey('ssh_auth_type_selector'),
-                        segments: const [
+                        segments: [
                           ButtonSegment(
                             value: SshAuthType.password,
-                            label: Text('Password'),
-                            icon: Icon(Icons.password),
+                            label: Text(l.password),
+                            icon: const Icon(Icons.password),
                           ),
                           ButtonSegment(
                             value: SshAuthType.privateKey,
-                            label: Text('Private Key'),
-                            icon: Icon(Icons.vpn_key),
+                            label: Text(l.machineEditPrivateKey),
+                            icon: const Icon(Icons.vpn_key),
                           ),
                         ],
                         selected: {_sshAuthType},
@@ -595,9 +604,9 @@ class _MachineEditSheetState extends State<MachineEditSheet> {
                       if (_sshAuthType == SshAuthType.password)
                         TextField(
                           controller: _sshPasswordController,
-                          decoration: const InputDecoration(
-                            labelText: 'SSH Password',
-                            prefixIcon: Icon(Icons.lock),
+                          decoration: InputDecoration(
+                            labelText: l.sshPassword,
+                            prefixIcon: const Icon(Icons.lock),
                             border: OutlineInputBorder(),
                           ),
                           obscureText: true,
@@ -609,10 +618,10 @@ class _MachineEditSheetState extends State<MachineEditSheet> {
                             TextField(
                               key: const ValueKey('ssh_private_key_field'),
                               controller: _sshPrivateKeyController,
-                              decoration: const InputDecoration(
-                                labelText: 'SSH Private Key (PEM)',
-                                hintText: '-----BEGIN OPENSSH PRIVATE KEY-----',
-                                prefixIcon: Icon(Icons.vpn_key),
+                              decoration: InputDecoration(
+                                labelText: l.machineEditSshPrivateKeyPem,
+                                hintText: l.machineEditOpenSshPrivateKeyHint,
+                                prefixIcon: const Icon(Icons.vpn_key),
                                 border: OutlineInputBorder(),
                               ),
                               maxLines: 4,
@@ -622,8 +631,7 @@ class _MachineEditSheetState extends State<MachineEditSheet> {
                                 _sshPrivateKeyController.text.isEmpty) ...[
                               const SizedBox(height: 8),
                               _SavedCredentialIndicator(
-                                label:
-                                    'A saved private key will be used unless replaced.',
+                                label: l.machineEditSavedPrivateKeyIndicator,
                               ),
                             ],
                           ],
@@ -643,12 +651,12 @@ class _MachineEditSheetState extends State<MachineEditSheet> {
                         ),
                         child: SwitchListTile(
                           key: const ValueKey('ssh_jump_toggle'),
-                          title: const Text(
-                            'Use SSH jump host',
-                            style: TextStyle(fontWeight: FontWeight.w500),
+                          title: Text(
+                            l.machineEditUseSshJumpHost,
+                            style: const TextStyle(fontWeight: FontWeight.w500),
                           ),
                           subtitle: Text(
-                            'Connect through a bastion or intermediate SSH host',
+                            l.machineEditUseSshJumpHostSubtitle,
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: colorScheme.onSurfaceVariant,
                             ),
@@ -665,7 +673,7 @@ class _MachineEditSheetState extends State<MachineEditSheet> {
                       if (_sshJumpEnabled) ...[
                         const SizedBox(height: 12),
 
-                        _SectionHeader(title: 'SSH Jump Host'),
+                        _SectionHeader(title: l.machineEditSshJumpHost),
                         const SizedBox(height: 12),
 
                         Row(
@@ -675,10 +683,10 @@ class _MachineEditSheetState extends State<MachineEditSheet> {
                               child: TextField(
                                 key: const ValueKey('ssh_jump_host_field'),
                                 controller: _sshJumpHostController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Jump Host',
-                                  hintText: 'bastion.example.com',
-                                  prefixIcon: Icon(Icons.hub),
+                                decoration: InputDecoration(
+                                  labelText: l.machineEditJumpHost,
+                                  hintText: l.machineEditJumpHostHint,
+                                  prefixIcon: const Icon(Icons.hub),
                                   border: OutlineInputBorder(),
                                 ),
                               ),
@@ -688,9 +696,9 @@ class _MachineEditSheetState extends State<MachineEditSheet> {
                               child: TextField(
                                 key: const ValueKey('ssh_jump_port_field'),
                                 controller: _sshJumpPortController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Jump Port',
-                                  hintText: '22',
+                                decoration: InputDecoration(
+                                  labelText: l.machineEditJumpPort,
+                                  hintText: l.machineEditSshPortHint,
                                   border: OutlineInputBorder(),
                                 ),
                                 keyboardType: TextInputType.number,
@@ -703,34 +711,33 @@ class _MachineEditSheetState extends State<MachineEditSheet> {
                         TextField(
                           key: const ValueKey('ssh_jump_username_field'),
                           controller: _sshJumpUsernameController,
-                          decoration: const InputDecoration(
-                            labelText: 'Jump Username',
-                            hintText: 'Defaults to SSH Username',
-                            prefixIcon: Icon(Icons.person_pin),
+                          decoration: InputDecoration(
+                            labelText: l.machineEditJumpUsername,
+                            hintText: l.machineEditJumpUsernameHint,
+                            prefixIcon: const Icon(Icons.person_pin),
                             border: OutlineInputBorder(),
                           ),
                         ),
                         const SizedBox(height: 12),
 
                         _SectionHeader(
-                          title: 'Jump Host Authentication',
-                          subtitle:
-                              'Leave blank to reuse target SSH credentials',
+                          title: l.machineEditJumpHostAuthentication,
+                          subtitle: l.machineEditJumpHostAuthenticationSubtitle,
                         ),
                         const SizedBox(height: 12),
 
                         SegmentedButton<SshAuthType>(
                           key: const ValueKey('ssh_jump_auth_type_selector'),
-                          segments: const [
+                          segments: [
                             ButtonSegment(
                               value: SshAuthType.password,
-                              label: Text('Password'),
-                              icon: Icon(Icons.password),
+                              label: Text(l.password),
+                              icon: const Icon(Icons.password),
                             ),
                             ButtonSegment(
                               value: SshAuthType.privateKey,
-                              label: Text('Private Key'),
-                              icon: Icon(Icons.vpn_key),
+                              label: Text(l.machineEditPrivateKey),
+                              icon: const Icon(Icons.vpn_key),
                             ),
                           ],
                           selected: {_sshJumpAuthType},
@@ -747,9 +754,9 @@ class _MachineEditSheetState extends State<MachineEditSheet> {
                               TextField(
                                 key: const ValueKey('ssh_jump_password_field'),
                                 controller: _sshJumpPasswordController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Jump Password',
-                                  prefixIcon: Icon(Icons.lock),
+                                decoration: InputDecoration(
+                                  labelText: l.machineEditJumpPassword,
+                                  prefixIcon: const Icon(Icons.lock),
                                   border: OutlineInputBorder(),
                                 ),
                                 obscureText: true,
@@ -759,8 +766,8 @@ class _MachineEditSheetState extends State<MachineEditSheet> {
                                   _sshJumpPasswordController.text.isEmpty) ...[
                                 const SizedBox(height: 8),
                                 _SavedCredentialIndicator(
-                                  label:
-                                      'A saved jump host password will be used unless replaced.',
+                                  label: l
+                                      .machineEditSavedJumpHostPasswordIndicator,
                                 ),
                               ],
                             ],
@@ -774,11 +781,10 @@ class _MachineEditSheetState extends State<MachineEditSheet> {
                                   'ssh_jump_private_key_field',
                                 ),
                                 controller: _sshJumpPrivateKeyController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Jump Private Key (PEM)',
-                                  hintText:
-                                      '-----BEGIN OPENSSH PRIVATE KEY-----',
-                                  prefixIcon: Icon(Icons.vpn_key),
+                                decoration: InputDecoration(
+                                  labelText: l.machineEditJumpPrivateKeyPem,
+                                  hintText: l.machineEditOpenSshPrivateKeyHint,
+                                  prefixIcon: const Icon(Icons.vpn_key),
                                   border: OutlineInputBorder(),
                                 ),
                                 maxLines: 4,
@@ -790,8 +796,8 @@ class _MachineEditSheetState extends State<MachineEditSheet> {
                                       .isEmpty) ...[
                                 const SizedBox(height: 8),
                                 _SavedCredentialIndicator(
-                                  label:
-                                      'A saved jump host private key will be used unless replaced.',
+                                  label: l
+                                      .machineEditSavedJumpHostPrivateKeyIndicator,
                                 ),
                               ],
                             ],
@@ -815,7 +821,9 @@ class _MachineEditSheetState extends State<MachineEditSheet> {
                                 )
                               : const Icon(Icons.wifi_find),
                           label: Text(
-                            _isTesting ? 'Testing...' : 'Test Connection',
+                            _isTesting
+                                ? l.machineEditTesting
+                                : l.machineEditTestConnection,
                           ),
                         ),
                       ),
@@ -887,7 +895,7 @@ class _MachineEditSheetState extends State<MachineEditSheet> {
                         style: TextButton.styleFrom(
                           foregroundColor: colorScheme.onSurfaceVariant,
                         ),
-                        child: const Text('Cancel'),
+                        child: Text(l.cancel),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -907,10 +915,10 @@ class _MachineEditSheetState extends State<MachineEditSheet> {
                               )
                             : Text(
                                 isEditing
-                                    ? 'Save'
+                                    ? l.save
                                     : widget.onSaveAndConnect != null
-                                    ? 'Add & Connect'
-                                    : 'Add',
+                                    ? l.machineEditAddAndConnect
+                                    : l.add,
                               ),
                       ),
                     ),

@@ -213,6 +213,148 @@ class AppLocalizationsJa extends AppLocalizations {
   String get password => 'パスワード';
 
   @override
+  String get machineEditAddTitle => 'マシンを追加';
+
+  @override
+  String get machineEditEditTitle => 'マシンを編集';
+
+  @override
+  String get machineEditDismissKeyboardTooltip => 'キーボードを閉じる';
+
+  @override
+  String get machineEditBasicInfo => '基本情報';
+
+  @override
+  String get machineEditName => '名前';
+
+  @override
+  String get machineEditNameHint => 'Home Mac';
+
+  @override
+  String get machineEditHostLabel => 'Host（IP またはホスト名）';
+
+  @override
+  String get machineEditHostHint => '100.64.1.2';
+
+  @override
+  String get machineEditPort => 'Port';
+
+  @override
+  String get machineEditBridgePortHint => '8765';
+
+  @override
+  String get machineEditApiKey => 'API Key';
+
+  @override
+  String get machineEditOptional => '任意';
+
+  @override
+  String get machineEditUseSecureConnection => 'セキュア接続を使う';
+
+  @override
+  String get machineEditUseSecureConnectionSubtitle =>
+      'WSS で接続し、ヘルスチェックに HTTPS を使います';
+
+  @override
+  String get machineEditSshConfiguration => 'SSH 設定';
+
+  @override
+  String get machineEditEnableSshRemoteStartup => 'SSH リモート起動を有効にする';
+
+  @override
+  String get machineEditEnableSshRemoteStartupSubtitle =>
+      'オフライン時に Bridge Server をリモート起動します';
+
+  @override
+  String get machineEditSshUsername => 'SSH Username';
+
+  @override
+  String get machineEditSshUsernameHint => 'myuser';
+
+  @override
+  String get machineEditSshPort => 'SSH Port';
+
+  @override
+  String get machineEditSshPortHint => '22';
+
+  @override
+  String get machineEditTargetAuthentication => '接続先の認証';
+
+  @override
+  String get machineEditPrivateKey => 'Private Key';
+
+  @override
+  String get machineEditSshPrivateKeyPem => 'SSH Private Key (PEM)';
+
+  @override
+  String get machineEditOpenSshPrivateKeyHint =>
+      '-----BEGIN OPENSSH PRIVATE KEY-----';
+
+  @override
+  String get machineEditSavedPrivateKeyIndicator =>
+      '保存済みの Private Key を使います。入力すると置き換えます。';
+
+  @override
+  String get machineEditUseSshJumpHost => 'SSH Jump Host を使う';
+
+  @override
+  String get machineEditUseSshJumpHostSubtitle => '踏み台または中継 SSH ホスト経由で接続します';
+
+  @override
+  String get machineEditSshJumpHost => 'SSH Jump Host';
+
+  @override
+  String get machineEditJumpHost => 'Jump Host';
+
+  @override
+  String get machineEditJumpHostHint => 'bastion.example.com';
+
+  @override
+  String get machineEditJumpPort => 'Jump Port';
+
+  @override
+  String get machineEditJumpUsername => 'Jump Username';
+
+  @override
+  String get machineEditJumpUsernameHint => '未入力なら SSH Username を使います';
+
+  @override
+  String get machineEditJumpHostAuthentication => 'Jump Host の認証';
+
+  @override
+  String get machineEditJumpHostAuthenticationSubtitle =>
+      '未入力なら接続先の SSH 認証情報を再利用します';
+
+  @override
+  String get machineEditJumpPassword => 'Jump Password';
+
+  @override
+  String get machineEditSavedJumpHostPasswordIndicator =>
+      '保存済みの Jump Host パスワードを使います。入力すると置き換えます。';
+
+  @override
+  String get machineEditJumpPrivateKeyPem => 'Jump Private Key (PEM)';
+
+  @override
+  String get machineEditSavedJumpHostPrivateKeyIndicator =>
+      '保存済みの Jump Host Private Key を使います。入力すると置き換えます。';
+
+  @override
+  String get machineEditTesting => 'テスト中...';
+
+  @override
+  String get machineEditTestConnection => '接続をテスト';
+
+  @override
+  String get machineEditConnectionSuccessful => '接続に成功しました';
+
+  @override
+  String get machineEditFillSshCredentials => 'SSH 認証情報を入力してください';
+
+  @override
+  String get machineEditAddAndConnect => '追加して接続';
+
+  @override
   String get deleteMachine => 'マシンを削除';
 
   @override

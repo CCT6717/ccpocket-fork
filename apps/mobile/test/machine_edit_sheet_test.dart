@@ -1,4 +1,5 @@
 import 'package:ccpocket/features/session_list/widgets/machine_edit_sheet.dart';
+import 'package:ccpocket/l10n/app_localizations.dart';
 import 'package:ccpocket/models/machine.dart';
 import 'package:ccpocket/services/ssh_startup_service.dart';
 import 'package:ccpocket/theme/app_theme.dart';
@@ -44,6 +45,7 @@ void main() {
     String? existingSshPrivateKey,
     String? existingSshJumpPassword,
     String? existingSshJumpPrivateKey,
+    Locale locale = const Locale('en'),
     required Future<void> Function({
       required Machine machine,
       String? apiKey,
@@ -63,6 +65,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        locale: locale,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         theme: AppTheme.lightTheme,
         home: Scaffold(
           body: MachineEditSheet(
@@ -447,6 +452,43 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(savedSshJumpPrivateKey, isNull);
+    });
+
+    testWidgets('localizes saved private key indicators', (tester) async {
+      await pumpSheet(
+        tester,
+        locale: const Locale('ja'),
+        machine: const Machine(
+          id: 'm11',
+          host: 'target.internal',
+          sshEnabled: true,
+          sshUsername: 'target-user',
+          sshAuthType: SshAuthType.privateKey,
+          sshJumpHost: 'jump.example.com',
+          sshJumpUsername: 'jump-user',
+          sshJumpAuthType: SshAuthType.privateKey,
+        ),
+        existingSshPrivateKey: 'saved-private-key',
+        existingSshJumpPrivateKey: 'saved-jump-private-key',
+        onSave:
+            ({
+              required machine,
+              apiKey,
+              sshPassword,
+              sshPrivateKey,
+              sshJumpPassword,
+              sshJumpPrivateKey,
+            }) async {},
+      );
+
+      expect(find.text('マシンを編集'), findsOneWidget);
+      expect(find.text('saved-private-key'), findsNothing);
+      expect(find.text('saved-jump-private-key'), findsNothing);
+      expect(find.text('保存済みの Private Key を使います。入力すると置き換えます。'), findsOneWidget);
+      expect(
+        find.text('保存済みの Jump Host Private Key を使います。入力すると置き換えます。'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('uses saved private key without displaying it', (tester) async {

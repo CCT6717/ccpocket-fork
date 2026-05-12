@@ -213,6 +213,149 @@ class AppLocalizationsKo extends AppLocalizations {
   String get password => '비밀번호';
 
   @override
+  String get machineEditAddTitle => '컴퓨터 추가';
+
+  @override
+  String get machineEditEditTitle => '컴퓨터 편집';
+
+  @override
+  String get machineEditDismissKeyboardTooltip => '키보드 닫기';
+
+  @override
+  String get machineEditBasicInfo => '기본 정보';
+
+  @override
+  String get machineEditName => '이름';
+
+  @override
+  String get machineEditNameHint => 'Home Mac';
+
+  @override
+  String get machineEditHostLabel => 'Host(IP 또는 호스트 이름)';
+
+  @override
+  String get machineEditHostHint => '100.64.1.2';
+
+  @override
+  String get machineEditPort => 'Port';
+
+  @override
+  String get machineEditBridgePortHint => '8765';
+
+  @override
+  String get machineEditApiKey => 'API Key';
+
+  @override
+  String get machineEditOptional => '선택 사항';
+
+  @override
+  String get machineEditUseSecureConnection => '보안 연결 사용';
+
+  @override
+  String get machineEditUseSecureConnectionSubtitle =>
+      'WSS로 연결하고 상태 확인에는 HTTPS를 사용합니다';
+
+  @override
+  String get machineEditSshConfiguration => 'SSH 설정';
+
+  @override
+  String get machineEditEnableSshRemoteStartup => 'SSH 원격 시작 활성화';
+
+  @override
+  String get machineEditEnableSshRemoteStartupSubtitle =>
+      '오프라인일 때 Bridge Server를 원격으로 시작합니다';
+
+  @override
+  String get machineEditSshUsername => 'SSH Username';
+
+  @override
+  String get machineEditSshUsernameHint => 'myuser';
+
+  @override
+  String get machineEditSshPort => 'SSH Port';
+
+  @override
+  String get machineEditSshPortHint => '22';
+
+  @override
+  String get machineEditTargetAuthentication => '대상 인증';
+
+  @override
+  String get machineEditPrivateKey => 'Private Key';
+
+  @override
+  String get machineEditSshPrivateKeyPem => 'SSH Private Key (PEM)';
+
+  @override
+  String get machineEditOpenSshPrivateKeyHint =>
+      '-----BEGIN OPENSSH PRIVATE KEY-----';
+
+  @override
+  String get machineEditSavedPrivateKeyIndicator =>
+      '저장된 Private Key를 사용합니다. 새로 입력하면 교체됩니다.';
+
+  @override
+  String get machineEditUseSshJumpHost => 'SSH Jump Host 사용';
+
+  @override
+  String get machineEditUseSshJumpHostSubtitle =>
+      'Bastion 또는 중간 SSH 호스트를 통해 연결합니다';
+
+  @override
+  String get machineEditSshJumpHost => 'SSH Jump Host';
+
+  @override
+  String get machineEditJumpHost => 'Jump Host';
+
+  @override
+  String get machineEditJumpHostHint => 'bastion.example.com';
+
+  @override
+  String get machineEditJumpPort => 'Jump Port';
+
+  @override
+  String get machineEditJumpUsername => 'Jump Username';
+
+  @override
+  String get machineEditJumpUsernameHint => '비워 두면 SSH Username을 사용합니다';
+
+  @override
+  String get machineEditJumpHostAuthentication => 'Jump Host 인증';
+
+  @override
+  String get machineEditJumpHostAuthenticationSubtitle =>
+      '비워 두면 대상 SSH 인증 정보를 재사용합니다';
+
+  @override
+  String get machineEditJumpPassword => 'Jump Password';
+
+  @override
+  String get machineEditSavedJumpHostPasswordIndicator =>
+      '저장된 Jump Host 비밀번호를 사용합니다. 새로 입력하면 교체됩니다.';
+
+  @override
+  String get machineEditJumpPrivateKeyPem => 'Jump Private Key (PEM)';
+
+  @override
+  String get machineEditSavedJumpHostPrivateKeyIndicator =>
+      '저장된 Jump Host Private Key를 사용합니다. 새로 입력하면 교체됩니다.';
+
+  @override
+  String get machineEditTesting => '테스트 중...';
+
+  @override
+  String get machineEditTestConnection => '연결 테스트';
+
+  @override
+  String get machineEditConnectionSuccessful => '연결에 성공했습니다';
+
+  @override
+  String get machineEditFillSshCredentials => 'SSH 인증 정보를 입력하세요';
+
+  @override
+  String get machineEditAddAndConnect => '추가하고 연결';
+
+  @override
   String get deleteMachine => '컴퓨터 삭제';
 
   @override

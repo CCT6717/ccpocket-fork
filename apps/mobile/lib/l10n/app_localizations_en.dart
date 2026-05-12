@@ -217,6 +217,149 @@ class AppLocalizationsEn extends AppLocalizations {
   String get password => 'Password';
 
   @override
+  String get machineEditAddTitle => 'Add Machine';
+
+  @override
+  String get machineEditEditTitle => 'Edit Machine';
+
+  @override
+  String get machineEditDismissKeyboardTooltip => 'Dismiss keyboard';
+
+  @override
+  String get machineEditBasicInfo => 'Basic Info';
+
+  @override
+  String get machineEditName => 'Name';
+
+  @override
+  String get machineEditNameHint => 'Home Mac';
+
+  @override
+  String get machineEditHostLabel => 'Host (IP or hostname)';
+
+  @override
+  String get machineEditHostHint => '100.64.1.2';
+
+  @override
+  String get machineEditPort => 'Port';
+
+  @override
+  String get machineEditBridgePortHint => '8765';
+
+  @override
+  String get machineEditApiKey => 'API Key';
+
+  @override
+  String get machineEditOptional => 'Optional';
+
+  @override
+  String get machineEditUseSecureConnection => 'Use secure connection';
+
+  @override
+  String get machineEditUseSecureConnectionSubtitle =>
+      'Connect with WSS and use HTTPS for health checks';
+
+  @override
+  String get machineEditSshConfiguration => 'SSH Configuration';
+
+  @override
+  String get machineEditEnableSshRemoteStartup => 'Enable SSH remote startup';
+
+  @override
+  String get machineEditEnableSshRemoteStartupSubtitle =>
+      'Remotely start Bridge Server when offline';
+
+  @override
+  String get machineEditSshUsername => 'SSH Username';
+
+  @override
+  String get machineEditSshUsernameHint => 'myuser';
+
+  @override
+  String get machineEditSshPort => 'SSH Port';
+
+  @override
+  String get machineEditSshPortHint => '22';
+
+  @override
+  String get machineEditTargetAuthentication => 'Target Authentication';
+
+  @override
+  String get machineEditPrivateKey => 'Private Key';
+
+  @override
+  String get machineEditSshPrivateKeyPem => 'SSH Private Key (PEM)';
+
+  @override
+  String get machineEditOpenSshPrivateKeyHint =>
+      '-----BEGIN OPENSSH PRIVATE KEY-----';
+
+  @override
+  String get machineEditSavedPrivateKeyIndicator =>
+      'A saved private key will be used unless replaced.';
+
+  @override
+  String get machineEditUseSshJumpHost => 'Use SSH jump host';
+
+  @override
+  String get machineEditUseSshJumpHostSubtitle =>
+      'Connect through a bastion or intermediate SSH host';
+
+  @override
+  String get machineEditSshJumpHost => 'SSH Jump Host';
+
+  @override
+  String get machineEditJumpHost => 'Jump Host';
+
+  @override
+  String get machineEditJumpHostHint => 'bastion.example.com';
+
+  @override
+  String get machineEditJumpPort => 'Jump Port';
+
+  @override
+  String get machineEditJumpUsername => 'Jump Username';
+
+  @override
+  String get machineEditJumpUsernameHint => 'Defaults to SSH Username';
+
+  @override
+  String get machineEditJumpHostAuthentication => 'Jump Host Authentication';
+
+  @override
+  String get machineEditJumpHostAuthenticationSubtitle =>
+      'Leave blank to reuse target SSH credentials';
+
+  @override
+  String get machineEditJumpPassword => 'Jump Password';
+
+  @override
+  String get machineEditSavedJumpHostPasswordIndicator =>
+      'A saved jump host password will be used unless replaced.';
+
+  @override
+  String get machineEditJumpPrivateKeyPem => 'Jump Private Key (PEM)';
+
+  @override
+  String get machineEditSavedJumpHostPrivateKeyIndicator =>
+      'A saved jump host private key will be used unless replaced.';
+
+  @override
+  String get machineEditTesting => 'Testing...';
+
+  @override
+  String get machineEditTestConnection => 'Test Connection';
+
+  @override
+  String get machineEditConnectionSuccessful => 'Connection successful!';
+
+  @override
+  String get machineEditFillSshCredentials => 'Please fill in SSH credentials';
+
+  @override
+  String get machineEditAddAndConnect => 'Add & Connect';
+
+  @override
   String get deleteMachine => 'Delete Machine';
 
   @override
