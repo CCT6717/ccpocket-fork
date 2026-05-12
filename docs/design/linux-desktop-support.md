@@ -1,6 +1,6 @@
 # Linux Desktop Support
 
-## Status: Proposed / experimental
+## Status: In progress / experimental
 
 This document captures the implementation plan and risks for adding a Linux
 desktop build of the Flutter app. The initial target should be an experimental
@@ -11,11 +11,14 @@ Tracking context:
 - Issue #86 asks for a Linux version of CC Pocket.
 - The Bridge Server already supports Linux hosts, including systemd user service
   setup.
-- The current Flutter app has `android`, `ios`, `macos`, and `web` platform
-  directories. It does not have an `apps/mobile/linux` platform directory.
+- The Flutter app has `android`, `ios`, `macos`, `web`, and now `linux`
+  platform directories.
 - A Linux desktop app may improve the "mobile + desktop" CC Pocket workflow, but
   it does not solve the broader Codex Desktop / CLI session sync limitations
   tracked in Issue #25.
+- PR #89 provided the first Linux bring-up and tester validation on Linux Mint
+  22.3. The maintainer-side implementation keeps the contributor's validation
+  and credit while reworking the patch into the MVP scope described here.
 
 ## Goals
 
@@ -76,7 +79,7 @@ is usable and the limitations are documented.
 
 ### 1. Add the Linux Flutter platform
 
-Generate the Linux runner from the existing Flutter project:
+Generated the Linux runner from the existing Flutter project:
 
 ```bash
 cd apps/mobile
@@ -86,7 +89,7 @@ flutter create --platforms=linux .
 Review generated files before committing. Keep generated runner changes minimal
 unless the app needs a custom window title, app id, icon, or plugin setup.
 
-Expected new path:
+Expected path:
 
 - `apps/mobile/linux/`
 
@@ -96,13 +99,15 @@ The app currently imports `package:sqflite/sqflite.dart` directly in
 `DatabaseService`. The mobile/macOS implementation works through sqflite's
 registered platform backend, but Linux needs an FFI-backed SQLite factory.
 
-Use `sqflite_common_ffi` for Linux desktop:
+Use `sqflite_common_ffi` for Linux desktop. The current implementation keeps the
+existing sqflite backend for mobile/macOS and switches only Linux to the FFI
+factory through a small platform adapter.
 
 - Add `sqflite_common_ffi` as an app dependency.
 - Import shared database types from `package:sqflite_common/sqlite_api.dart`
   where possible.
 - Keep iOS, Android, and macOS on the existing sqflite backend.
-- On Linux, call `sqfliteFfiInit()` once and open the database through
+- On Linux, initialize sqflite FFI before opening the database through
   `databaseFactoryFfi`.
 - Avoid relying on `getDatabasesPath()` for Linux. Use `path_provider` and store
   the database below the application support directory.
