@@ -270,6 +270,19 @@ void main() {
       expect(find.text('jump.example.com'), findsOneWidget);
       expect(find.text('2222'), findsOneWidget);
       expect(find.text('jump-user'), findsOneWidget);
+      expect(
+        tester
+            .widget<SwitchListTile>(
+              find.byKey(const ValueKey('ssh_jump_toggle')),
+            )
+            .value,
+        isTrue,
+      );
+      expect(find.text('jump-pw'), findsNothing);
+      expect(
+        find.text('A saved jump host password will be used unless replaced.'),
+        findsOneWidget,
+      );
 
       await tester.tap(find.text('Save'));
       await tester.pumpAndSettle();
@@ -280,7 +293,7 @@ void main() {
       expect(savedMachine!.sshJumpUsername, 'jump-user');
       expect(savedMachine!.sshJumpAuthType, SshAuthType.password);
       expect(savedSshPassword, 'target-pw');
-      expect(savedSshJumpPassword, 'jump-pw');
+      expect(savedSshJumpPassword, isNull);
     });
 
     testWidgets('passes SSH jump host fields to Test Connection', (
@@ -325,6 +338,115 @@ void main() {
       expect(call!.jumpUsername, 'jump-user');
       expect(call!.jumpAuthType, SshAuthType.password);
       expect(call!.jumpPassword, 'jump-pw');
+    });
+
+    testWidgets('replaces saved SSH jump host password only when entered', (
+      tester,
+    ) async {
+      String? savedSshJumpPassword;
+
+      await pumpSheet(
+        tester,
+        machine: const Machine(
+          id: 'm9',
+          host: 'target.internal',
+          sshEnabled: true,
+          sshUsername: 'target-user',
+          sshJumpHost: 'jump.example.com',
+          sshJumpUsername: 'jump-user',
+        ),
+        existingSshPassword: 'target-pw',
+        existingSshJumpPassword: 'jump-pw',
+        onSave:
+            ({
+              required machine,
+              apiKey,
+              sshPassword,
+              sshPrivateKey,
+              sshJumpPassword,
+              sshJumpPrivateKey,
+            }) async {
+              savedSshJumpPassword = sshJumpPassword;
+            },
+      );
+
+      await tester.enterText(
+        find.byKey(const ValueKey('ssh_jump_password_field')),
+        'new-jump-pw',
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('A saved jump host password will be used unless replaced.'),
+        findsNothing,
+      );
+
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      expect(savedSshJumpPassword, 'new-jump-pw');
+    });
+
+    testWidgets('shows saved SSH jump host private key without displaying it', (
+      tester,
+    ) async {
+      _TestConnectionCall? call;
+      String? savedSshJumpPrivateKey;
+
+      await pumpSheet(
+        tester,
+        machine: const Machine(
+          id: 'm10',
+          host: 'target.internal',
+          sshEnabled: true,
+          sshUsername: 'target-user',
+          sshJumpHost: 'jump.example.com',
+          sshJumpUsername: 'jump-user',
+          sshJumpAuthType: SshAuthType.privateKey,
+        ),
+        existingSshPassword: 'target-pw',
+        existingSshJumpPrivateKey: 'saved-jump-private-key',
+        onTestConnectionCall: (value) => call = value,
+        onSave:
+            ({
+              required machine,
+              apiKey,
+              sshPassword,
+              sshPrivateKey,
+              sshJumpPassword,
+              sshJumpPrivateKey,
+            }) async {
+              savedSshJumpPrivateKey = sshJumpPrivateKey;
+            },
+      );
+
+      expect(
+        tester
+            .widget<SwitchListTile>(
+              find.byKey(const ValueKey('ssh_jump_toggle')),
+            )
+            .value,
+        isTrue,
+      );
+      expect(find.text('saved-jump-private-key'), findsNothing);
+      expect(
+        find.text(
+          'A saved jump host private key will be used unless replaced.',
+        ),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.text('Test Connection'));
+      await tester.pumpAndSettle();
+
+      expect(call, isNotNull);
+      expect(call!.jumpAuthType, SshAuthType.privateKey);
+      expect(call!.jumpPrivateKey, 'saved-jump-private-key');
+
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      expect(savedSshJumpPrivateKey, isNull);
     });
 
     testWidgets('uses saved private key without displaying it', (tester) async {

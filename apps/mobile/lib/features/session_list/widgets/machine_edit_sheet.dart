@@ -104,6 +104,9 @@ class _MachineEditSheetState extends State<MachineEditSheet> {
   bool get _hasExistingSshPrivateKey =>
       widget.existingSshPrivateKey?.isNotEmpty ?? false;
 
+  bool get _hasExistingSshJumpPassword =>
+      widget.existingSshJumpPassword?.isNotEmpty ?? false;
+
   bool get _hasExistingSshJumpPrivateKey =>
       widget.existingSshJumpPrivateKey?.isNotEmpty ?? false;
 
@@ -113,6 +116,15 @@ class _MachineEditSheetState extends State<MachineEditSheet> {
   bool get _hasSshJumpPrivateKey =>
       _sshJumpPrivateKeyController.text.isNotEmpty ||
       _hasExistingSshJumpPrivateKey;
+
+  bool get _hasSavedJumpHostConfiguration {
+    final m = widget.machine;
+    if (m == null) return false;
+    return (m.sshJumpHost?.trim().isNotEmpty ?? false) ||
+        m.hasJumpCredentials ||
+        _hasExistingSshJumpPassword ||
+        _hasExistingSshJumpPrivateKey;
+  }
 
   @override
   void initState() {
@@ -137,9 +149,7 @@ class _MachineEditSheetState extends State<MachineEditSheet> {
     _sshJumpUsernameController = TextEditingController(
       text: m?.sshJumpUsername ?? '',
     );
-    _sshJumpPasswordController = TextEditingController(
-      text: widget.existingSshJumpPassword ?? '',
-    );
+    _sshJumpPasswordController = TextEditingController();
     _sshJumpPrivateKeyController = TextEditingController();
     _sshPasswordController = TextEditingController(
       text: widget.existingSshPassword ?? '',
@@ -149,7 +159,7 @@ class _MachineEditSheetState extends State<MachineEditSheet> {
     if (m != null) {
       _useSsl = m.useSsl;
       _sshEnabled = m.sshEnabled;
-      _sshJumpEnabled = m.sshJumpHost?.trim().isNotEmpty ?? false;
+      _sshJumpEnabled = _hasSavedJumpHostConfiguration;
       _sshAuthType = m.sshAuthType;
       _sshJumpAuthType = m.sshJumpAuthType;
     }
@@ -219,8 +229,11 @@ class _MachineEditSheetState extends State<MachineEditSheet> {
         jumpAuthType: _sshJumpAuthType,
         jumpPassword:
             _sshJumpAuthType == SshAuthType.password &&
-                _sshJumpPasswordController.text.isNotEmpty
-            ? _sshJumpPasswordController.text
+                (_sshJumpPasswordController.text.isNotEmpty ||
+                    _hasExistingSshJumpPassword)
+            ? _sshJumpPasswordController.text.isNotEmpty
+                  ? _sshJumpPasswordController.text
+                  : widget.existingSshJumpPassword
             : null,
         jumpPrivateKey:
             _sshJumpAuthType == SshAuthType.privateKey && _hasSshJumpPrivateKey
@@ -728,15 +741,29 @@ class _MachineEditSheetState extends State<MachineEditSheet> {
                         const SizedBox(height: 12),
 
                         if (_sshJumpAuthType == SshAuthType.password)
-                          TextField(
-                            key: const ValueKey('ssh_jump_password_field'),
-                            controller: _sshJumpPasswordController,
-                            decoration: const InputDecoration(
-                              labelText: 'Jump Password',
-                              prefixIcon: Icon(Icons.lock),
-                              border: OutlineInputBorder(),
-                            ),
-                            obscureText: true,
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              TextField(
+                                key: const ValueKey('ssh_jump_password_field'),
+                                controller: _sshJumpPasswordController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Jump Password',
+                                  prefixIcon: Icon(Icons.lock),
+                                  border: OutlineInputBorder(),
+                                ),
+                                obscureText: true,
+                                onChanged: (_) => setState(() {}),
+                              ),
+                              if (_hasExistingSshJumpPassword &&
+                                  _sshJumpPasswordController.text.isEmpty) ...[
+                                const SizedBox(height: 8),
+                                _SavedCredentialIndicator(
+                                  label:
+                                      'A saved jump host password will be used unless replaced.',
+                                ),
+                              ],
+                            ],
                           )
                         else
                           Column(
