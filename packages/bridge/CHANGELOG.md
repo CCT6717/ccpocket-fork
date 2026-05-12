@@ -2,6 +2,11 @@
 
 All notable changes to `@ccpocket/bridge` will be documented in this file.
 
+## [1.57.1] - 2026-05-12
+
+### Fixed
+- Recover push relay registration when a persisted Firebase anonymous account has been deleted.
+
 ## [1.57.0] - 2026-05-09
 
 ### Added
