@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.97.0] - 2026-05-13
+
+### Added
+- Add experimental Linux desktop release support.
+- Add an in-app action to copy the Codex CLI command for joining the current session.
+
+### Changed
+- Require Bridge 1.58.0 for experimental Codex shared app-server co-presence.
+- Refresh store release notes.
+
+### Fixed
+- Keep copied Codex join commands scoped to the current session.
+- Hide the Codex join command until the session can be resumed from Codex CLI.
+- Keep Linux release cargokit precompiled binary overrides scoped to release builds.
+
 ## [1.96.1] - 2026-05-12
 
 ### Fixed
