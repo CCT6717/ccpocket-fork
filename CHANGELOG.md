@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.98.2] - 2026-05-17
+
+### Changed
+- Require Bridge 1.59.3 for clearer Codex CLI setup errors.
+
+### Fixed
+- Show a clearer setup error when the Codex CLI is unavailable.
+- Improve markdown emphasis styling in chat messages.
+
 ## [1.98.1] - 2026-05-16
 
 ### Changed
