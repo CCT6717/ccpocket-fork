@@ -1,2 +1,4 @@
-• 添加了一项实验性功能，可通过 Codex CLI 加入在 CC Pocket 中开始的 Codex 会话。设置方法请参阅 Bridge README。
-• 发布了实验性的 Linux 桌面版。你可以将桌面端和移动端结合使用，更灵活地开展工作。
+• 将 Codex 会话权限模式与官方 Codex 应用保持一致，包括 Auto-review、Full access 以及基于配置的 Custom。
+• 当多个客户端打开同一个 Codex 会话时，来自其他客户端发送的消息也会正确同步。
+• 当 Codex CLI 不可用时，会显示更清晰的设置指引。
+• 改进了聊天消息中的 Markdown 强调样式。
