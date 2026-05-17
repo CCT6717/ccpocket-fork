@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:ccpocket/features/session_list/session_list_screen.dart';
 import 'package:ccpocket/models/machine.dart';
 import 'package:ccpocket/providers/machine_manager_cubit.dart';
 import 'package:ccpocket/services/bridge_latest_version_service.dart';
@@ -31,7 +32,12 @@ class MockMachineManagerService implements MachineManagerService {
   @override
   Stream<List<MachineWithStatus>> get machines => _controller.stream;
 
-  void emitMachines(List<MachineWithStatus> list) => _controller.add(list);
+  void emitMachines(List<MachineWithStatus> list) {
+    _machines
+      ..clear()
+      ..addEntries(list.map((m) => MapEntry(m.machine.id, m.machine)));
+    _controller.add(list);
+  }
 
   @override
   Future<void> init() async {
@@ -191,7 +197,12 @@ class MockMachineManagerService implements MachineManagerService {
   }
 
   @override
-  Machine? findByHostPort(String host, int port) => null;
+  Machine? findByHostPort(String host, int port) {
+    for (final machine in _machines.values) {
+      if (machine.host == host && machine.port == port) return machine;
+    }
+    return null;
+  }
 
   @override
   void dispose() {
@@ -363,6 +374,51 @@ void main() {
 
       expect(cubit.state.error, contains('init failed'));
       expect(cubit.state.isLoading, false);
+    });
+
+    test('waitUntilLoaded waits for machine stream update', () async {
+      final cubit = createCubit();
+      addTearDown(cubit.close);
+
+      var completed = false;
+      final wait = cubit
+          .waitUntilLoaded(timeout: const Duration(milliseconds: 200))
+          .then((_) => completed = true);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(completed, false);
+
+      mockService.emitMachines([
+        MachineWithStatus(
+          machine: Machine(id: 'm1', host: '10.0.0.1', port: 8765),
+        ),
+      ]);
+      await wait;
+
+      expect(completed, true);
+      expect(cubit.state.isLoading, false);
+    });
+
+    test('auto-connect machine lookup waits for loaded machines', () async {
+      final cubit = createCubit();
+      addTearDown(cubit.close);
+
+      final lookup = findAutoConnectMachine(
+        cubit,
+        Uri.parse('ws://10.0.0.1:8765'),
+        loadTimeout: const Duration(milliseconds: 200),
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      mockService.emitMachines([
+        MachineWithStatus(
+          machine: Machine(id: 'm1', host: '10.0.0.1', port: 8765),
+        ),
+      ]);
+
+      final machine = await lookup;
+
+      expect(machine?.id, 'm1');
     });
   });
 

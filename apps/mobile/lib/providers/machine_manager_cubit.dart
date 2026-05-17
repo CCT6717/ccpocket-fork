@@ -109,6 +109,21 @@ class MachineManagerCubit extends Cubit<MachineManagerState> {
     }
   }
 
+  /// Wait until the initial machine load has finished.
+  ///
+  /// Callers that need credentials from the loaded machine list during app
+  /// startup should wait here before using [findByHostPort].
+  Future<void> waitUntilLoaded({
+    Duration timeout = const Duration(seconds: 3),
+  }) async {
+    if (!state.isLoading) return;
+    try {
+      await stream.firstWhere((s) => !s.isLoading).timeout(timeout);
+    } on TimeoutException {
+      // Fall back to the current state; auto-connect can still try legacy data.
+    }
+  }
+
   /// Refresh all machine statuses
   Future<void> refreshAll() async {
     emit(state.copyWith(isLoading: true, error: null));

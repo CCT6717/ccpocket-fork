@@ -72,6 +72,16 @@ List<({String path, String name})> recentProjects(
   return result;
 }
 
+Future<Machine?> findAutoConnectMachine(
+  MachineManagerCubit? cubit,
+  Uri uri, {
+  Duration loadTimeout = const Duration(seconds: 3),
+}) async {
+  if (cubit == null) return null;
+  await cubit.waitUntilLoaded(timeout: loadTimeout);
+  return cubit.findByHostPort(uri.host, uri.hasPort ? uri.port : 8765);
+}
+
 /// Shorten absolute path by replacing $HOME with ~.
 String shortenPath(String path) {
   final home = getHomeDirectory();
@@ -392,10 +402,7 @@ class _SessionListScreenState extends State<SessionListScreen>
         final uri = Uri.tryParse(url);
         if (uri != null) {
           final cubit = context.read<MachineManagerCubit?>();
-          final machine = cubit?.findByHostPort(
-            uri.host,
-            uri.hasPort ? uri.port : 8765,
-          );
+          final machine = await findAutoConnectMachine(cubit, uri);
           if (machine != null) {
             apiKey = await cubit?.getApiKey(machine.id);
             if (machine.sshJumpHost?.trim().isNotEmpty == true) {
