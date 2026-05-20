@@ -2,6 +2,11 @@
 
 All notable changes to `@ccpocket/bridge` will be documented in this file.
 
+## [1.61.1] - 2026-05-20
+
+### Fixed
+- Load Codex model reasoning capabilities from the app-server and allow clients to use `none` reasoning effort.
+
 ## [1.61.0] - 2026-05-18
 
 ### Added
