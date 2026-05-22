@@ -2,6 +2,11 @@
 
 All notable changes to `@ccpocket/bridge` will be documented in this file.
 
+## [1.61.3] - 2026-05-23
+
+### Fixed
+- Support the `bonjour-service` 1.4 CommonJS export shape so mDNS advertising continues to work after fresh installs.
+
 ## [1.61.2] - 2026-05-21
 
 ### Fixed
