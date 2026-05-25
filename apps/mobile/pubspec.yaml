@@ -121,6 +121,11 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
+  config:
+    # speech_to_text's SwiftPM manifest still targets macOS 10.14, while the
+    # plugin uses APIs that require 10.15+. CocoaPods respects the app's 11.0
+    # deployment target, so keep SPM off for this project for now.
+    enable-swift-package-manager: false
   generate: true
 
   # The following line ensures that the Material Icons font is
