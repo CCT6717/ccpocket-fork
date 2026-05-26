@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.99.4] - 2026-05-26
+
+### Fixed
+- Preserve standard desktop `Ctrl+V` text paste while still probing the clipboard for pasted images.
+- Handle Windows-style project paths when displaying project names.
+
 ## [1.99.3] - 2026-05-26
 
 ### Changed
