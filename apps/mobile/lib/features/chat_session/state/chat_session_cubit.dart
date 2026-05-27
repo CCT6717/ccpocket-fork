@@ -1407,6 +1407,16 @@ class ChatSessionCubit extends Cubit<ChatSessionState> {
       executionMode: nextExecution,
       planMode: nextPlanMode,
     );
+    final codexPermissionsMode =
+        isCodex && state.codexPermissionsMode != CodexPermissionsMode.custom
+        ? state.codexPermissionsMode
+        : null;
+    final codexApprovalPolicy = codexPermissionsMode != null
+        ? state.codexApprovalPolicy.value
+        : null;
+    final codexApprovalsReviewer = codexPermissionsMode != null
+        ? state.codexApprovalsReviewer
+        : null;
 
     logger.info(
       '[session:$sessionId] setSessionModes '
@@ -1430,11 +1440,17 @@ class ChatSessionCubit extends Cubit<ChatSessionState> {
       permissionMode: legacyMode.value,
       executionMode: nextExecution.value,
       planMode: nextPlanMode,
+      approvalPolicy: codexApprovalPolicy,
+      approvalsReviewer: codexApprovalsReviewer,
+      codexPermissionsMode: codexPermissionsMode?.value,
     );
     _bridge.send(
       ClientMessage.setSessionMode(
         legacyMode: legacyMode.value,
         executionMode: nextExecution.value,
+        approvalPolicy: codexApprovalPolicy,
+        approvalsReviewer: codexApprovalsReviewer,
+        codexPermissionsMode: codexPermissionsMode?.value,
         planMode: nextPlanMode,
         sessionId: sessionId,
       ),

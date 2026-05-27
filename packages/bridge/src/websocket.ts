@@ -2244,8 +2244,24 @@ export class BridgeWebSocketServer {
           const codexPermissionSettings = requestedCodexPermissionsMode
             ? codexSettingsFromPermissionsMode(requestedCodexPermissionsMode)
             : undefined;
+          const process = session.process as CodexProcess;
+          const currentApproval = normalizeCodexApprovalPolicy(
+            process.approvalPolicy,
+          );
+          const currentReviewer = process.approvalsReviewer;
+          const currentSandboxMode = session.codexSettings?.sandboxMode;
+          const currentPermissionsMode = normalizeCodexPermissionsMode(
+            session.codexSettings?.codexPermissionsMode,
+          );
+          const collaborationOnlyChange =
+            requestedCodexPermissionsMode === undefined &&
+            msg.approvalPolicy === undefined &&
+            msg.approvalsReviewer === undefined &&
+            (msg.planMode !== undefined || msg.mode === "plan");
           const explicitApproval = requestedCodexPermissionsMode
             ? codexPermissionSettings?.approvalPolicy
+            : collaborationOnlyChange
+              ? currentApproval
             : normalizeCodexApprovalPolicy(
                 msg.approvalPolicy ??
                   (msg.executionMode == null
@@ -2270,36 +2286,30 @@ export class BridgeWebSocketServer {
             planMode,
           );
           const newApproval = explicitApproval;
+          const newSandboxMode = codexPermissionSettings
+            ? codexPermissionSettings.sandboxMode
+            : currentSandboxMode;
           const newPermissionsMode =
             codexPermissionSettings?.codexPermissionsMode ??
+            (collaborationOnlyChange ? currentPermissionsMode : undefined) ??
             inferCodexPermissionsMode({
               approvalPolicy: newApproval,
               approvalsReviewer:
                 codexPermissionSettings?.approvalsReviewer ??
-                msg.approvalsReviewer,
-              sandboxMode: session.codexSettings?.sandboxMode,
+                msg.approvalsReviewer ??
+                currentReviewer,
+              sandboxMode: newSandboxMode,
             });
           const newCollaboration: "plan" | "default" = planMode
             ? "plan"
             : "default";
-          const currentApproval = (session.process as CodexProcess)
-            .approvalPolicy;
-          const currentReviewer = (session.process as CodexProcess)
-            .approvalsReviewer;
           const newReviewer =
             requestedCodexPermissionsMode === "custom"
               ? undefined
               : (codexPermissionSettings?.approvalsReviewer ??
                 msg.approvalsReviewer ??
                 currentReviewer);
-          const currentSandboxMode = session.codexSettings?.sandboxMode;
-          const newSandboxMode = codexPermissionSettings
-            ? codexPermissionSettings.sandboxMode
-            : currentSandboxMode;
-          const currentCollaboration = (session.process as CodexProcess)
-            .collaborationMode;
-          const currentPermissionsMode =
-            session.codexSettings?.codexPermissionsMode;
+          const currentCollaboration = process.collaborationMode;
           if (
             newApproval === currentApproval &&
             newReviewer === currentReviewer &&

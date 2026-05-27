@@ -1996,6 +1996,78 @@ describe("BridgeWebSocketServer resume/get_history flow", () => {
     bridge.close();
   });
 
+  it("preserves codex auto-review when enabling plan mode in-place", async () => {
+    const bridge = new BridgeWebSocketServer({ server: httpServer });
+    const ws = {
+      readyState: OPEN_STATE,
+      send: vi.fn(),
+    } as any;
+    (bridge as any).wss.clients.add(ws);
+
+    (bridge as any).handleClientMessage(
+      {
+        type: "start",
+        projectPath: "/tmp/project-codex",
+        provider: "codex",
+        codexPermissionsMode: "autoReview",
+      },
+      ws,
+    );
+    await Promise.resolve();
+
+    const sends = ws.send.mock.calls.map((c: unknown[]) =>
+      JSON.parse(c[0] as string),
+    );
+    const created = sends.find(
+      (m: any) => m.type === "system" && m.subtype === "session_created",
+    );
+    expect(created).toBeDefined();
+    const sessionId = created.sessionId as string;
+
+    const session = (bridge as any).sessionManager.get(sessionId);
+    expect(session).toBeDefined();
+    session.status = "idle";
+    session.process.setApprovalPolicy("on-request");
+    session.process.setApprovalsReviewer("auto_review");
+    ws.send.mockClear();
+
+    (bridge as any).handleClientMessage(
+      {
+        type: "set_permission_mode",
+        sessionId,
+        mode: "plan",
+        executionMode: "default",
+        planMode: true,
+      },
+      ws,
+    );
+
+    const updatedSession = (bridge as any).sessionManager.get(sessionId);
+    expect(updatedSession).toBeDefined();
+    expect(updatedSession.id).toBe(sessionId);
+    expect(updatedSession.codexSettings).toMatchObject({
+      approvalPolicy: "on-request",
+      approvalsReviewer: "auto_review",
+      codexPermissionsMode: "autoReview",
+    });
+    expect(updatedSession.process.collaborationMode).toBe("plan");
+
+    const messages = ws.send.mock.calls.map((c: unknown[]) =>
+      JSON.parse(c[0] as string),
+    );
+    const modeChanged = messages.find(
+      (m: any) => m.type === "system" && m.subtype === "set_permission_mode",
+    );
+    expect(modeChanged).toMatchObject({
+      approvalPolicy: "on-request",
+      approvalsReviewer: "auto_review",
+      codexPermissionsMode: "autoReview",
+      planMode: true,
+    });
+
+    bridge.close();
+  });
+
   it("maps set_permission_mode plan to collaborationMode for codex session with restart when active", async () => {
     const bridge = new BridgeWebSocketServer({ server: httpServer });
     const ws = {
