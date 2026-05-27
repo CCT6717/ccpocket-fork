@@ -386,13 +386,14 @@ describe("parseClientMessage", () => {
 
   it("parses list_recent_sessions with offset and projectPath", () => {
     const msg = parseClientMessage(
-      '{"type":"list_recent_sessions","limit":10,"offset":20,"projectPath":"/tmp/project"}',
+      '{"type":"list_recent_sessions","limit":10,"offset":20,"projectPath":"/tmp/project","requestScope":"project"}',
     );
     expect(msg).toEqual({
       type: "list_recent_sessions",
       limit: 10,
       offset: 20,
       projectPath: "/tmp/project",
+      requestScope: "project",
     });
   });
 

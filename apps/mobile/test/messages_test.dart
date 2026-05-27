@@ -326,6 +326,26 @@ void main() {
       expect(sessionList.defaultCodexProfile, 'ccpocket');
     });
 
+    test('RecentSessionsMessage parses request metadata', () {
+      final msg = ServerMessage.fromJson({
+        'type': 'recent_sessions',
+        'sessions': const [],
+        'hasMore': true,
+        'limit': 20,
+        'offset': 40,
+        'projectPath': '/tmp/project',
+        'requestScope': 'project',
+      });
+
+      expect(msg, isA<RecentSessionsMessage>());
+      final recentSessions = msg as RecentSessionsMessage;
+      expect(recentSessions.hasMore, isTrue);
+      expect(recentSessions.limit, 20);
+      expect(recentSessions.offset, 40);
+      expect(recentSessions.projectPath, '/tmp/project');
+      expect(recentSessions.requestScope, 'project');
+    });
+
     test('RecentSession parses resumeCwd for worktree resume target', () {
       final session = RecentSession.fromJson({
         'sessionId': 's2',

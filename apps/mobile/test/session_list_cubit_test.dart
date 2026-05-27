@@ -15,6 +15,7 @@ class MockBridgeService extends BridgeService {
 
   bool _hasMore = false;
   String? _projectFilter;
+  RecentSessionsMessage? _lastRecentSessionsMessage;
 
   @override
   Stream<List<RecentSession>> get recentSessionsStream =>
@@ -29,10 +30,32 @@ class MockBridgeService extends BridgeService {
   set recentSessionsHasMore(bool v) => _hasMore = v;
 
   @override
+  RecentSessionsMessage? get lastRecentSessionsMessage =>
+      _lastRecentSessionsMessage;
+
+  @override
   String? get currentProjectFilter => _projectFilter;
 
   void emitSessions(List<RecentSession> sessions, {bool hasMore = false}) {
     _hasMore = hasMore;
+    _lastRecentSessionsMessage = RecentSessionsMessage(
+      sessions: sessions,
+      hasMore: hasMore,
+    );
+    _recentSessionsController.add(sessions);
+  }
+
+  void emitProjectSessions(
+    String projectPath,
+    List<RecentSession> sessions, {
+    bool hasMore = false,
+  }) {
+    _lastRecentSessionsMessage = RecentSessionsMessage(
+      sessions: sessions,
+      hasMore: hasMore,
+      projectPath: projectPath,
+      requestScope: 'project',
+    );
     _recentSessionsController.add(sessions);
   }
 
@@ -63,9 +86,19 @@ class MockBridgeService extends BridgeService {
   void requestProjectHistory() {}
 
   @override
-  void loadMoreRecentSessions({int pageSize = 20}) {
+  void loadMoreRecentSessions({
+    int pageSize = 20,
+    String? projectPath,
+    int? offset,
+    String requestScope = 'list',
+  }) {
     sentMessages.add(
-      ClientMessage.listRecentSessions(offset: 0, limit: pageSize),
+      ClientMessage.listRecentSessions(
+        offset: offset ?? 0,
+        limit: pageSize,
+        projectPath: projectPath,
+        requestScope: requestScope,
+      ),
     );
   }
 
@@ -158,6 +191,33 @@ void main() {
       expect(cubit.state.hasMore, isTrue);
     });
 
+    test(
+      'non-project response marks loaded projects exhausted when no more pages',
+      () async {
+        mockBridge.emitSessions([
+          _session(id: 's1', projectPath: '/a/proj1'),
+          _session(id: 's2', projectPath: '/b/proj2'),
+        ]);
+        await Future.microtask(() {});
+
+        expect(cubit.state.hasMore, isFalse);
+        expect(cubit.state.exhaustedProjectPaths, {'/a/proj1', '/b/proj2'});
+      },
+    );
+
+    test(
+      'non-project response keeps project show more available when more pages exist',
+      () async {
+        mockBridge.emitSessions([
+          _session(id: 's1', projectPath: '/a/proj1'),
+        ], hasMore: true);
+        await Future.microtask(() {});
+
+        expect(cubit.state.hasMore, isTrue);
+        expect(cubit.state.exhaustedProjectPaths, isEmpty);
+      },
+    );
+
     test('sessions update accumulates project paths', () async {
       mockBridge.emitSessions([
         _session(id: 's1', projectPath: '/a/proj1'),
@@ -247,6 +307,71 @@ void main() {
       await Future.microtask(() {});
 
       expect(cubit.state.isLoadingMore, isFalse);
+    });
+
+    test(
+      'loadMoreProject requests project-scoped page from current count',
+      () async {
+        mockBridge.emitSessions([
+          _session(id: 's1', projectPath: '/a/proj1'),
+          _session(id: 's2', projectPath: '/a/proj1'),
+          _session(id: 's3', projectPath: '/b/proj2'),
+        ], hasMore: true);
+        await Future.microtask(() {});
+
+        cubit.loadMoreProject('/a/proj1');
+
+        expect(cubit.state.loadingProjectPaths, contains('/a/proj1'));
+        expect(cubit.state.projectSessionDisplayLimits['/a/proj1'], 25);
+        final json = mockBridge.sentMessages.last.toJson();
+        expect(json, contains('"projectPath":"/a/proj1"'));
+        expect(json, contains('"offset":2'));
+        expect(json, contains('"limit":20'));
+        expect(json, contains('"requestScope":"project"'));
+      },
+    );
+
+    test(
+      'loadMoreProject reveals already loaded hidden sessions without fetch',
+      () async {
+        mockBridge.emitSessions([
+          for (var i = 0; i < 7; i++)
+            _session(id: 's$i', projectPath: '/a/proj1'),
+        ]);
+        await Future.microtask(() {});
+
+        cubit.loadMoreProject('/a/proj1');
+
+        expect(cubit.state.projectSessionDisplayLimits['/a/proj1'], 25);
+        expect(cubit.state.loadingProjectPaths, isNot(contains('/a/proj1')));
+        expect(mockBridge.sentMessages, isEmpty);
+      },
+    );
+
+    test(
+      'project-scoped response clears loading and marks exhausted',
+      () async {
+        cubit.loadMoreProject('/a/proj1');
+        expect(cubit.state.loadingProjectPaths, contains('/a/proj1'));
+
+        mockBridge.emitProjectSessions('/a/proj1', const [], hasMore: false);
+        await Future.microtask(() {});
+
+        expect(cubit.state.loadingProjectPaths, isNot(contains('/a/proj1')));
+        expect(cubit.state.exhaustedProjectPaths, contains('/a/proj1'));
+      },
+    );
+
+    test('toggleProjectCollapsed persists collapsed project path', () async {
+      cubit.toggleProjectCollapsed('/a/proj1');
+      await Future.microtask(() {});
+
+      expect(cubit.state.collapsedProjectPaths, contains('/a/proj1'));
+      final prefs = await SharedPreferences.getInstance();
+      expect(
+        prefs.getStringList('session_list_collapsed_project_paths'),
+        contains('/a/proj1'),
+      );
     });
 
     test('resetFilters clears all filter state', () {

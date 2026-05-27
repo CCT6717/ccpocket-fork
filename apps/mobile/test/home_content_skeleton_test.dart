@@ -93,6 +93,10 @@ Widget _buildHomeContent({
   List<SessionInfo> sessions = const [],
   List<OfflinePendingAction> offlinePendingActions = const [],
   List<RecentSession> recentSessions = const [],
+  Set<String> exhaustedProjectPaths = const {},
+  Map<String, int> projectSessionDisplayLimits = const {},
+  String? currentProjectFilter,
+  bool hasMoreSessions = false,
   bool isInitialLoading = false,
   bool showMacOSNativeAppBanner = false,
   VoidCallback? onDismissMacOSNativeAppBanner,
@@ -123,11 +127,13 @@ Widget _buildHomeContent({
             offlinePendingActions: offlinePendingActions,
             recentSessions: recentSessions,
             accumulatedProjectPaths: const {},
+            exhaustedProjectPaths: exhaustedProjectPaths,
+            projectSessionDisplayLimits: projectSessionDisplayLimits,
             searchQuery: '',
             isLoadingMore: false,
             isInitialLoading: isInitialLoading,
-            hasMoreSessions: false,
-            currentProjectFilter: null,
+            hasMoreSessions: hasMoreSessions,
+            currentProjectFilter: currentProjectFilter,
             onNewSession: () {},
             onTapRunning:
                 (
@@ -148,6 +154,7 @@ Widget _buildHomeContent({
             onLongPressRunningSession: (_, _) {},
             onSelectProject: (_) {},
             onLoadMore: () {},
+            onLoadMoreProject: (_) {},
             providerFilter: ProviderFilter.all,
             namedOnly: false,
             onToggleProvider: () {},
@@ -258,6 +265,102 @@ void main() {
       expect(find.text('test prompt for s1'), findsOneWidget);
       expect(find.text('test prompt for s2'), findsOneWidget);
     });
+
+    testWidgets('shows only five sessions per project by default', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _buildHomeContent(
+          recentSessions: [for (var i = 1; i <= 6; i++) _session(id: 's$i')],
+          isInitialLoading: false,
+          cubit: cubit,
+          draftService: draftService,
+          revenueCatService: revenueCatService,
+          supportBannerService: supportBannerService,
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('test prompt for s1'), findsOneWidget);
+      expect(find.text('test prompt for s5'), findsOneWidget);
+      expect(find.text('test prompt for s6'), findsNothing);
+      expect(
+        find.byKey(const ValueKey('project_show_more_/home/user/project-a')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets(
+      'shows expanded project sessions after display limit increases',
+      (tester) async {
+        await tester.pumpWidget(
+          _buildHomeContent(
+            recentSessions: [for (var i = 1; i <= 6; i++) _session(id: 's$i')],
+            exhaustedProjectPaths: const {'/home/user/project-a'},
+            projectSessionDisplayLimits: const {'/home/user/project-a': 25},
+            isInitialLoading: false,
+            cubit: cubit,
+            draftService: draftService,
+            revenueCatService: revenueCatService,
+            supportBannerService: supportBannerService,
+          ),
+        );
+        await tester.pump();
+
+        expect(find.text('test prompt for s6'), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('project_show_more_/home/user/project-a')),
+          findsNothing,
+        );
+      },
+    );
+
+    testWidgets('hides project Show more when project is exhausted', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _buildHomeContent(
+          recentSessions: [_session(id: 's1')],
+          exhaustedProjectPaths: const {'/home/user/project-a'},
+          isInitialLoading: false,
+          cubit: cubit,
+          draftService: draftService,
+          revenueCatService: revenueCatService,
+          supportBannerService: supportBannerService,
+        ),
+      );
+      await tester.pump();
+
+      expect(
+        find.byKey(const ValueKey('project_show_more_/home/user/project-a')),
+        findsNothing,
+      );
+    });
+
+    testWidgets(
+      'uses global load more instead of project Show more in filter',
+      (tester) async {
+        await tester.pumpWidget(
+          _buildHomeContent(
+            recentSessions: [_session(id: 's1')],
+            currentProjectFilter: '/home/user/project-a',
+            hasMoreSessions: true,
+            isInitialLoading: false,
+            cubit: cubit,
+            draftService: draftService,
+            revenueCatService: revenueCatService,
+            supportBannerService: supportBannerService,
+          ),
+        );
+        await tester.pump();
+
+        expect(
+          find.byKey(const ValueKey('project_show_more_/home/user/project-a')),
+          findsNothing,
+        );
+        expect(find.byKey(const ValueKey('load_more_button')), findsOneWidget);
+      },
+    );
 
     testWidgets('shows skeleton below running sessions when '
         'isInitialLoading is true', (tester) async {

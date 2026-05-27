@@ -31,6 +31,19 @@ abstract class SessionListState with _$SessionListState {
     /// Used for the "New Session" project picker.
     @Default({}) Set<String> accumulatedProjectPaths,
 
+    /// Project paths collapsed by the user. Defaults to empty because project
+    /// groups are expanded by default.
+    @Default({}) Set<String> collapsedProjectPaths,
+
+    /// Project paths currently loading an additional page.
+    @Default({}) Set<String> loadingProjectPaths,
+
+    /// Project paths known to have no more recent sessions to load.
+    @Default({}) Set<String> exhaustedProjectPaths,
+
+    /// Per-project number of recent sessions currently visible in the list.
+    @Default({}) Map<String, int> projectSessionDisplayLimits,
+
     /// Provider filter (All / Claude / Codex). Applied server-side.
     @Default(ProviderFilter.all) ProviderFilter providerFilter,
 

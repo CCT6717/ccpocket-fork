@@ -31,6 +31,40 @@ import 'macos_native_app_banner.dart';
 import 'session_reconnect_banner.dart';
 import 'support_banner.dart';
 
+class _ProjectSessionGroup {
+  final String projectPath;
+  final String projectName;
+  final List<RecentSession> sessions;
+
+  const _ProjectSessionGroup({
+    required this.projectPath,
+    required this.projectName,
+    required this.sessions,
+  });
+}
+
+List<_ProjectSessionGroup> _groupSessionsByProject({
+  required Iterable<String> projectPaths,
+  required List<RecentSession> sessions,
+}) {
+  final grouped = <String, List<RecentSession>>{
+    for (final path in projectPaths)
+      if (path.isNotEmpty) path: <RecentSession>[],
+  };
+  for (final session in sessions) {
+    grouped.putIfAbsent(session.projectPath, () => <RecentSession>[]);
+    grouped[session.projectPath]!.add(session);
+  }
+  return [
+    for (final entry in grouped.entries)
+      _ProjectSessionGroup(
+        projectPath: entry.key,
+        projectName: pathBasename(entry.key),
+        sessions: entry.value,
+      ),
+  ];
+}
+
 class HomeContent extends StatefulWidget {
   final BridgeConnectionState connectionState;
   final String? bridgeVersion;
@@ -39,6 +73,10 @@ class HomeContent extends StatefulWidget {
   final List<OfflinePendingAction> offlinePendingActions;
   final List<RecentSession> recentSessions;
   final Set<String> accumulatedProjectPaths;
+  final Set<String> collapsedProjectPaths;
+  final Set<String> loadingProjectPaths;
+  final Set<String> exhaustedProjectPaths;
+  final Map<String, int> projectSessionDisplayLimits;
   final String searchQuery;
   final bool isLoadingMore;
   final bool isInitialLoading;
@@ -76,6 +114,8 @@ class HomeContent extends StatefulWidget {
   onLongPressRunningSession;
   final ValueChanged<String?> onSelectProject;
   final VoidCallback onLoadMore;
+  final ValueChanged<String>? onLoadMoreProject;
+  final ValueChanged<String>? onToggleProjectCollapsed;
   final ProviderFilter providerFilter;
   final bool namedOnly;
   final VoidCallback onToggleProvider;
@@ -99,6 +139,10 @@ class HomeContent extends StatefulWidget {
     this.offlinePendingActions = const [],
     required this.recentSessions,
     required this.accumulatedProjectPaths,
+    this.collapsedProjectPaths = const {},
+    this.loadingProjectPaths = const {},
+    this.exhaustedProjectPaths = const {},
+    this.projectSessionDisplayLimits = const {},
     required this.searchQuery,
     required this.isLoadingMore,
     required this.isInitialLoading,
@@ -120,6 +164,8 @@ class HomeContent extends StatefulWidget {
     required this.onLongPressRunningSession,
     required this.onSelectProject,
     required this.onLoadMore,
+    this.onLoadMoreProject,
+    this.onToggleProjectCollapsed,
     required this.providerFilter,
     required this.namedOnly,
     required this.onToggleProvider,
@@ -393,6 +439,7 @@ class HomeContentState extends State<HomeContent> {
     final hasPendingActions = widget.offlinePendingActions.isNotEmpty;
     final hasRunningSessions = widget.sessions.isNotEmpty || hasPendingActions;
     final hasRecentSessions = widget.recentSessions.isNotEmpty;
+    final hasKnownProjects = widget.accumulatedProjectPaths.isNotEmpty;
     final isReconnecting =
         widget.connectionState == BridgeConnectionState.reconnecting;
     final updateBanner = _buildUpdateBanner();
@@ -443,6 +490,17 @@ class HomeContentState extends State<HomeContent> {
     final filteredSessions = widget.recentSessions
         .where((s) => !isDuplicate(s))
         .toList();
+    final allProjectPaths = <String>{
+      if (widget.currentProjectFilter != null) widget.currentProjectFilter!,
+      if (widget.currentProjectFilter == null)
+        ...widget.accumulatedProjectPaths,
+      if (widget.currentProjectFilter == null)
+        ...filteredSessions.map((session) => session.projectPath),
+    }.where((path) => path.isNotEmpty).toList();
+    final groupedRecentSessions = _groupSessionsByProject(
+      projectPaths: allProjectPaths,
+      sessions: filteredSessions,
+    );
 
     final hasActiveFilter =
         widget.currentProjectFilter != null ||
@@ -450,7 +508,10 @@ class HomeContentState extends State<HomeContent> {
         widget.namedOnly ||
         widget.searchQuery.isNotEmpty;
 
-    if (!hasRunningSessions && !hasRecentSessions && !hasActiveFilter) {
+    if (!hasRunningSessions &&
+        !hasRecentSessions &&
+        !hasKnownProjects &&
+        !hasActiveFilter) {
       // Show skeleton while initial data is loading
       if (widget.isInitialLoading) {
         return ListView(
@@ -590,6 +651,7 @@ class HomeContentState extends State<HomeContent> {
         ],
         if (widget.isInitialLoading ||
             hasRecentSessions ||
+            hasKnownProjects ||
             hasActiveFilter) ...[
           SectionHeader(
             icon: Icons.history,
@@ -664,7 +726,7 @@ class HomeContentState extends State<HomeContent> {
           if (widget.isInitialLoading)
             const _SessionListSkeleton()
           else ...[
-            if (filteredSessions.isEmpty)
+            if (groupedRecentSessions.isEmpty)
               _RecentSessionsEmptyResult(
                 title: hasActiveFilter
                     ? l.noSessionsMatchFilters
@@ -672,52 +734,33 @@ class HomeContentState extends State<HomeContent> {
                 subtitle: hasActiveFilter ? l.adjustFiltersAndSearch : null,
               )
             else
-              for (final session in filteredSessions)
-                Slidable(
-                  key: ValueKey('recent_session_${session.sessionId}'),
-                  endActionPane: ActionPane(
-                    motion: const BehindMotion(),
-                    extentRatio: 0.18,
-                    children: [
-                      CustomSlidableAction(
-                        onPressed: (_) => widget.onArchiveSession(session),
-                        backgroundColor: Colors.transparent,
-                        padding: EdgeInsets.zero,
-                        child: Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.error,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.archive_outlined,
-                            color: Colors.white,
-                            size: 22,
-                          ),
-                        ),
-                      ),
-                    ],
+              for (final group in groupedRecentSessions)
+                _ProjectRecentSessionGroup(
+                  group: group,
+                  displayMode: _displayMode,
+                  isCollapsed: widget.collapsedProjectPaths.contains(
+                    group.projectPath,
                   ),
-                  child: RecentSessionCard(
-                    session: session,
-                    displayMode: _displayMode,
-                    // Only running sessions show the active selection state.
-                    isSelected: false,
-                    draftText: context.read<DraftService>().getDraft(
-                      session.sessionId,
-                    ),
-                    isProcessing: widget.archivingSessionIds.contains(
-                      session.sessionId,
-                    ),
-                    onTap: () => widget.onResumeSession(session),
-                    onLongPress: () =>
-                        widget.onLongPressRecentSession(session, null),
-                    onShowActions: (position) =>
-                        widget.onLongPressRecentSession(session, position),
+                  isLoadingMore: widget.loadingProjectPaths.contains(
+                    group.projectPath,
                   ),
+                  displayLimit:
+                      widget.projectSessionDisplayLimits[group.projectPath] ??
+                      5,
+                  canLoadFromBridge:
+                      widget.currentProjectFilter == null &&
+                      !widget.exhaustedProjectPaths.contains(group.projectPath),
+                  archivingSessionIds: widget.archivingSessionIds,
+                  onToggleCollapsed: () =>
+                      widget.onToggleProjectCollapsed?.call(group.projectPath),
+                  onLoadMore: () =>
+                      widget.onLoadMoreProject?.call(group.projectPath),
+                  onArchiveSession: widget.onArchiveSession,
+                  onResumeSession: widget.onResumeSession,
+                  onLongPressRecentSession: widget.onLongPressRecentSession,
                 ),
-            if (widget.hasMoreSessions) ...[
+            if (widget.currentProjectFilter != null &&
+                widget.hasMoreSessions) ...[
               const SizedBox(height: 8),
               Center(
                 child: widget.isLoadingMore
@@ -783,6 +826,203 @@ class _RecentSessionsEmptyResult extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProjectRecentSessionGroup extends StatelessWidget {
+  final _ProjectSessionGroup group;
+  final SessionDisplayMode displayMode;
+  final bool isCollapsed;
+  final bool isLoadingMore;
+  final int displayLimit;
+  final bool canLoadFromBridge;
+  final Set<String> archivingSessionIds;
+  final VoidCallback onToggleCollapsed;
+  final VoidCallback onLoadMore;
+  final ValueChanged<RecentSession> onArchiveSession;
+  final ValueChanged<RecentSession> onResumeSession;
+  final void Function(RecentSession session, Offset? position)
+  onLongPressRecentSession;
+
+  const _ProjectRecentSessionGroup({
+    required this.group,
+    required this.displayMode,
+    required this.isCollapsed,
+    required this.isLoadingMore,
+    required this.displayLimit,
+    required this.canLoadFromBridge,
+    required this.archivingSessionIds,
+    required this.onToggleCollapsed,
+    required this.onLoadMore,
+    required this.onArchiveSession,
+    required this.onResumeSession,
+    required this.onLongPressRecentSession,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final visibleSessions = group.sessions.take(displayLimit).toList();
+    final hasHiddenLoadedSessions = group.sessions.length > displayLimit;
+    final canShowMore = hasHiddenLoadedSessions || canLoadFromBridge;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _ProjectRecentSessionHeader(
+            projectPath: group.projectPath,
+            projectName: group.projectName,
+            isCollapsed: isCollapsed,
+            onTap: onToggleCollapsed,
+          ),
+          if (!isCollapsed) ...[
+            const SizedBox(height: 4),
+            for (final session in visibleSessions)
+              Slidable(
+                key: ValueKey('recent_session_${session.sessionId}'),
+                endActionPane: ActionPane(
+                  motion: const BehindMotion(),
+                  extentRatio: 0.18,
+                  children: [
+                    CustomSlidableAction(
+                      onPressed: (_) => onArchiveSession(session),
+                      backgroundColor: Colors.transparent,
+                      padding: EdgeInsets.zero,
+                      child: Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.error,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.archive_outlined,
+                          color: Colors.white,
+                          size: 22,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                child: RecentSessionCard(
+                  session: session,
+                  displayMode: displayMode,
+                  // Only running sessions show the active selection state.
+                  isSelected: false,
+                  draftText: context.read<DraftService>().getDraft(
+                    session.sessionId,
+                  ),
+                  isProcessing: archivingSessionIds.contains(session.sessionId),
+                  onTap: () => onResumeSession(session),
+                  onLongPress: () => onLongPressRecentSession(session, null),
+                  onShowActions: (position) =>
+                      onLongPressRecentSession(session, position),
+                ),
+              ),
+            if (isLoadingMore)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(12),
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+              )
+            else if (canShowMore)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 28, top: 2, bottom: 4),
+                  child: InkWell(
+                    key: ValueKey('project_show_more_${group.projectPath}'),
+                    borderRadius: BorderRadius.circular(6),
+                    onTap: onLoadMore,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 5,
+                      ),
+                      child: Text(
+                        AppLocalizations.of(context).showMore,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              )
+            else if (group.sessions.isEmpty)
+              Padding(
+                padding: const EdgeInsets.only(left: 40, top: 4, bottom: 8),
+                child: Text(
+                  AppLocalizations.of(context).noRecentSessions,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ProjectRecentSessionHeader extends StatelessWidget {
+  final String projectPath;
+  final String projectName;
+  final bool isCollapsed;
+  final VoidCallback onTap;
+
+  const _ProjectRecentSessionHeader({
+    required this.projectPath,
+    required this.projectName,
+    required this.isCollapsed,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        key: ValueKey('project_header_$projectPath'),
+        borderRadius: BorderRadius.circular(8),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+          child: Row(
+            children: [
+              AnimatedRotation(
+                turns: isCollapsed ? 0 : 0.25,
+                duration: const Duration(milliseconds: 160),
+                child: Icon(
+                  Icons.chevron_right,
+                  size: 18,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  projectName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

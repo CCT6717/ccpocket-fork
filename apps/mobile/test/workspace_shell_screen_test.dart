@@ -139,7 +139,12 @@ class _MockBridgeService extends BridgeService {
   }) {}
 
   @override
-  void loadMoreRecentSessions({int pageSize = 20}) {}
+  void loadMoreRecentSessions({
+    int pageSize = 20,
+    String? projectPath,
+    int? offset,
+    String requestScope = 'list',
+  }) {}
 
   @override
   void requestGallery({String? project, String? sessionId}) {

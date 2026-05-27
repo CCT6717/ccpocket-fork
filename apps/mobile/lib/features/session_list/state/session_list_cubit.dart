@@ -7,6 +7,10 @@ import '../../../models/messages.dart';
 import '../../../services/bridge_service.dart';
 import 'session_list_state.dart';
 
+const _collapsedProjectPathsKey = 'session_list_collapsed_project_paths';
+const _projectInitialSessionDisplayLimit = 5;
+const _projectSessionDisplayPageSize = 20;
+
 /// Manages session list state: sessions, filters, pagination, and
 /// accumulated project paths.
 ///
@@ -33,6 +37,9 @@ class SessionListCubit extends Cubit<SessionListState> {
     final prefs = await SharedPreferences.getInstance();
     final providerStr = prefs.getString('session_list_provider');
     final namedOnly = prefs.getBool('session_list_named_only');
+    final collapsedProjectPaths =
+        prefs.getStringList(_collapsedProjectPathsKey)?.toSet() ??
+        const <String>{};
 
     var provider = ProviderFilter.all;
     if (providerStr == ProviderFilter.claude.name) {
@@ -42,11 +49,21 @@ class SessionListCubit extends Cubit<SessionListState> {
     }
 
     emit(
-      state.copyWith(providerFilter: provider, namedOnly: namedOnly ?? false),
+      state.copyWith(
+        providerFilter: provider,
+        namedOnly: namedOnly ?? false,
+        collapsedProjectPaths: collapsedProjectPaths,
+      ),
     );
   }
 
   void _onSessionsUpdate(List<RecentSession> sessions) {
+    final response = _bridge.lastRecentSessionsMessage;
+    final projectPath = response?.projectPath;
+    final isProjectPage =
+        response?.requestScope == 'project' &&
+        projectPath != null &&
+        projectPath.isNotEmpty;
     final newPaths = sessions
         .map((s) => s.projectPath)
         .where((p) => p.isNotEmpty)
@@ -56,13 +73,36 @@ class SessionListCubit extends Cubit<SessionListState> {
         ? {...current, ...newPaths}
         : current;
 
+    if (isProjectPage) {
+      emit(
+        state.copyWith(
+          sessions: sessions,
+          isInitialLoading: false,
+          accumulatedProjectPaths: merged,
+          loadingProjectPaths: {...state.loadingProjectPaths}
+            ..remove(projectPath),
+          exhaustedProjectPaths: response!.hasMore
+              ? ({...state.exhaustedProjectPaths}..remove(projectPath))
+              : {...state.exhaustedProjectPaths, projectPath},
+        ),
+      );
+      return;
+    }
+
+    final hasMore = _bridge.recentSessionsHasMore;
+    final isFirstPage = (response?.offset ?? 0) == 0;
     emit(
       state.copyWith(
         sessions: sessions,
-        hasMore: _bridge.recentSessionsHasMore,
+        hasMore: hasMore,
         isLoadingMore: false,
         isInitialLoading: false,
         accumulatedProjectPaths: merged,
+        loadingProjectPaths: const {},
+        exhaustedProjectPaths: hasMore ? const {} : merged,
+        projectSessionDisplayLimits: isFirstPage
+            ? const {}
+            : state.projectSessionDisplayLimits,
       ),
     );
   }
@@ -133,6 +173,54 @@ class SessionListCubit extends Cubit<SessionListState> {
     _bridge.loadMoreRecentSessions();
   }
 
+  /// Load the next project-scoped page without replacing other projects.
+  void loadMoreProject(String projectPath) {
+    if (projectPath.isEmpty ||
+        state.loadingProjectPaths.contains(projectPath)) {
+      return;
+    }
+    final loadedCount = state.sessions
+        .where((session) => session.projectPath == projectPath)
+        .length;
+    final currentLimit =
+        state.projectSessionDisplayLimits[projectPath] ??
+        _projectInitialSessionDisplayLimit;
+    final nextLimit = currentLimit + _projectSessionDisplayPageSize;
+    final shouldFetch =
+        nextLimit > loadedCount &&
+        !state.exhaustedProjectPaths.contains(projectPath);
+    emit(
+      state.copyWith(
+        projectSessionDisplayLimits: {
+          ...state.projectSessionDisplayLimits,
+          projectPath: nextLimit,
+        },
+        loadingProjectPaths: shouldFetch
+            ? {...state.loadingProjectPaths, projectPath}
+            : state.loadingProjectPaths,
+      ),
+    );
+    if (!shouldFetch) return;
+    _bridge.loadMoreRecentSessions(
+      projectPath: projectPath,
+      offset: loadedCount,
+      pageSize: _projectSessionDisplayPageSize,
+      requestScope: 'project',
+    );
+  }
+
+  void toggleProjectCollapsed(String projectPath) {
+    if (projectPath.isEmpty) return;
+    final next = {...state.collapsedProjectPaths};
+    if (!next.remove(projectPath)) {
+      next.add(projectPath);
+    }
+    emit(state.copyWith(collapsedProjectPaths: next));
+    SharedPreferences.getInstance().then(
+      (prefs) => prefs.setStringList(_collapsedProjectPathsKey, next.toList()),
+    );
+  }
+
   /// Request fresh data from the server.
   void refresh() {
     _bridge.requestSessionList();
@@ -148,6 +236,9 @@ class SessionListCubit extends Cubit<SessionListState> {
         sessions: const [],
         searchQuery: '',
         accumulatedProjectPaths: const {},
+        loadingProjectPaths: const {},
+        exhaustedProjectPaths: const {},
+        projectSessionDisplayLimits: const {},
         isLoadingMore: false,
         isInitialLoading: true,
         providerFilter: ProviderFilter.all,

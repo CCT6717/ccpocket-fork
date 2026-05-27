@@ -185,6 +185,7 @@ export type ClientMessage =
       limit?: number;
       offset?: number;
       projectPath?: string;
+      requestScope?: "list" | "project";
       provider?: "claude" | "codex";
       namedOnly?: boolean;
       searchQuery?: string;

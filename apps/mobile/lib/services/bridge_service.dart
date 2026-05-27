@@ -97,6 +97,7 @@ class BridgeService implements BridgeServiceBase {
   final List<ClientMessage> _messageQueue = [];
   List<SessionInfo> _sessions = [];
   List<RecentSession> _recentSessions = [];
+  RecentSessionsMessage? _lastRecentSessionsMessage;
   List<GalleryImage> _galleryImages = [];
   List<String> _projectHistory = [];
   List<String> _allowedDirs = [];
@@ -219,6 +220,8 @@ class BridgeService implements BridgeServiceBase {
   List<SessionInfo> get sessions => _sessions;
   List<RecentSession> get recentSessions => _recentSessions;
   bool get recentSessionsHasMore => _recentSessionsHasMore;
+  RecentSessionsMessage? get lastRecentSessionsMessage =>
+      _lastRecentSessionsMessage;
   String? get currentProjectFilter => _currentProjectFilter;
   List<GalleryImage> get galleryImages => _galleryImages;
   List<String> get projectHistory => _projectHistory;
@@ -402,13 +405,28 @@ class BridgeService implements BridgeServiceBase {
                 _defaultCodexProfile = defaultCodexProfile;
                 _bridgeVersion = bridgeVersion;
               case RecentSessionsMessage(:final sessions, :final hasMore):
-                _recentSessionsHasMore = hasMore;
-                if (_appendMode) {
-                  _recentSessions = [..._recentSessions, ...sessions];
+                _lastRecentSessionsMessage = msg;
+                final isProjectMerge =
+                    msg.requestScope == 'project' &&
+                    msg.projectPath != null &&
+                    msg.projectPath!.isNotEmpty;
+                if (isProjectMerge) {
+                  _recentSessions = _mergeRecentSessions(
+                    _recentSessions,
+                    sessions,
+                  );
                 } else {
-                  _recentSessions = sessions;
+                  _recentSessionsHasMore = hasMore;
+                  if (_appendMode) {
+                    _recentSessions = _mergeRecentSessions(
+                      _recentSessions,
+                      sessions,
+                    );
+                  } else {
+                    _recentSessions = sessions;
+                  }
+                  _appendMode = false;
                 }
-                _appendMode = false;
                 _recentSessionsController.add(_recentSessions);
               case PastHistoryMessage():
                 _taggedMessageController.add((msg, sessionId));
@@ -633,6 +651,7 @@ class BridgeService implements BridgeServiceBase {
   void _clearBridgeScopedState({required bool clearOfflineQueue}) {
     _sessions = const [];
     _recentSessions = const [];
+    _lastRecentSessionsMessage = null;
     _recentSessionsHasMore = false;
     _appendMode = false;
     _currentProjectFilter = null;
@@ -1376,13 +1395,20 @@ class BridgeService implements BridgeServiceBase {
   }
 
   /// Load the next page of recent sessions (append mode).
-  void loadMoreRecentSessions({int pageSize = 20}) {
+  void loadMoreRecentSessions({
+    int pageSize = 20,
+    String? projectPath,
+    int? offset,
+    String requestScope = 'list',
+  }) {
+    final requestedProjectPath = projectPath ?? _currentProjectFilter;
     _appendMode = true;
     send(
       ClientMessage.listRecentSessions(
         limit: pageSize,
-        offset: _recentSessions.length,
-        projectPath: _currentProjectFilter,
+        offset: offset ?? _recentSessions.length,
+        projectPath: requestedProjectPath,
+        requestScope: requestScope,
         provider: _currentProvider,
         namedOnly: _currentNamedOnly,
         searchQuery: _currentSearchQuery,
@@ -1996,6 +2022,22 @@ class BridgeService implements BridgeServiceBase {
       if (pending == null) return session;
       return session.copyWith(queuedInput: pending);
     }).toList();
+  }
+
+  List<RecentSession> _mergeRecentSessions(
+    List<RecentSession> current,
+    List<RecentSession> incoming,
+  ) {
+    if (current.isEmpty) return incoming;
+    if (incoming.isEmpty) return current;
+    final seen = current.map((session) => session.sessionId).toSet();
+    final merged = List<RecentSession>.of(current);
+    for (final session in incoming) {
+      if (seen.add(session.sessionId)) {
+        merged.add(session);
+      }
+    }
+    return merged;
   }
 
   void patchSessionPermissionMode(String sessionId, String permissionMode) {

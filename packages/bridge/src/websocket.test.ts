@@ -418,6 +418,115 @@ describe("BridgeWebSocketServer resume/get_history flow", () => {
     httpServer.close();
   });
 
+  it("echoes recent session request metadata for project scoped requests", async () => {
+    const bridge = new BridgeWebSocketServer({ server: httpServer });
+    const ws = {
+      readyState: OPEN_STATE,
+      send: vi.fn(),
+    } as any;
+    getAllRecentSessionsMock.mockResolvedValue({
+      sessions: [{ sessionId: "s1", projectPath: "/tmp/project" }],
+      hasMore: true,
+    });
+
+    (bridge as any).handleClientMessage(
+      {
+        type: "list_recent_sessions",
+        limit: 20,
+        offset: 40,
+        projectPath: "/tmp/project",
+        requestScope: "project",
+      },
+      ws,
+    );
+    await Promise.resolve();
+    await Promise.resolve();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const recent = ws.send.mock.calls
+      .map((c: unknown[]) => JSON.parse(c[0] as string))
+      .find((m: any) => m.type === "recent_sessions");
+    expect(recent).toMatchObject({
+      type: "recent_sessions",
+      hasMore: true,
+      limit: 20,
+      offset: 40,
+      projectPath: "/tmp/project",
+      requestScope: "project",
+    });
+
+    bridge.close();
+  });
+
+  it("drops stale project scoped recent session responses after filter refresh", async () => {
+    const bridge = new BridgeWebSocketServer({ server: httpServer });
+    const ws = {
+      readyState: OPEN_STATE,
+      send: vi.fn(),
+    } as any;
+    let resolveProject:
+      | ((value: { sessions: any[]; hasMore: boolean }) => void)
+      | undefined;
+    let resolveList:
+      | ((value: { sessions: any[]; hasMore: boolean }) => void)
+      | undefined;
+    getAllRecentSessionsMock
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveProject = resolve;
+          }),
+      )
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveList = resolve;
+          }),
+      );
+
+    (bridge as any).handleClientMessage(
+      {
+        type: "list_recent_sessions",
+        limit: 20,
+        offset: 0,
+        projectPath: "/tmp/project",
+        requestScope: "project",
+      },
+      ws,
+    );
+    (bridge as any).handleClientMessage(
+      {
+        type: "list_recent_sessions",
+        limit: 20,
+        offset: 0,
+      },
+      ws,
+    );
+
+    resolveProject?.({
+      sessions: [{ sessionId: "stale", projectPath: "/tmp/project" }],
+      hasMore: true,
+    });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    let recentMessages = ws.send.mock.calls
+      .map((c: unknown[]) => JSON.parse(c[0] as string))
+      .filter((m: any) => m.type === "recent_sessions");
+    expect(recentMessages).toHaveLength(0);
+
+    resolveList?.({
+      sessions: [{ sessionId: "fresh", projectPath: "/tmp/project" }],
+      hasMore: false,
+    });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    recentMessages = ws.send.mock.calls
+      .map((c: unknown[]) => JSON.parse(c[0] as string))
+      .filter((m: any) => m.type === "recent_sessions");
+    expect(recentMessages).toHaveLength(1);
+    expect(recentMessages[0].sessions[0].sessionId).toBe("fresh");
+
+    bridge.close();
+  });
+
   it("sends codex model list without deprecated models", () => {
     const bridge = new BridgeWebSocketServer({ server: httpServer });
     const ws = {

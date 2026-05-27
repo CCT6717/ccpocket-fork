@@ -3318,19 +3318,30 @@ export class BridgeWebSocketServer {
       }
 
       case "list_recent_sessions": {
-        const requestId = ++this.recentSessionsRequestId;
+        const isProjectScopedRequest = msg.requestScope === "project";
+        const requestId = isProjectScopedRequest
+          ? this.recentSessionsRequestId
+          : ++this.recentSessionsRequestId;
         this.listRecentSessions(msg)
           .then(({ sessions, hasMore }) => {
             // Drop stale responses when rapid filter switches cause out-of-order completion
-            if (requestId !== this.recentSessionsRequestId) return;
+            if (requestId !== this.recentSessionsRequestId) {
+              return;
+            }
             this.send(ws, {
               type: "recent_sessions",
               sessions,
               hasMore,
+              limit: msg.limit,
+              offset: msg.offset,
+              projectPath: msg.projectPath,
+              requestScope: msg.requestScope,
             } as Record<string, unknown>);
           })
           .catch((err) => {
-            if (requestId !== this.recentSessionsRequestId) return;
+            if (requestId !== this.recentSessionsRequestId) {
+              return;
+            }
             this.send(ws, {
               type: "error",
               message: `Failed to list recent sessions: ${err}`,

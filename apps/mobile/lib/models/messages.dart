@@ -768,6 +768,10 @@ sealed class ServerMessage {
             .map((s) => RecentSession.fromJson(s as Map<String, dynamic>))
             .toList(),
         hasMore: json['hasMore'] as bool? ?? false,
+        limit: json['limit'] as int?,
+        offset: json['offset'] as int?,
+        projectPath: json['projectPath'] as String?,
+        requestScope: json['requestScope'] as String?,
       ),
       'past_history' => PastHistoryMessage(
         claudeSessionId: json['claudeSessionId'] as String? ?? '',
@@ -2045,7 +2049,18 @@ class SessionListMessage implements ServerMessage {
 class RecentSessionsMessage implements ServerMessage {
   final List<RecentSession> sessions;
   final bool hasMore;
-  const RecentSessionsMessage({required this.sessions, this.hasMore = false});
+  final int? limit;
+  final int? offset;
+  final String? projectPath;
+  final String? requestScope;
+  const RecentSessionsMessage({
+    required this.sessions,
+    this.hasMore = false,
+    this.limit,
+    this.offset,
+    this.projectPath,
+    this.requestScope,
+  });
 }
 
 class PastHistoryMessage implements ServerMessage {
@@ -3792,6 +3807,7 @@ class ClientMessage {
     int? limit,
     int? offset,
     String? projectPath,
+    String? requestScope,
     String? provider,
     bool? namedOnly,
     String? searchQuery,
@@ -3801,6 +3817,7 @@ class ClientMessage {
       'limit': ?limit,
       'offset': ?offset,
       'projectPath': ?projectPath,
+      'requestScope': ?requestScope,
       'provider': ?provider,
       'namedOnly': ?namedOnly,
       'searchQuery': ?searchQuery,

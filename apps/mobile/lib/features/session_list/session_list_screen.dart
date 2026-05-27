@@ -1980,6 +1980,10 @@ class _SessionListScreenState extends State<SessionListScreen>
               offlinePendingActions: offlinePendingActions,
               recentSessions: recentSessionsList,
               accumulatedProjectPaths: slState.accumulatedProjectPaths,
+              collapsedProjectPaths: slState.collapsedProjectPaths,
+              loadingProjectPaths: slState.loadingProjectPaths,
+              exhaustedProjectPaths: slState.exhaustedProjectPaths,
+              projectSessionDisplayLimits: slState.projectSessionDisplayLimits,
               searchQuery: slState.searchQuery,
               isLoadingMore: slState.isLoadingMore,
               isInitialLoading: slState.isInitialLoading,
@@ -2057,6 +2061,10 @@ class _SessionListScreenState extends State<SessionListScreen>
               onSelectProject: (path) =>
                   context.read<SessionListCubit>().selectProject(path),
               onLoadMore: () => context.read<SessionListCubit>().loadMore(),
+              onLoadMoreProject: (path) =>
+                  context.read<SessionListCubit>().loadMoreProject(path),
+              onToggleProjectCollapsed: (path) =>
+                  context.read<SessionListCubit>().toggleProjectCollapsed(path),
               providerFilter: slState.providerFilter,
               namedOnly: slState.namedOnly,
               onToggleProvider: () =>
