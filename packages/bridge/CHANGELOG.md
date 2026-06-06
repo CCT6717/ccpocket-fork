@@ -2,6 +2,11 @@
 
 All notable changes to `@ccpocket/bridge` will be documented in this file.
 
+## [1.63.3] - 2026-06-06
+
+### Fixed
+- Include Codex app-server threads in all-provider recent sessions while preserving scan-only Codex sessions.
+
 ## [1.63.2] - 2026-05-30
 
 ### Fixed
