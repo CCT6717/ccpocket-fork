@@ -1202,6 +1202,12 @@ class _SessionListScreenState extends State<SessionListScreen>
           label: l.rename,
         ),
         AdaptiveActionMenuItem(
+          value: 'archive',
+          icon: Icons.archive_outlined,
+          label: l.archive,
+          destructive: false,
+        ),
+        AdaptiveActionMenuItem(
           value: 'stop',
           icon: Icons.stop_circle_outlined,
           label: l.stopSession,
@@ -1221,13 +1227,27 @@ class _SessionListScreenState extends State<SessionListScreen>
         sessionId: session.id,
         name: newName.isEmpty ? null : newName,
       );
-      // Running session list will auto-update via broadcastSessionList
+      return;
+    }
+
+    if (action == 'archive') {
+      _archiveSessionFromInfo(session);
       return;
     }
 
     if (action == 'stop') {
       context.read<BridgeService>().stopSession(session.id);
     }
+  }
+
+  void _archiveSessionFromInfo(SessionInfo session) {
+    if (_archivingSessionIds.contains(session.id)) return;
+    setState(() => _archivingSessionIds.add(session.id));
+    context.read<BridgeService>().archiveSession(
+      sessionId: session.id,
+      provider: session.provider ?? 'claude',
+      projectPath: session.projectPath,
+    );
   }
 
   void _showRecentSessionActions(
@@ -2021,7 +2041,9 @@ class _SessionListScreenState extends State<SessionListScreen>
                     approvalPolicy: approvalPolicy,
                     approvalsReviewer: approvalsReviewer,
                   ),
-              onStopSession: _stopSession,
+              onStopSession: (session) => _stopSession(session.id),
+              onArchiveRunningSession: (session) =>
+                  _archiveSessionFromInfo(session),
               onCancelOfflinePendingAction: (actionId) =>
                   unawaited(bridge.cancelOfflinePendingAction(actionId)),
               onApprovePermission:

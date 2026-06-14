@@ -98,7 +98,8 @@ class HomeContent extends StatefulWidget {
     String? approvalsReviewer,
   })
   onTapRunning;
-  final ValueChanged<String> onStopSession;
+  final ValueChanged<SessionInfo> onStopSession;
+  final ValueChanged<SessionInfo>? onArchiveRunningSession;
   final ValueChanged<String>? onCancelOfflinePendingAction;
   final void Function(String sessionId, String toolUseId, {bool clearContext})?
   onApprovePermission;
@@ -604,10 +605,30 @@ class HomeContentState extends State<HomeContent> {
               key: ValueKey('running_session_${session.id}'),
               endActionPane: ActionPane(
                 motion: const BehindMotion(),
-                extentRatio: 0.18,
+                extentRatio: 0.36,
                 children: [
+                  if (widget.onArchiveRunningSession != null)
+                    CustomSlidableAction(
+                      onPressed: (_) =>
+                          widget.onArchiveRunningSession!(session),
+                      backgroundColor: Colors.transparent,
+                      padding: EdgeInsets.zero,
+                      child: Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.error,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.archive_outlined,
+                          color: Colors.white,
+                          size: 22,
+                        ),
+                      ),
+                    ),
                   CustomSlidableAction(
-                    onPressed: (_) => widget.onStopSession(session.id),
+                    onPressed: (_) => widget.onStopSession(session),
                     backgroundColor: Colors.transparent,
                     padding: EdgeInsets.zero,
                     child: Container(
