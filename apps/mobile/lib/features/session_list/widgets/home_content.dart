@@ -10,6 +10,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../models/messages.dart';
 import '../../../models/offline_pending_action.dart';
 import '../../../services/app_update_service.dart';
+import '../../../services/bridge_service.dart';
 import '../../../services/draft_service.dart';
 import '../../../services/notification_service.dart';
 import '../../../services/revenuecat_service.dart';
@@ -458,6 +459,9 @@ class HomeContentState extends State<HomeContent> {
     final hasKnownProjects = widget.accumulatedProjectPaths.isNotEmpty;
     final isReconnecting =
         widget.connectionState == BridgeConnectionState.reconnecting;
+    final reconnectCount = isReconnecting
+        ? context.read<BridgeService>().reconnectCount
+        : 0;
     final updateBanner = _buildUpdateBanner();
     final supportBannerService = context.read<SupportBannerService>();
     final supportBanner =
@@ -535,7 +539,7 @@ class HomeContentState extends State<HomeContent> {
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(12),
           children: [
-            if (isReconnecting) const SessionReconnectBanner(),
+            if (isReconnecting) SessionReconnectBanner(reconnectCount: reconnectCount),
             ?connectedBridgeBanner,
             ?updateBanner,
             ?supportBanner,

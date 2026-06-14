@@ -140,6 +140,23 @@ class BridgeService implements BridgeServiceBase {
   static const _maxReconnectDelay = 30;
   bool _intentionalDisconnect = false;
 
+  // Connection health monitoring
+  int _totalReconnectAttempts = 0;
+  DateTime? _lastConnectedAt;
+  Duration get connectionUptime {
+    if (_lastConnectedAt == null) return Duration.zero;
+    return DateTime.now().difference(_lastConnectedAt!);
+  }
+
+  int get reconnectCount => _totalReconnectAttempts;
+  String? get connectionHealthLabel {
+    if (!isConnected) return null;
+    final uptime = connectionUptime;
+    if (uptime.inMinutes < 1) return '${uptime.inSeconds}s';
+    if (uptime.inHours < 1) return '${uptime.inMinutes}m';
+    return '${uptime.inHours}h${uptime.inMinutes % 60}m';
+  }
+
   @override
   Stream<ServerMessage> get messages => _messageController.stream;
   @override
@@ -348,7 +365,11 @@ class BridgeService implements BridgeServiceBase {
 
     _setBridgeConnectionState(BridgeConnectionState.connecting);
     try {
-      _channel = WebSocketChannel.connect(Uri.parse(url));
+      _channel = WebSocketChannel.connect(
+        Uri.parse(url),
+        pingInterval: const Duration(seconds: 15),
+      );
+      _lastConnectedAt = DateTime.now();
       _setBridgeConnectionState(BridgeConnectionState.connected);
       _reconnectAttempt = 0;
       send(ClientMessage.clientCapabilities());
@@ -791,10 +812,13 @@ class BridgeService implements BridgeServiceBase {
   void _scheduleReconnect() {
     if (_intentionalDisconnect || _lastUrl == null) return;
 
+    _totalReconnectAttempts++;
     _reconnectAttempt++;
     final delay = min(pow(2, _reconnectAttempt).toInt(), _maxReconnectDelay);
+    // Add jitter: 0-1s random offset to prevent thundering herd
+    final jitter = Random().nextDouble();
     _setBridgeConnectionState(BridgeConnectionState.reconnecting);
-    _reconnectTimer = Timer(Duration(seconds: delay), () {
+    _reconnectTimer = Timer(Duration(milliseconds: (delay * 1000 + jitter * 1000).toInt()), () {
       if (_lastUrl != null && !_intentionalDisconnect) {
         connect(_lastUrl!);
       }
@@ -2217,13 +2241,22 @@ class BridgeService implements BridgeServiceBase {
     if (_connectionState == BridgeConnectionState.connected) {
       // The channel may appear "connected" but the underlying socket is dead.
       // A non-null closeCode means the socket has already been closed.
-      if (_channel?.closeCode != null) {
+      if (_channel?.closeCode != null || !_isChannelOpen()) {
         _scheduleReconnect();
       }
     } else if (_connectionState == BridgeConnectionState.disconnected) {
       connect(_lastUrl!);
     }
     // If reconnecting, do nothing — already in progress.
+  }
+
+  bool _isChannelOpen() {
+    try {
+      // If we can check the channel's ready state without throwing, it's open.
+      return _channel != null && _channel!.closeCode == null;
+    } catch (_) {
+      return false;
+    }
   }
 
   void disconnect() {

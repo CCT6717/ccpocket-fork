@@ -1871,6 +1871,36 @@ export class BridgeWebSocketServer {
     const projects = this.projectHistory?.getProjects() ?? [];
     this.send(ws, { type: "project_history", projects });
 
+    // ---- Heartbeat detection ----
+    let isAlive = true;
+    let pingTimeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    const heartbeat = () => {
+      if (!isAlive) {
+        console.log("[ws] Client heartbeat timeout, terminating connection");
+        ws.terminate();
+        return;
+      }
+      isAlive = false;
+      ws.ping();
+      pingTimeoutId = setTimeout(() => {
+        heartbeat();
+      }, 30000); // Send ping every 30s
+    };
+
+    const clearHeartbeat = () => {
+      if (pingTimeoutId !== null) {
+        clearTimeout(pingTimeoutId);
+        pingTimeoutId = null;
+      }
+    };
+
+    ws.on("pong", () => {
+      isAlive = true;
+    });
+
+    // ---- End heartbeat ----
+
     ws.on("message", (data) => {
       const raw = data.toString();
       const msg = parseClientMessage(raw);
@@ -1903,11 +1933,18 @@ export class BridgeWebSocketServer {
 
     ws.on("close", () => {
       console.log("[ws] Client disconnected");
+      clearHeartbeat();
     });
 
     ws.on("error", (err) => {
       console.error("[ws] Client error:", err.message);
+      clearHeartbeat();
     });
+
+    // Start heartbeat after a short initial delay so the connection can stabilize
+    setTimeout(() => {
+      heartbeat();
+    }, 5000);
   }
 
   private async handleClientMessage(
