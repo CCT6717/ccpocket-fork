@@ -7,6 +7,7 @@ import '../../../models/git_diff_interaction_mode.dart';
 import '../../../models/image_paste_shortcut.dart';
 import '../../../models/new_session_tab.dart';
 import '../../../models/terminal_app.dart';
+import '../../../theme/app_theme.dart';
 
 part 'settings_state.freezed.dart';
 
@@ -31,6 +32,9 @@ abstract class SettingsState with _$SettingsState {
   const factory SettingsState({
     /// Theme mode: system, light, or dark.
     @Default(ThemeMode.system) ThemeMode themeMode,
+
+    /// Selected colour palette accent.
+    @Default(ThemePalette.graphiteEmber) ThemePalette themePalette,
 
     /// App display locale ID (e.g. 'ja', 'en').
     /// Empty string means follow the device default.

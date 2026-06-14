@@ -40,6 +40,7 @@ import 'widgets/support_section.dart';
 import 'widgets/new_session_tabs_bottom_sheet.dart';
 import 'widgets/speech_locale_bottom_sheet.dart';
 import 'widgets/terminal_app_bottom_sheet.dart';
+import '../../theme/app_theme.dart';
 import 'widgets/theme_bottom_sheet.dart';
 import 'widgets/prompt_history_section.dart';
 import 'widgets/usage_section.dart';
@@ -407,6 +408,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         onChanged: (mode) =>
                             context.read<SettingsCubit>().setThemeMode(mode),
                       ),
+                    ),
+                    // Colour palette
+                    ListTile(
+                      leading: Icon(Icons.colorize, color: cs.primary),
+                      title: Text('Colour theme'),
+                      subtitle: Text(state.themePalette.label),
+                      trailing: const Icon(Icons.chevron_right, size: 20),
+                      onTap: () => _showPalettePicker(context, state.themePalette, (p) =>
+                          context.read<SettingsCubit>().setThemePalette(p)),
                     ),
                     // Language
                     ListTile(
@@ -1919,4 +1929,28 @@ class _PromptHistorySectionSlot extends StatelessWidget {
       return null;
     }
   }
+}
+
+/// Simple dialog for picking a colour palette.
+void _showPalettePicker(BuildContext context, ThemePalette current, ValueChanged<ThemePalette> onChanged) {
+  showDialog<ThemePalette>(
+    context: context,
+    builder: (ctx) => SimpleDialog(
+      title: const Text('Colour theme'),
+      children: [
+        for (final p in ThemePalette.values)
+          RadioListTile<ThemePalette>(
+            title: Text(p.label),
+            value: p,
+            groupValue: current,
+            onChanged: (v) {
+              if (v != null) {
+                onChanged(v);
+                Navigator.pop(ctx);
+              }
+            },
+          ),
+      ],
+    ),
+  );
 }

@@ -475,8 +475,8 @@ class _CcpocketAppState extends State<CcpocketApp> {
             appLocale ?? WidgetsBinding.instance.platformDispatcher.locale;
         return MaterialApp.router(
           title: 'CC Pocket',
-          theme: AppTheme.lightThemeForLocale(themeLocale),
-          darkTheme: AppTheme.darkThemeForLocale(themeLocale),
+          theme: AppTheme.lightThemeForLocale(themeLocale, palette: settings.themePalette),
+          darkTheme: AppTheme.darkThemeForLocale(themeLocale, palette: settings.themePalette),
           themeMode: settings.themeMode,
           locale: appLocale,
           localizationsDelegates: AppLocalizations.localizationsDelegates,

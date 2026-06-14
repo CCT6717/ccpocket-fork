@@ -10,6 +10,77 @@ import 'package:google_fonts/google_fonts.dart';
 // gradient on white" cliché.
 // ---------------------------------------------------------------------------
 
+/// Available theme colour palettes.  Each changes the primary/secondary
+/// accent colours while keeping the underlying light/dark structure.
+enum ThemePalette {
+  graphiteEmber,
+  wechat,
+  qq,
+  codex,
+  opencode,
+}
+
+/// Human-readable label shown in settings.
+extension ThemePaletteLabel on ThemePalette {
+  String get label {
+    switch (this) {
+      case ThemePalette.graphiteEmber:
+        return 'Graphite & Ember';
+      case ThemePalette.wechat:
+        return 'WeChat';
+      case ThemePalette.qq:
+        return 'QQ';
+      case ThemePalette.codex:
+        return 'Codex';
+      case ThemePalette.opencode:
+        return 'OpenCode';
+    }
+  }
+}
+
+/// Primary + secondary colour pair for a given palette and brightness.
+({Color primary, Color secondary, Color? onPrimary, Color? primaryContainer})
+paletteColors(ThemePalette palette, Brightness brightness) {
+  final isDark = brightness == Brightness.dark;
+  switch (palette) {
+    case ThemePalette.graphiteEmber:
+      return (
+        primary: isDark ? const Color(0xFFF97316) : const Color(0xFFD4450A),
+        secondary: isDark ? const Color(0xFF2DD4BF) : const Color(0xFF0D9488),
+        onPrimary: null,
+        primaryContainer: null,
+      );
+    case ThemePalette.wechat:
+      return (
+        primary: isDark ? const Color(0xFF34D399) : const Color(0xFF07C160),
+        secondary: isDark ? const Color(0xFF6EE7B7) : const Color(0xFF059669),
+        onPrimary: isDark ? Colors.black : Colors.white,
+        primaryContainer: null,
+      );
+    case ThemePalette.qq:
+      return (
+        primary: isDark ? const Color(0xFF60A5FA) : const Color(0xFF007AFF),
+        secondary: isDark ? const Color(0xFF93C5FD) : const Color(0xFF0EA5E9),
+        onPrimary: isDark ? Colors.black : Colors.white,
+        primaryContainer: null,
+      );
+    case ThemePalette.codex:
+      return (
+        primary: isDark ? const Color(0xFFA78BFA) : const Color(0xFF8B5CF6),
+        secondary: isDark ? const Color(0xFF67E8F9) : const Color(0xFF06B6D4),
+        onPrimary: Colors.white,
+        primaryContainer: null,
+      );
+    case ThemePalette.opencode:
+      return (
+        primary: isDark ? const Color(0xFFFBBF24) : const Color(0xFFF59E0B),
+        secondary: isDark ? const Color(0xFFFB923C) : const Color(0xFFEA580C),
+        onPrimary: isDark ? Colors.black : Colors.white,
+        primaryContainer: null,
+      );
+  }
+}
+
 class AppTheme {
   static const List<String> _zhFontFallback = [
     'Microsoft YaHei', // Windows
@@ -21,7 +92,8 @@ class AppTheme {
     return lightThemeForLocale(null);
   }
 
-  static ThemeData lightThemeForLocale(Locale? locale) {
+  static ThemeData lightThemeForLocale(Locale? locale, {ThemePalette palette = ThemePalette.graphiteEmber}) {
+    final p = paletteColors(palette, Brightness.light);
     final colorScheme = ColorScheme.light(
       surface: const Color(0xFFF7F7F8), // cleaner off-white bg (Zinc 50)
       surfaceContainerLowest: Colors.white,
@@ -29,11 +101,11 @@ class AppTheme {
       surfaceContainer: const Color(0xFFE4E4E7), // Zinc 200
       surfaceContainerHigh: Colors.white, // crisp white card bg
       surfaceContainerHighest: const Color(0xFFD4D4D8), // Zinc 300
-      primary: const Color(0xFFD4450A), // Ember (brighter)
-      onPrimary: Colors.white,
-      primaryContainer: const Color(0xFFFFF0E0), // warm Orange 100
-      onPrimaryContainer: const Color(0xFFD4450A), // Ember (vibrant contrast)
-      secondary: const Color(0xFF0D9488), // Teal 600 (brighter accent)
+      primary: p.primary,
+      onPrimary: p.onPrimary ?? Colors.white,
+      primaryContainer: p.primaryContainer ?? const Color(0xFFFFF0E0),
+      onPrimaryContainer: p.primary,
+      secondary: p.secondary,
       onSecondary: Colors.white,
       tertiary: const Color(0xFF92400E), // Amber 800 (subtle warm variant)
       error: const Color(0xFFB91C1C), // Red 700
@@ -54,7 +126,8 @@ class AppTheme {
     return darkThemeForLocale(null);
   }
 
-  static ThemeData darkThemeForLocale(Locale? locale) {
+  static ThemeData darkThemeForLocale(Locale? locale, {ThemePalette palette = ThemePalette.graphiteEmber}) {
+    final p = paletteColors(palette, Brightness.dark);
     final colorScheme = ColorScheme.dark(
       surface: const Color(0xFF0A0A0A), // Deep neat black bg (Neutral 950)
       surfaceContainerLowest: const Color(0xFF000000), // Pure Black
@@ -64,11 +137,11 @@ class AppTheme {
         0xFF161616,
       ), // near-surface card bg, glow-focused
       surfaceContainerHighest: const Color(0xFF404040), // Neutral 700
-      primary: const Color(0xFFF97316), // Orange 500 (brighter for dark)
-      onPrimary: Colors.white,
-      primaryContainer: const Color(0xFFC2410C),
+      primary: p.primary,
+      onPrimary: p.onPrimary ?? Colors.white,
+      primaryContainer: p.primaryContainer ?? const Color(0xFFC2410C),
       onPrimaryContainer: Colors.white,
-      secondary: const Color(0xFF2DD4BF), // Teal 300 (bright for dark)
+      secondary: p.secondary,
       onSecondary: Colors.black,
       tertiary: const Color(0xFFFBBF24), // Amber 400
       error: const Color(0xFFF87171), // Red 400

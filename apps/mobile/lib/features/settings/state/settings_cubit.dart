@@ -13,6 +13,7 @@ import '../../../models/image_paste_shortcut.dart';
 import '../../../models/messages.dart';
 import '../../../models/new_session_tab.dart';
 import '../../../models/terminal_app.dart';
+import '../../../theme/app_theme.dart';
 import '../../../services/app_icon_service.dart';
 import '../../../services/bridge_service.dart';
 import '../../../services/fcm_service.dart';
@@ -36,6 +37,7 @@ class SettingsCubit extends Cubit<SettingsState> {
   VoidCallback? _supporterListener;
 
   static const _keyThemeMode = 'settings_theme_mode';
+  static const _keyThemePalette = 'settings_theme_palette';
   static const _keyAppLocale = 'settings_app_locale';
   static const _keySpeechLocale = 'settings_speech_locale';
   static const _keyFcmMachines = 'settings_fcm_machines';
@@ -240,6 +242,7 @@ class SettingsCubit extends Cubit<SettingsState> {
               themeModeIndex < ThemeMode.values.length)
           ? ThemeMode.values[themeModeIndex]
           : ThemeMode.system,
+      themePalette: ThemePalette.values[prefs.getInt(_keyThemePalette)?.clamp(0, ThemePalette.values.length - 1) ?? 0],
       appLocaleId: appLocale,
       speechLocaleId: speechLocale ?? '',
       fcmEnabledMachines: fcmMachines,
@@ -310,6 +313,11 @@ class SettingsCubit extends Cubit<SettingsState> {
   void setThemeMode(ThemeMode mode) {
     _prefs.setInt(_keyThemeMode, mode.index);
     emit(state.copyWith(themeMode: mode));
+  }
+
+  void setThemePalette(ThemePalette palette) {
+    _prefs.setInt(_keyThemePalette, palette.index);
+    emit(state.copyWith(themePalette: palette));
   }
 
   void setAppLocaleId(String localeId) {
