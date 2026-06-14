@@ -79,6 +79,11 @@ class ChatMessageList extends StatefulWidget {
 }
 
 class _ChatMessageListState extends State<ChatMessageList> {
+  // Cache for _resolvePlanText: avoids scanning all entries on every build.
+  // Invalidated when entry count changes.
+  String? _cachedPlanText;
+  int _cachedPlanTextAtEntryCount = -1;
+
   @override
   void initState() {
     super.initState();
@@ -128,11 +133,13 @@ class _ChatMessageListState extends State<ChatMessageList> {
   }
 
   // ---------------------------------------------------------------------------
-  // Plan text resolution
+  // Plan text resolution (cached)
   // ---------------------------------------------------------------------------
 
   /// For entries with ExitPlanMode, search all entries for a Write tool
   /// targeting `.claude/plans/` to resolve the plan text.
+  ///
+  /// Result is cached so the full scan only happens once per entry list change.
   String? _resolvePlanText(ChatEntry entry) {
     if (entry is! ServerChatEntry) return null;
     final msg = entry.message;
@@ -141,12 +148,18 @@ class _ChatMessageListState extends State<ChatMessageList> {
       (c) => c is ToolUseContent && c.name == 'ExitPlanMode',
     );
     if (!hasExitPlan) return null;
-    return _findPlanFromWriteTool();
+
+    // Check cache: re-scan only if entries changed
+    final entries = context.read<ChatSessionCubit>().state.entries;
+    if (_cachedPlanTextAtEntryCount != entries.length || _cachedPlanText == null) {
+      _cachedPlanTextAtEntryCount = entries.length;
+      _cachedPlanText = _findPlanFromWriteTool(entries);
+    }
+    return _cachedPlanText;
   }
 
   /// Search all entries in reverse for a Write tool targeting `.claude/plans/`.
-  String? _findPlanFromWriteTool() {
-    final entries = context.read<ChatSessionCubit>().state.entries;
+  String? _findPlanFromWriteTool(List<ChatEntry> entries) {
     for (var i = entries.length - 1; i >= 0; i--) {
       final entry = entries[i];
       if (entry is! ServerChatEntry) continue;
@@ -169,9 +182,15 @@ class _ChatMessageListState extends State<ChatMessageList> {
 
   @override
   Widget build(BuildContext context) {
-    final chatState = context.watch<ChatSessionCubit>().state;
-    final hiddenToolUseIds = chatState.hiddenToolUseIds;
-    final allEntries = chatState.entries;
+    // Use context.select instead of context.watch so that only the specific
+    // fields we read trigger a rebuild. Changes to status, approval, cost, etc.
+    // will NOT cause the message list to rebuild.
+    final allEntries = context.select<ChatSessionCubit, List<ChatEntry>>(
+      (c) => c.state.entries,
+    );
+    final hiddenToolUseIds = context.select<ChatSessionCubit, Set<String>>(
+      (c) => c.state.hiddenToolUseIds,
+    );
 
     // Watch only the isStreaming flag (not the full streaming text) so the
     // list rebuilds when streaming starts/stops (to adjust itemCount) but NOT
