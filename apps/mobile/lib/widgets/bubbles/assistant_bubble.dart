@@ -461,7 +461,7 @@ class _ImageGenerationToolUseStatus extends StatelessWidget {
                 style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
               ),
               if (subtitle != null && subtitle.isNotEmpty) ...[
-                const SizedBox(width: 8),
+                SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Text(
                     subtitle,
@@ -525,7 +525,7 @@ class _ToolUseCollapsed extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: AppSpacing.sm),
               // Input summary
               Expanded(
                 child: Text(
@@ -623,7 +623,7 @@ class _ToolUseCard extends StatelessWidget {
                   ),
                   if (diffFile != null) ...[
                     _DiffStatsMini(diffFile: diffFile, appColors: appColors),
-                    const SizedBox(width: 4),
+                    SizedBox(width: AppSpacing.xs),
                   ],
                   Icon(chevronIcon, size: 16, color: appColors.subtleText),
                 ],

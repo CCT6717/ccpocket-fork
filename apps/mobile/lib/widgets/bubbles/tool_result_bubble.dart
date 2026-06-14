@@ -349,7 +349,7 @@ class _ImageGenerationResultCardState
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
-              const SizedBox(height: 4),
+              SizedBox(height: AppSpacing.xs),
               Align(
                 alignment: Alignment.centerLeft,
                 child: TextButton.icon(
@@ -375,7 +375,7 @@ class _ImageGenerationResultCardState
                 ),
               ),
               if (_detailsExpanded) ...[
-                const SizedBox(height: 4),
+                SizedBox(height: AppSpacing.xs),
                 SelectableText(
                   widget.message.content,
                   style: TextStyle(
@@ -494,7 +494,7 @@ class _CollapsedToolResult extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: AppSpacing.sm),
               // Summary -- plain text, no badge
               Expanded(
                 child: Text(
@@ -574,7 +574,7 @@ class _ExpandedToolResult extends StatelessWidget {
                   images: message.images,
                   httpBaseUrl: httpBaseUrl!,
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: AppSpacing.sm),
               ],
               // Header row
               Row(

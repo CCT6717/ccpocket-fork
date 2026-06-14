@@ -1,6 +1,14 @@
 import 'package:flutter/painting.dart';
 
 abstract class AppSpacing {
+  // ---- Gap tokens ----
+  static const double xs = 4;
+  static const double sm = 8;
+  static const double md = 12;
+  static const double lg = 16;
+  static const double xl = 24;
+
+  // ---- Bubble layout ----
   static const double bubbleMarginH = 12;
   static const double bubbleMarginV = 4;
   static const double bubblePaddingH = 14;
