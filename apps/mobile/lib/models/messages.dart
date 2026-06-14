@@ -795,6 +795,10 @@ sealed class ServerMessage {
       'gallery_new_image' => GalleryNewImageMessage(
         image: GalleryImage.fromJson(json['image'] as Map<String, dynamic>),
       ),
+      'pong' => PongMessage(
+        id: json['id'] as String,
+        t: (json['t'] as num).toInt(),
+      ),
       'window_list' => WindowListMessage(
         windows: (json['windows'] as List)
             .map((w) => WindowInfo.fromJson(w as Map<String, dynamic>))
@@ -2805,6 +2809,13 @@ class GitUnstageHunksResultMessage implements ServerMessage {
   const GitUnstageHunksResultMessage({required this.success, this.error});
 }
 
+/// Application-layer ping/pong for RTT measurement.
+class PongMessage implements ServerMessage {
+  final String id;
+  final int t;
+  const PongMessage({required this.id, required this.t});
+}
+
 class GitCommitResultMessage implements ServerMessage {
   final bool success;
   final String? commitHash;
@@ -4215,6 +4226,15 @@ class ClientMessage {
     'type': 'git_remote_status',
     'projectPath': projectPath,
   });
+
+  /// Create a ping message for application-layer RTT measurement.
+  factory ClientMessage.ping({required String id}) {
+    return ClientMessage._(<String, dynamic>{
+      'type': 'ping',
+      'id': id,
+      't': DateTime.now().millisecondsSinceEpoch,
+    });
+  }
 
   String toJson() => jsonEncode(_json);
 }

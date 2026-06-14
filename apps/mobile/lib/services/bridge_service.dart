@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -143,6 +144,13 @@ class BridgeService implements BridgeServiceBase {
   // Connection health monitoring
   int _totalReconnectAttempts = 0;
   DateTime? _lastConnectedAt;
+
+  // Application-layer RTT measurement
+  static const _pingInterval = Duration(seconds: 10);
+  Timer? _pingTimer;
+  final Map<String, int> _pendingPings = {};
+  final _lastRttMs = ValueNotifier<int>(0);
+  ValueListenable<int> get lastRttMs => _lastRttMs;
 
   int get reconnectCount => _totalReconnectAttempts;
 
@@ -361,6 +369,8 @@ class BridgeService implements BridgeServiceBase {
       _setBridgeConnectionState(BridgeConnectionState.connected);
       _lastConnectedAt = DateTime.now();
       _reconnectAttempt = 0;
+      // Start application-layer ping for RTT measurement
+      _startPingTimer();
       send(ClientMessage.clientCapabilities());
       _flushMessageQueue();
 
@@ -600,6 +610,8 @@ class BridgeService implements BridgeServiceBase {
                 logger.error('Bridge error: $message');
                 _taggedMessageController.add((msg, sessionId));
                 _messageController.add(msg);
+              case PongMessage(:final id, :final t):
+                _handlePong(id, t);
               default:
                 _taggedMessageController.add((msg, sessionId));
                 _messageController.add(msg);
@@ -796,6 +808,34 @@ class BridgeService implements BridgeServiceBase {
     for (final sessionId in sessionIds) {
       send(ClientMessage.getHistory(sessionId));
     }
+  }
+
+  void _startPingTimer() {
+    _pingTimer?.cancel();
+    _pendingPings.clear();
+    _pingTimer = Timer.periodic(_pingInterval, (_) {
+      if (!isConnected) return;
+      final id = 'ping_${DateTime.now().microsecondsSinceEpoch}';
+      _pendingPings[id] = DateTime.now().millisecondsSinceEpoch;
+      send(ClientMessage.ping(id: id));
+      // Clean up stale pings after 5 seconds
+      Future.delayed(const Duration(seconds: 5), () {
+        _pendingPings.remove(id);
+      });
+    });
+  }
+
+  void _handlePong(String id, int sentAtMs) {
+    if (!_pendingPings.containsKey(id)) return;
+    _pendingPings.remove(id);
+    final now = DateTime.now().millisecondsSinceEpoch;
+    _lastRttMs.value = now - sentAtMs;
+  }
+
+  void _stopPingTimer() {
+    _pingTimer?.cancel();
+    _pingTimer = null;
+    _pendingPings.clear();
   }
 
   void _scheduleReconnect() {
@@ -2251,6 +2291,7 @@ class BridgeService implements BridgeServiceBase {
   void disconnect() {
     _connectionEpoch++;
     _intentionalDisconnect = true;
+    _stopPingTimer();
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
     _channelSub?.cancel();

@@ -357,7 +357,8 @@ export type ClientMessage =
       sessionId?: string;
       includeRemote?: boolean;
     }
-  | { type: "git_remote_status"; projectPath: string };
+  | { type: "git_remote_status"; projectPath: string }
+  | { type: "ping"; id: string; t: number };
 
 /** Image change detected in a git diff (binary image file). */
 export interface ImageChange {
@@ -735,7 +736,8 @@ export type ServerMessage =
       behind: number;
       branch: string;
       hasUpstream: boolean;
-    };
+    }
+  | { type: "pong"; id: string; t: number };
 
 export interface UsageWindowPayload {
   utilization: number;
@@ -1538,6 +1540,9 @@ export function parseClientMessage(data: string): ClientMessage | null {
         if (typeof msg.sessionId !== "string") return null;
         if (msg.provider !== "claude" && msg.provider !== "codex") return null;
         if (typeof msg.projectPath !== "string") return null;
+        break;
+      case "ping":
+        if (typeof msg.id !== "string" || typeof msg.t !== "number") return null;
         break;
       default:
         return null;

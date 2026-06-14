@@ -5609,6 +5609,11 @@ export class BridgeWebSocketServer {
         await this.handleRenameSession(ws, msg.sessionId, name, msg);
         break;
       }
+
+      case "ping": {
+        this.send(ws, { type: "pong", id: msg.id, t: msg.t });
+        break;
+      }
     }
   }
 

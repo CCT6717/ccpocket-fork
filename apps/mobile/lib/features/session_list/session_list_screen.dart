@@ -1758,10 +1758,12 @@ class _SessionListScreenState extends State<SessionListScreen>
     final machineManagerCubit = context.watch<MachineManagerCubit?>();
     final machineState = machineManagerCubit?.state;
     final settingsState = context.watch<SettingsCubit>().state;
+    final bridge = context.read<BridgeService>();
     final connectedBridgeLabel = _connectedBridgeLabel(
       settingsState: settingsState,
       machineState: machineState,
     );
+    final rttMs = showConnectedUI ? bridge.lastRttMs : null;
 
     return BlocProvider<UnseenSessionsCubit>.value(
       value: _unseenCubit,
@@ -1809,6 +1811,7 @@ class _SessionListScreenState extends State<SessionListScreen>
                     machineState: machineState,
                     machineManagerCubit: machineManagerCubit,
                     connectedBridgeLabel: connectedBridgeLabel,
+                    rttMs: rttMs,
                   ),
                 ),
               ),
@@ -1830,6 +1833,7 @@ class _SessionListScreenState extends State<SessionListScreen>
     required MachineManagerState? machineState,
     required MachineManagerCubit? machineManagerCubit,
     required String? connectedBridgeLabel,
+    required ValueListenable<int>? rttMs,
   }) {
     final chrome = resolveWorkspacePaneChrome(
       platform: Theme.of(context).platform,
@@ -1867,6 +1871,7 @@ class _SessionListScreenState extends State<SessionListScreen>
                     onDisconnect: showConnectedUI ? _disconnect : null,
                     onTogglePaneVisibility: widget.onTogglePaneVisibility,
                     bridgeLabel: connectedBridgeLabel,
+                    rttMs: rttMs,
                   ),
                   Expanded(child: body),
                 ],
@@ -2107,6 +2112,7 @@ class _SessionListScreenState extends State<SessionListScreen>
             forceElevated: innerBoxIsScrolled,
             toolbarHeight: chrome.toolbarHeight,
             bridgeLabel: connectedBridgeLabel,
+            rttMs: rttMs,
           ),
         ],
         body: content,

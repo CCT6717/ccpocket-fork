@@ -2,8 +2,10 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
 import '../../../l10n/app_localizations.dart';
+import '../../../models/messages.dart';
 import '../../../router/app_router.dart';
 import '../../../services/app_update_service.dart';
+import '../../../theme/app_theme.dart';
 import '../../../widgets/workspace_pane_chrome.dart';
 
 /// Floating SliverAppBar for the session list screen.
@@ -17,6 +19,9 @@ class SessionListSliverAppBar extends StatelessWidget {
   final double? toolbarHeight;
   final String? bridgeLabel;
 
+  /// Listenable bridge RTT in ms for connection quality display.
+  final ValueListenable<int>? rttMs;
+
   const SessionListSliverAppBar({
     super.key,
     required this.onTitleTap,
@@ -24,6 +29,7 @@ class SessionListSliverAppBar extends StatelessWidget {
     this.forceElevated = false,
     this.toolbarHeight,
     this.bridgeLabel,
+    this.rttMs,
   });
 
   @override
@@ -37,7 +43,11 @@ class SessionListSliverAppBar extends StatelessWidget {
       toolbarHeight: toolbarHeight ?? kToolbarHeight,
       title: GestureDetector(
         onTap: onTitleTap,
-        child: _SessionListTitle(title: l.appTitle, subtitle: bridgeLabel),
+        child: _SessionListTitle(
+          title: l.appTitle,
+          subtitle: bridgeLabel,
+          rttMs: rttMs,
+        ),
       ),
       actions: [
         IconButton(
@@ -75,6 +85,9 @@ class SessionListPaneHeader extends StatelessWidget {
   final VoidCallback? onTogglePaneVisibility;
   final String? bridgeLabel;
 
+  /// Listenable bridge RTT in ms for connection quality display.
+  final ValueListenable<int>? rttMs;
+
   const SessionListPaneHeader({
     super.key,
     required this.onTitleTap,
@@ -83,6 +96,7 @@ class SessionListPaneHeader extends StatelessWidget {
     this.onDisconnect,
     this.onTogglePaneVisibility,
     this.bridgeLabel,
+    this.rttMs,
   });
 
   @override
@@ -116,6 +130,7 @@ class SessionListPaneHeader extends StatelessWidget {
                     key: const ValueKey('session_list_pane_title'),
                     title: l.appTitle,
                     subtitle: bridgeLabel,
+                    rttMs: rttMs,
                     titleStyle: titleStyle,
                   ),
                 ),
@@ -180,11 +195,15 @@ class _SessionListTitle extends StatelessWidget {
   final String? subtitle;
   final TextStyle? titleStyle;
 
+  /// Listenable bridge RTT in ms (0 = no data yet).
+  final ValueListenable<int>? rttMs;
+
   const _SessionListTitle({
     super.key,
     required this.title,
     this.subtitle,
     this.titleStyle,
+    this.rttMs,
   });
 
   @override
@@ -194,12 +213,48 @@ class _SessionListTitle extends StatelessWidget {
     final defaultTitleStyle = theme.textTheme.titleLarge?.copyWith(
       fontWeight: FontWeight.w700,
     );
+    final appColors = theme.extension<AppColors>();
+
+    final rttWidget = rttMs != null
+        ? ValueListenableBuilder<int>(
+            valueListenable: rttMs!,
+            builder: (context, rtt, _) {
+              if (rtt <= 0) return const SizedBox.shrink();
+              final color = rtt < 50
+                  ? (appColors?.statusOnline ?? Colors.green)
+                  : rtt < 150
+                  ? (appColors?.statusApproval ?? Colors.orange)
+                  : (appColors?.errorBubbleBorder ?? Colors.red);
+              return Padding(
+                padding: const EdgeInsets.only(left: 6),
+                child: Text(
+                  '${rtt}ms',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: color,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                ),
+              );
+            },
+          )
+        : const SizedBox.shrink();
+
     if (subtitle == null || subtitle.isEmpty) {
-      return Text(
-        title,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: titleStyle ?? defaultTitleStyle,
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: titleStyle ?? defaultTitleStyle,
+            ),
+          ),
+          rttWidget,
+        ],
       );
     }
     return Column(
@@ -213,14 +268,22 @@ class _SessionListTitle extends StatelessWidget {
           style: titleStyle ?? defaultTitleStyle,
         ),
         const SizedBox(height: 1),
-        Text(
-          subtitle,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-            fontSize: 11,
-          ),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Text(
+                subtitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontSize: 11,
+                ),
+              ),
+            ),
+            rttWidget,
+          ],
         ),
       ],
     );
