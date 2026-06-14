@@ -143,19 +143,8 @@ class BridgeService implements BridgeServiceBase {
   // Connection health monitoring
   int _totalReconnectAttempts = 0;
   DateTime? _lastConnectedAt;
-  Duration get connectionUptime {
-    if (_lastConnectedAt == null) return Duration.zero;
-    return DateTime.now().difference(_lastConnectedAt!);
-  }
 
   int get reconnectCount => _totalReconnectAttempts;
-  String? get connectionHealthLabel {
-    if (!isConnected) return null;
-    final uptime = connectionUptime;
-    if (uptime.inMinutes < 1) return '${uptime.inSeconds}s';
-    if (uptime.inHours < 1) return '${uptime.inMinutes}m';
-    return '${uptime.inHours}h${uptime.inMinutes % 60}m';
-  }
 
   @override
   Stream<ServerMessage> get messages => _messageController.stream;
@@ -369,8 +358,8 @@ class BridgeService implements BridgeServiceBase {
         Uri.parse(url),
         pingInterval: const Duration(seconds: 15),
       );
-      _lastConnectedAt = DateTime.now();
       _setBridgeConnectionState(BridgeConnectionState.connected);
+      _lastConnectedAt = DateTime.now();
       _reconnectAttempt = 0;
       send(ClientMessage.clientCapabilities());
       _flushMessageQueue();

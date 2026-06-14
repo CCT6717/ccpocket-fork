@@ -1942,7 +1942,7 @@ export class BridgeWebSocketServer {
     });
 
     // Start heartbeat after a short initial delay so the connection can stabilize
-    setTimeout(() => {
+    pingTimeoutId = setTimeout(() => {
       heartbeat();
     }, 5000);
   }
