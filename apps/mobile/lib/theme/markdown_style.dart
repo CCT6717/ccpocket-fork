@@ -233,64 +233,146 @@ class FencedCodeBlockBuilder extends MarkdownElementBuilder {
         ..codeBlockBuildMicros += buildWatch.elapsedMicroseconds;
     }
 
-    return Container(
+    return _CodeBlockContainer(
       key: ValueKey(
         'code_block_container_${displayLanguage}_${source.length}_${source.hashCode}',
       ),
+      source: source,
+      displayLanguage: displayLanguage,
+      hasExplicitLanguage: hasExplicitLanguage,
+      highlightedSpans: highlightedSpans,
+      baseStyle: baseStyle,
+      appColors: appColors,
+    );
+  }
+}
+
+/// Stateful container for a code block: constrained height, scrollable,
+/// copy button with feedback.
+class _CodeBlockContainer extends StatefulWidget {
+  final String source;
+  final String displayLanguage;
+  final bool hasExplicitLanguage;
+  final List<TextSpan> highlightedSpans;
+  final TextStyle baseStyle;
+  final AppColors appColors;
+
+  const _CodeBlockContainer({
+    super.key,
+    required this.source,
+    required this.displayLanguage,
+    required this.hasExplicitLanguage,
+    required this.highlightedSpans,
+    required this.baseStyle,
+    required this.appColors,
+  });
+
+  @override
+  State<_CodeBlockContainer> createState() => _CodeBlockContainerState();
+}
+
+class _CodeBlockContainerState extends State<_CodeBlockContainer> {
+  bool _copied = false;
+
+  void _copy() {
+    final source = widget.source;
+    Clipboard.setData(ClipboardData(text: source));
+    HapticFeedback.lightImpact();
+    setState(() => _copied = true);
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) setState(() => _copied = false);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hasLang = widget.hasExplicitLanguage;
+
+    return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: appColors.codeBackground,
+        color: widget.appColors.codeBackground,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: appColors.codeBorder),
+        border: Border.all(color: widget.appColors.codeBorder),
       ),
-      child: GestureDetector(
-        key: ValueKey('code_block_copy_target_$displayLanguage'),
-        behavior: HitTestBehavior.opaque,
-        onLongPress: () => _copyCodeBlock(context, source),
+      child: ConstrainedBox(
+        key: const ValueKey('code_block_constrained'),
+        constraints: const BoxConstraints(maxHeight: 300),
         child: Stack(
           children: [
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: EdgeInsets.fromLTRB(
-                12,
-                hasExplicitLanguage ? 20 : 12,
-                12,
-                12,
-              ),
-              child: SelectableText.rich(
-                TextSpan(style: baseStyle, children: highlightedSpans),
-                contextMenuBuilder:
-                    googleSearchSelectableTextContextMenuBuilder,
-              ),
-            ),
-            if (hasExplicitLanguage)
-              Positioned(
-                top: 6,
-                right: 8,
-                child: Text(
-                  displayLanguage,
-                  key: ValueKey('code_block_language_$displayLanguage'),
-                  style: baseStyle.copyWith(
-                    fontSize: 10,
-                    letterSpacing: 0.2,
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.52),
+            // Scrollable code content
+            Padding(
+              padding: EdgeInsets.fromLTRB(12, hasLang ? 28 : 8, 12, 8),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.vertical,
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: SelectableText.rich(
+                    TextSpan(
+                      style: widget.baseStyle,
+                      children: widget.highlightedSpans,
+                    ),
+                    contextMenuBuilder:
+                        googleSearchSelectableTextContextMenuBuilder,
                   ),
                 ),
               ),
+            ),
+            // Language label (top-left)
+            if (hasLang)
+              Positioned(
+                top: 6,
+                left: 10,
+                child: Text(
+                  widget.displayLanguage,
+                  style: widget.baseStyle.copyWith(
+                    fontSize: 10,
+                    letterSpacing: 0.2,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.45),
+                  ),
+                ),
+              ),
+            // Copy button (top-right)
+            Positioned(
+              top: 4,
+              right: 4,
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(6),
+                  onTap: _copy,
+                  child: Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 200),
+                      transitionBuilder: (child, anim) => ScaleTransition(
+                        scale: anim,
+                        child: child,
+                      ),
+                      child: Icon(
+                        _copied ? Icons.check : Icons.content_copy,
+                        key: ValueKey(_copied),
+                        size: 16,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.52),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 }
-
-void _copyCodeBlock(BuildContext context, String source) {
-  Clipboard.setData(ClipboardData(text: source));
-  HapticFeedback.lightImpact();
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
       content: Text(AppLocalizations.of(context).copied),
       duration: const Duration(seconds: 1),
     ),
