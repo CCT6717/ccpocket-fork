@@ -330,3 +330,11 @@ bash .claude/skills/shorebird-patch/promote.sh <version> <patch-number>
 - コミット: Conventional Commits (`type(scope): description`)
 - TypeScript: ESM, strict mode, NodeNext module resolution
 - Bridge ServerのデフォルトPort: 8765
+
+## 二次开发记忆（Fork 自有，不 upstream）
+
+项目记忆：`C:\Users\c\.claude\projects\D--project-ccpocket\memory\MEMORY.md`
+
+### 已完成
+
+- **2026-06-14 连接稳定性增强**：客户端 pingInterval(15s) + 服务端心跳检测 + 重连 jitter + 重连次数 UI
