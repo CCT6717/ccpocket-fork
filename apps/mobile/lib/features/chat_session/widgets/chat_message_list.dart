@@ -39,6 +39,10 @@ bool shouldShowForkForAssistant(List<ChatEntry> entries, int entryIndex) {
 /// With reverse list, offset 0 = bottom of chat, so new messages appear
 /// immediately without scroll adjustment, and history prepend does not
 /// shift the viewport.
+///
+/// **Windowing (P1):** Only the latest [_visibleLimit] entries are rendered.
+/// Scrolling to the top triggers loading more (older) entries into the
+/// viewport. The underlying [ChatSessionState] always holds the full list.
 class ChatMessageList extends StatefulWidget {
   final String sessionId;
   final AutoScrollController scrollController;
@@ -79,8 +83,16 @@ class ChatMessageList extends StatefulWidget {
 }
 
 class _ChatMessageListState extends State<ChatMessageList> {
+  // ---------------------------------------------------------------------------
+  // Windowing (P1): only render the latest N entries
+  // ---------------------------------------------------------------------------
+  static const _initialVisibleLimit = 60;
+  static const _loadMoreIncrement = 40;
+  int _visibleLimit = _initialVisibleLimit;
+  bool _hasEarlierMessages = false;
+  bool _isLoadingMore = false;
+
   // Cache for _resolvePlanText: avoids scanning all entries on every build.
-  // Invalidated when entry count changes.
   String? _cachedPlanText;
   int _cachedPlanTextAtEntryCount = -1;
 
@@ -108,7 +120,6 @@ class _ChatMessageListState extends State<ChatMessageList> {
   void _onScrollToUserEntry() {
     final entry = widget.scrollToUserEntry?.value;
     if (entry == null) return;
-    // Reset the notifier
     widget.scrollToUserEntry?.value = null;
     _scrollToUserEntry(entry);
   }
@@ -118,13 +129,13 @@ class _ChatMessageListState extends State<ChatMessageList> {
   // ---------------------------------------------------------------------------
 
   /// Scrolls the chat list to make the given [UserChatEntry] visible.
-  ///
-  /// Uses [AutoScrollController.scrollToIndex] which handles both on-screen
-  /// and off-screen items correctly with variable-height widgets.
   void _scrollToUserEntry(UserChatEntry entry) {
     final entries = context.read<ChatSessionCubit>().state.entries;
     final idx = entries.indexOf(entry);
     if (idx < 0) return;
+    // Adjust for windowing offset
+    final offset = _indexOffsetFor(entries);
+    // The AutoScrollTag is keyed on the real entryIndex so we pass the actual idx
     widget.scrollController.scrollToIndex(
       idx,
       preferPosition: AutoScrollPosition.middle,
@@ -133,13 +144,38 @@ class _ChatMessageListState extends State<ChatMessageList> {
   }
 
   // ---------------------------------------------------------------------------
+  // Windowing helpers
+  // ---------------------------------------------------------------------------
+
+  /// How many entries from the state are hidden off-screen at the top.
+  int _indexOffsetFor(List<ChatEntry> all) =>
+      all.length > _visibleLimit ? all.length - _visibleLimit : 0;
+
+  /// Clip [all] to the latest [_visibleLimit] entries.
+  /// Sets [_hasEarlierMessages] accordingly.
+  List<ChatEntry> _getVisibleEntries(List<ChatEntry> all) {
+    if (all.length <= _visibleLimit) {
+      _hasEarlierMessages = false;
+      return all;
+    }
+    _hasEarlierMessages = true;
+    return all.sublist(all.length - _visibleLimit);
+  }
+
+  /// Load the next batch of older entries into the visible window.
+  void _loadEarlierMessages() {
+    if (_isLoadingMore) return;
+    _isLoadingMore = true;
+    setState(() {
+      _visibleLimit += _loadMoreIncrement;
+      _isLoadingMore = false;
+    });
+  }
+
+  // ---------------------------------------------------------------------------
   // Plan text resolution (cached)
   // ---------------------------------------------------------------------------
 
-  /// For entries with ExitPlanMode, search all entries for a Write tool
-  /// targeting `.claude/plans/` to resolve the plan text.
-  ///
-  /// Result is cached so the full scan only happens once per entry list change.
   String? _resolvePlanText(ChatEntry entry) {
     if (entry is! ServerChatEntry) return null;
     final msg = entry.message;
@@ -149,7 +185,6 @@ class _ChatMessageListState extends State<ChatMessageList> {
     );
     if (!hasExitPlan) return null;
 
-    // Check cache: re-scan only if entries changed
     final entries = context.read<ChatSessionCubit>().state.entries;
     if (_cachedPlanTextAtEntryCount != entries.length || _cachedPlanText == null) {
       _cachedPlanTextAtEntryCount = entries.length;
@@ -158,7 +193,6 @@ class _ChatMessageListState extends State<ChatMessageList> {
     return _cachedPlanText;
   }
 
-  /// Search all entries in reverse for a Write tool targeting `.claude/plans/`.
   String? _findPlanFromWriteTool(List<ChatEntry> entries) {
     for (var i = entries.length - 1; i >= 0; i--) {
       final entry = entries[i];
@@ -182,9 +216,7 @@ class _ChatMessageListState extends State<ChatMessageList> {
 
   @override
   Widget build(BuildContext context) {
-    // Use context.select instead of context.watch so that only the specific
-    // fields we read trigger a rebuild. Changes to status, approval, cost, etc.
-    // will NOT cause the message list to rebuild.
+    // Use context.select so only the fields we read trigger a rebuild.
     final allEntries = context.select<ChatSessionCubit, List<ChatEntry>>(
       (c) => c.state.entries,
     );
@@ -192,24 +224,35 @@ class _ChatMessageListState extends State<ChatMessageList> {
       (c) => c.state.hiddenToolUseIds,
     );
 
-    // Watch only the isStreaming flag (not the full streaming text) so the
-    // list rebuilds when streaming starts/stops (to adjust itemCount) but NOT
-    // on every text delta. The actual streaming text is rendered inside a
-    // scoped BlocBuilder on the streaming item only.
+    // Streaming flag — scoped BlocBuilder handles text deltas locally.
     final hasStreaming = context.select<StreamingStateCubit, bool>(
       (cubit) => cubit.state.isStreaming,
     );
-    final totalCount = allEntries.length + (hasStreaming ? 1 : 0);
+
+    // Windowing: only render the latest _visibleLimit entries
+    final visibleEntries = _getVisibleEntries(allEntries);
+    final indexOffset = _indexOffsetFor(allEntries);
+
+    final visibleCount = visibleEntries.length;
+    final totalCount = visibleCount + (hasStreaming ? 1 : 0);
 
     return NotificationListener<ScrollNotification>(
       onNotification: (notification) {
-        // Only unfocus when user drags the list (not programmatic scroll).
-        // This prevents the keyboard from being dismissed during automatic
-        // scroll-to-bottom triggered by streaming updates.
+        // Unfocus on user drag (not programmatic scroll)
         if (notification is UserScrollNotification &&
             notification.direction != ScrollDirection.idle) {
           FocusScope.of(context).unfocus();
+          return false;
         }
+
+        // Scroll-to-top triggers load-more (P1 windowing)
+        if (notification is ScrollEndNotification &&
+            _hasEarlierMessages &&
+            !_isLoadingMore &&
+            notification.metrics.extentAfter <= 1.0) {
+          _loadEarlierMessages();
+        }
+
         return false;
       },
       child: ListView.builder(
@@ -218,13 +261,14 @@ class _ChatMessageListState extends State<ChatMessageList> {
         padding: EdgeInsets.only(top: 36, bottom: widget.bottomPadding),
         itemCount: totalCount,
         itemBuilder: (context, index) {
-          // index 0 = newest entry (bottom of chat)
-          // Map to actual entry index:
-          final entryIndex = totalCount - 1 - index;
+          // With reverse: true, index 0 = bottom (newest visible).
+          // visIndex is position within visibleEntries (0 = oldest visible).
+          final visIndex = totalCount - 1 - index;
+          // entryIndex maps back to the real position in allEntries
+          final entryIndex = visIndex + indexOffset;
 
-          // Streaming entry is at totalCount - 1 (index 0 in reverse)
-          if (hasStreaming && entryIndex == allEntries.length) {
-            // Scoped BlocBuilder: only this widget rebuilds on streaming deltas
+          // Streaming entry sits at the bottom of the visible list
+          if (hasStreaming && visIndex == visibleCount) {
             return BlocBuilder<StreamingStateCubit, StreamingState>(
               builder: (context, streamingState) {
                 if (!streamingState.isStreaming) {
@@ -247,9 +291,9 @@ class _ChatMessageListState extends State<ChatMessageList> {
           final previous = entryIndex > 0 ? allEntries[entryIndex - 1] : null;
           final onForkMessage =
               widget.isCodex &&
-                  shouldShowForkForAssistant(allEntries, entryIndex)
-              ? widget.onForkMessage
-              : null;
+                      shouldShowForkForAssistant(allEntries, entryIndex)
+                  ? widget.onForkMessage
+                  : null;
 
           Widget child = ChatEntryWidget(
             entry: entry,
@@ -274,10 +318,8 @@ class _ChatMessageListState extends State<ChatMessageList> {
               );
             },
             onImageTap: (user) {
-              final claudeSessionId = context
-                  .read<ChatSessionCubit>()
-                  .state
-                  .claudeSessionId;
+              final claudeSessionId =
+                  context.read<ChatSessionCubit>().state.claudeSessionId;
               final httpBaseUrl = widget.httpBaseUrl;
               if (claudeSessionId == null ||
                   claudeSessionId.isEmpty ||
@@ -298,8 +340,7 @@ class _ChatMessageListState extends State<ChatMessageList> {
             },
             isCodex: widget.isCodex,
           );
-          // Wrap with AutoScrollTag for scroll-to-index support.
-          // Use entryIndex (not reverse index) as the AutoScrollTag index.
+          // AutoScrollTag keyed on the real entryIndex for scroll-to-index
           child = AutoScrollTag(
             key: ValueKey(_entryKey(entry, entryIndex)),
             controller: widget.scrollController,
@@ -320,20 +361,19 @@ class _ChatMessageListState extends State<ChatMessageList> {
           messageUuid != null && messageUuid.isNotEmpty
               ? 'assistant_uuid:$messageUuid'
               : message.id.isNotEmpty
-              ? 'assistant_id:${message.id}'
-              : 'assistant_ts:${entry.timestamp.microsecondsSinceEpoch}:$index',
+                  ? 'assistant_id:${message.id}'
+                  : 'assistant_ts:${entry.timestamp.microsecondsSinceEpoch}:$index',
         PermissionRequestMessage(:final toolUseId) => 'permission:$toolUseId',
         ToolUseSummaryMessage() =>
           'tool_summary:${entry.timestamp.microsecondsSinceEpoch}:$index',
-        _ =>
-          '${message.runtimeType}:${entry.timestamp.microsecondsSinceEpoch}:$index',
+        _ => '${message.runtimeType}:${entry.timestamp.microsecondsSinceEpoch}:$index',
       },
       UserChatEntry(:final messageUuid, :final clientMessageId, :final text) =>
         messageUuid != null && messageUuid.isNotEmpty
             ? 'user_uuid:$messageUuid'
             : clientMessageId != null && clientMessageId.isNotEmpty
-            ? 'user_client:$clientMessageId'
-            : 'user_ts:${entry.timestamp.microsecondsSinceEpoch}:${text.hashCode}:$index',
+                ? 'user_client:$clientMessageId'
+                : 'user_ts:${entry.timestamp.microsecondsSinceEpoch}:${text.hashCode}:$index',
       StreamingChatEntry() => 'streaming',
     };
   }
