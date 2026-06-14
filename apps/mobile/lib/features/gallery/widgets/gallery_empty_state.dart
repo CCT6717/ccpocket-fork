@@ -11,6 +11,7 @@ class GalleryEmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final appColors = Theme.of(context).extension<AppColors>()!;
+    final colorScheme = Theme.of(context).colorScheme;
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -18,25 +19,33 @@ class GalleryEmptyState extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Theme.of(
-                  context,
-                ).colorScheme.primary.withValues(alpha: 0.08),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    colorScheme.primary.withValues(alpha: 0.15),
+                    colorScheme.primary.withValues(alpha: 0.04),
+                  ],
+                ),
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                Icons.collections,
-                size: 40,
-                color: Theme.of(context).colorScheme.primary,
+                Icons.collections_outlined,
+                size: 44,
+                color: colorScheme.primary,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             Text(
               AppLocalizations.of(context).noScreenshotsYet,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             Text(
               isSessionMode
                   ? AppLocalizations.of(context).screenshotButtonHint

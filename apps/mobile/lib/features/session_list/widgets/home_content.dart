@@ -938,34 +938,42 @@ class _RecentSessionsEmptyResult extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final appColors = Theme.of(context).extension<AppColors>()!;
-    return Card(
+    final colorScheme = Theme.of(context).colorScheme;
+    return Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-        child: Row(
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 48),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.filter_alt_off, color: appColors.subtleText),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle!,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: appColors.subtleText,
-                      ),
-                    ),
-                  ],
-                ],
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: colorScheme.primary.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.inbox_outlined,
+                size: 40,
+                color: colorScheme.primary,
               ),
             ),
+            const SizedBox(height: 20),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            if (subtitle != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                subtitle!,
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14, color: appColors.subtleText),
+              ),
+            ],
           ],
         ),
       ),
