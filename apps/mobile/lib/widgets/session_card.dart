@@ -346,6 +346,44 @@ class _RunningSessionCardState extends State<RunningSessionCard> {
                               ),
                               const SizedBox(width: 8),
                             ],
+                            // Fallback: show truncated last message when no name
+                            else if (session.lastMessage.isNotEmpty) ...[
+                              Flexible(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.surfaceContainer,
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.outlineVariant,
+                                      width: 0.5,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    session.lastMessage.length > 30
+                                        ? '${session.lastMessage.substring(0, 30)}…'
+                                        : session.lastMessage,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                            ],
                             Hero(
                               tag: 'project_name_${session.id}',
                               child: Material(
@@ -2508,6 +2546,39 @@ class RecentSessionCard extends StatelessWidget {
                                   ),
                                   child: Text(
                                     session.name!,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: colorScheme.onSurfaceVariant,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                            ],
+                            // Fallback: show summary or first prompt when no name
+                            else if (session.displayText.isNotEmpty &&
+                                session.displayText != '(no description)') ...[
+                              Flexible(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: colorScheme.surfaceContainer,
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(
+                                      color: colorScheme.outlineVariant,
+                                      width: 0.5,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    session.displayText.length > 30
+                                        ? '${session.displayText.substring(0, 30)}…'
+                                        : session.displayText,
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w500,
