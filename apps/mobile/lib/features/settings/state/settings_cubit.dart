@@ -10,10 +10,14 @@ import '../../../models/app_icon.dart';
 import '../../../models/code_font_family.dart';
 import '../../../models/git_diff_interaction_mode.dart';
 import '../../../models/image_paste_shortcut.dart';
-import '../../../models/messages.dart';
 import '../../../models/new_session_tab.dart';
 import '../../../models/terminal_app.dart';
 import '../../../theme/app_theme.dart';
+import '../../../models/git_diff_interaction_mode.dart';
+import '../../../models/image_paste_shortcut.dart';
+import '../../../models/messages.dart';
+import '../../../models/new_session_tab.dart';
+import '../../../models/terminal_app.dart';
 import '../../../services/app_icon_service.dart';
 import '../../../services/bridge_service.dart';
 import '../../../services/fcm_service.dart';
@@ -90,6 +94,7 @@ class SettingsCubit extends Cubit<SettingsState> {
                (appIconService ?? AppIconService()).isSupportedPlatform,
          ),
        ) {
+    _cachedPalette = loadPalette(_prefs);
     final bridge = _bridge;
     if (bridge != null) {
       _bridgeSub = bridge.connectionStatus.listen((status) {
@@ -242,7 +247,6 @@ class SettingsCubit extends Cubit<SettingsState> {
               themeModeIndex < ThemeMode.values.length)
           ? ThemeMode.values[themeModeIndex]
           : ThemeMode.system,
-      themePalette: ThemePalette.values[prefs.getInt(_keyThemePalette)?.clamp(0, ThemePalette.values.length - 1) ?? 0],
       appLocaleId: appLocale,
       speechLocaleId: speechLocale ?? '',
       fcmEnabledMachines: fcmMachines,
@@ -315,10 +319,24 @@ class SettingsCubit extends Cubit<SettingsState> {
     emit(state.copyWith(themeMode: mode));
   }
 
+  static ThemePalette loadPalette(SharedPreferences prefs) {
+    final index = prefs.getInt(_keyThemePalette) ?? 0;
+    return ThemePalette.values[index.clamp(0, ThemePalette.values.length - 1)];
+  }
+
   void setThemePalette(ThemePalette palette) {
     _prefs.setInt(_keyThemePalette, palette.index);
-    emit(state.copyWith(themePalette: palette));
+    // Refresh the cached palette value and force rebuild
+    _cachedPalette = palette;
+    emit(state.copyWith(themeMode: state.themeMode));
   }
+
+  /// Cached palette value, loaded from prefs at cubit startup.
+  /// Updated on setThemePalette so the UI can read it synchronously.
+  ThemePalette _cachedPalette = ThemePalette.graphiteEmber;
+
+  /// Synchronous getter for the current palette.
+  ThemePalette get currentPalette => _cachedPalette;
 
   void setAppLocaleId(String localeId) {
     _prefs.setString(_keyAppLocale, localeId);
