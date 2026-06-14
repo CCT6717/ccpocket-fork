@@ -4,7 +4,6 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../providers/bridge_cubits.dart';
@@ -12,12 +11,12 @@ import '../../models/messages.dart';
 import '../../router/app_router.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_theme.dart';
-import '../../theme/markdown_style.dart';
 import '../../utils/structured_error_inference.dart';
 import '../../utils/diff_parser.dart';
 import '../../utils/tool_categories.dart';
 import '../../utils/codex_plan_update.dart';
 import '../../features/file_peek/file_path_syntax.dart';
+import '../cached_markdown_body.dart';
 import 'error_bubble.dart';
 import '../plan_detail_sheet.dart';
 import '../google_search_text_selection.dart';
@@ -257,23 +256,11 @@ class _DefaultLayout extends StatelessWidget {
               contextMenuBuilder: googleSearchSelectableTextContextMenuBuilder,
             )
           : GoogleSearchSelectionArea(
-              child: MarkdownBody(
+              child: CachedMarkdownBody(
                 data: text,
+                onFileTap: onFileTap,
+                knownFileSuffixes: fileSuffixes,
                 selectable: !googleSearchSelectionMenuEnabled,
-                styleSheet: buildMarkdownStyle(context),
-                onTapLink: handleMarkdownLink,
-                inlineSyntaxes: [
-                  if (onFileTap != null) ...[
-                    FilePathSyntax(knownPathSuffixes: fileSuffixes),
-                    BareFilePathSyntax(knownPathSuffixes: fileSuffixes),
-                  ],
-                  ...colorCodeInlineSyntaxes,
-                ],
-                builders: {
-                  if (onFileTap != null)
-                    'filePath': FilePathBuilder(onTap: onFileTap),
-                  ...markdownBuilders,
-                },
               ),
             ),
     );
