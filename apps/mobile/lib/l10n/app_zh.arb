@@ -461,7 +461,7 @@
   "agentIsAsking": "{agent} 正在提问",
   "@agentIsAsking": {
     "placeholders": {
-      "agent": {}
+      "agent": {"type": "Object"}
     }
   },
   "codexIsAsking": "Codex 正在提问",

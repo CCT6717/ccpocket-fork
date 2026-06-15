@@ -364,7 +364,6 @@ class BridgeService implements BridgeServiceBase {
     try {
       _channel = WebSocketChannel.connect(
         Uri.parse(url),
-        pingInterval: const Duration(seconds: 15),
       );
       _setBridgeConnectionState(BridgeConnectionState.connected);
       _lastConnectedAt = DateTime.now();

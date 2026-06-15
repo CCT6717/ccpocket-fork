@@ -155,6 +155,7 @@ class HomeContent extends StatefulWidget {
     required this.onNewSession,
     required this.onTapRunning,
     required this.onStopSession,
+    this.onArchiveRunningSession,
     this.onCancelOfflinePendingAction,
     this.onApprovePermission,
     this.onApproveAlways,
@@ -658,7 +659,7 @@ class HomeContentState extends State<HomeContent> {
                 onShowActions: (position) =>
                     widget.onLongPressRunningSession(session, position),
                 onStop: showInlineStopButton
-                    ? () => widget.onStopSession(session.id)
+                    ? () => widget.onStopSession(session)
                     : null,
                 onTap: () => widget.onTapRunning(
                   session.id,

@@ -422,7 +422,7 @@
   "rewindConfirmBody": "Mode: {mode}\n\nThis action cannot be undone. Proceed?",
   "@rewindConfirmBody": {
     "placeholders": {
-      "mode": {}
+      "mode": {"type": "Object"}
     }
   },
   "rewindCannotRewindFiles": "Cannot rewind files",
@@ -443,7 +443,7 @@
   "agentIsAsking": "{agent} is asking",
   "@agentIsAsking": {
     "placeholders": {
-      "agent": {}
+      "agent": {"type": "Object"}
     }
   },
   "submitAllAnswers": "Submit All Answers",

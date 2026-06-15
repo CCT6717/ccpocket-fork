@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:auto_route/auto_route.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -1873,6 +1874,7 @@ class _SessionListScreenState extends State<SessionListScreen>
       machineState: machineState,
       machineManagerCubit: machineManagerCubit,
       connectedBridgeLabel: connectedBridgeLabel,
+      rttMs: rttMs,
     );
 
     if (widget.embedded) {
@@ -1967,6 +1969,7 @@ class _SessionListScreenState extends State<SessionListScreen>
     required MachineManagerState? machineState,
     required MachineManagerCubit? machineManagerCubit,
     required String? connectedBridgeLabel,
+    required ValueListenable<int>? rttMs,
   }) {
     if (_isAutoConnecting) {
       return const Center(child: CircularProgressIndicator());

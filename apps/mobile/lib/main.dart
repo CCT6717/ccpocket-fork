@@ -256,16 +256,17 @@ void main() async {
           ),
           BlocProvider<SettingsCubit>.value(value: settingsCubit),
         ],
-        child: CcpocketApp(fcmService: fcmService),
+        child: CcpocketApp(fcmService: fcmService, prefs: prefs),
       ),
     ),
   );
 }
 
 class CcpocketApp extends StatefulWidget {
-  const CcpocketApp({required this.fcmService, super.key});
+  const CcpocketApp({required this.fcmService, required this.prefs, super.key});
 
   final FcmService fcmService;
+  final SharedPreferences prefs;
 
   @override
   State<CcpocketApp> createState() => _CcpocketAppState();
@@ -473,7 +474,7 @@ class _CcpocketAppState extends State<CcpocketApp> {
             : Locale(settings.appLocaleId);
         final themeLocale =
             appLocale ?? WidgetsBinding.instance.platformDispatcher.locale;
-        final palette = SettingsCubit.loadPalette(prefs);
+        final palette = SettingsCubit.loadPalette(widget.prefs);
         return MaterialApp.router(
           title: 'CC Pocket',
           theme: AppTheme.lightThemeForLocale(themeLocale, palette: palette),

@@ -425,7 +425,7 @@
   "agentIsAsking": "{agent} 질문 중",
   "@agentIsAsking": {
     "placeholders": {
-      "agent": {}
+      "agent": {"type": "Object"}
     }
   },
   "submitAllAnswers": "모든 답변 제출",

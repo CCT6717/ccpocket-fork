@@ -373,11 +373,6 @@ class _CodeBlockContainerState extends State<_CodeBlockContainer> {
     );
   }
 }
-      content: Text(AppLocalizations.of(context).copied),
-      duration: const Duration(seconds: 1),
-    ),
-  );
-}
 
 String? _extractFenceLanguage(String className) {
   if (className.isEmpty) return null;

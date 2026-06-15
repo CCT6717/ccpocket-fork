@@ -474,7 +474,7 @@
   "agentIsAsking": "{agent} が質問しています",
   "@agentIsAsking": {
     "placeholders": {
-      "agent": {}
+      "agent": {"type": "Object"}
     }
   },
   "submitAllAnswers": "すべての回答を送信",
