@@ -75,12 +75,11 @@ class SettingsCubit extends Cubit<SettingsState> {
   SettingsCubit(
     this._prefs, {
     BridgeService? bridgeService,
-    MachineManagerService? machineManager,
+    this._machineManager,
     FcmService? fcmService,
     RevenueCatService? revenueCatService,
     AppIconService? appIconService,
   }) : _bridge = bridgeService,
-       _machineManager = machineManager,
        _fcmService = fcmService ?? FcmService(),
        _revenueCat = revenueCatService,
        _appIconService = appIconService ?? AppIconService(),
@@ -324,9 +323,6 @@ class SettingsCubit extends Cubit<SettingsState> {
     _prefs.setInt(_keyThemePalette, palette.index);
     emit(state.copyWith(themePalette: palette));
   }
-
-  /// Synchronous getter for the current palette.
-  ThemePalette get currentPalette => state.themePalette;
 
   void setAppLocaleId(String localeId) {
     _prefs.setString(_keyAppLocale, localeId);

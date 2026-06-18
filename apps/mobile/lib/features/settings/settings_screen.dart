@@ -1942,18 +1942,24 @@ void _showPalettePicker(BuildContext context, ThemePalette current, ValueChanged
     builder: (ctx) => SimpleDialog(
       title: const Text('Colour theme'),
       children: [
-        for (final p in ThemePalette.values)
-          RadioListTile<ThemePalette>(
-            title: Text(p.label),
-            value: p,
-            groupValue: current,
-            onChanged: (v) {
-              if (v != null) {
-                onChanged(v);
-                Navigator.pop(ctx);
-              }
-            },
+        RadioGroup<ThemePalette>(
+          groupValue: current,
+          onChanged: (value) {
+            if (value == null) return;
+            onChanged(value);
+            Navigator.pop(ctx);
+          },
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final p in ThemePalette.values)
+                RadioListTile<ThemePalette>(
+                  title: Text(p.label),
+                  value: p,
+                ),
+            ],
           ),
+        ),
       ],
     ),
   );
