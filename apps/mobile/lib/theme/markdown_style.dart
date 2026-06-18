@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
@@ -273,23 +275,42 @@ class _CodeBlockContainer extends StatefulWidget {
 
 class _CodeBlockContainerState extends State<_CodeBlockContainer> {
   bool _copied = false;
+  Timer? _resetTimer;
 
   void _copy() {
     final source = widget.source;
     Clipboard.setData(ClipboardData(text: source));
     HapticFeedback.lightImpact();
     setState(() => _copied = true);
-    Future.delayed(const Duration(seconds: 2), () {
+    _resetTimer?.cancel();
+    _resetTimer = Timer(const Duration(seconds: 2), () {
       if (mounted) setState(() => _copied = false);
     });
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Copied'),
+          duration: Duration(seconds: 1),
+        ),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _resetTimer?.cancel();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final hasLang = widget.hasExplicitLanguage;
 
-    return Container(
-      width: double.infinity,
+    return GestureDetector(
+      key: ValueKey('code_block_copy_target_${widget.displayLanguage}'),
+      onLongPress: _copy,
+      child: Container(
+        width: double.infinity,
       decoration: BoxDecoration(
         color: widget.appColors.codeBackground,
         borderRadius: BorderRadius.circular(8),
@@ -325,6 +346,9 @@ class _CodeBlockContainerState extends State<_CodeBlockContainer> {
                 left: 10,
                 child: Text(
                   widget.displayLanguage,
+                  key: ValueKey(
+                    'code_block_language_${widget.displayLanguage}',
+                  ),
                   style: widget.baseStyle.copyWith(
                     fontSize: 10,
                     letterSpacing: 0.2,
@@ -370,6 +394,7 @@ class _CodeBlockContainerState extends State<_CodeBlockContainer> {
           ],
         ),
       ),
+    ),
     );
   }
 }
