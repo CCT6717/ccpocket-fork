@@ -16,13 +16,10 @@ import '../features/file_peek/file_path_syntax.dart';
 /// the AST and regenerate its internal widget tree (dozens of RichText/TextSpan
 /// allocations).
 ///
-/// This widget solves it with a **Key-swapping strategy**:
-/// - The inner `MarkdownBody` gets a stable key derived from whether the text
-///   has changed since the last build.
-/// - When `data` stays the same, the key also stays the same → Flutter walks
-///   into the existing subtree and **does nothing**.
-/// - When `data` changes, the key changes → Flutter discards the old Element
-///   tree and creates a fresh one.
+/// This widget solves it with a **render-keyed cached child**:
+/// - The inner `MarkdownBody` widget instance is cached and reused while all
+///   render-affecting inputs stay the same.
+/// - When those inputs change, a new cached child is created with a new key.
 ///
 /// A `RepaintBoundary` wraps the whole thing so repaints are also isolated
 /// from the parent layer.
@@ -45,56 +42,28 @@ class CachedMarkdownBody extends StatefulWidget {
 }
 
 class _CachedMarkdownBodyState extends State<CachedMarkdownBody> {
-  /// Counter-based key: incremented whenever any render-affecting prop changes,
-  /// causing Flutter to discard the old MarkdownBody Element tree.
-  int _keyCounter = 0;
-  Key _childKey = const ValueKey(0);
-
-  /// Cached prop values from the last build that produced [_childKey].
-  String _lastData = '';
-  bool _lastSelectable = true;
-  Set<String> _lastSuffixes = const {};
-  // Note: onFileTap is a closure — we track identity via hashCode as a
-  // best-effort signal. If the parent recreates the closure on every build the
-  // key will change every time, which is still correct (just less cached).
-  int _lastTapHash = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _lastData = widget.data;
-    _lastSelectable = widget.selectable;
-    _lastSuffixes = widget.knownFileSuffixes;
-    _lastTapHash = widget.onFileTap.hashCode;
-  }
-
-  @override
-  void didUpdateWidget(covariant CachedMarkdownBody oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    final tapHash = widget.onFileTap.hashCode;
-    if (widget.data != _lastData ||
-        widget.selectable != _lastSelectable ||
-        widget.knownFileSuffixes != _lastSuffixes ||
-        tapHash != _lastTapHash) {
-      _childKey = ValueKey(++_keyCounter);
-      _lastData = widget.data;
-      _lastSelectable = widget.selectable;
-      _lastSuffixes = widget.knownFileSuffixes;
-      _lastTapHash = tapHash;
-    }
-  }
+  _CachedMarkdownRenderKey? _cachedRenderKey;
+  Widget? _cachedMarkdownBody;
 
   @override
   Widget build(BuildContext context) {
     final onFileTap = widget.onFileTap;
     final fileSuffixes = widget.knownFileSuffixes;
-
-    return RepaintBoundary(
-      child: MarkdownBody(
-        key: _childKey,
+    final styleSheet = buildMarkdownStyle(context);
+    final renderKey = _CachedMarkdownRenderKey(
+      data: widget.data,
+      selectable: widget.selectable,
+      hasFileTapHandler: onFileTap != null,
+      sortedSuffixes: _sortedSuffixes(fileSuffixes),
+      themeSignature: _themeSignature(context),
+    );
+    if (_cachedRenderKey != renderKey || _cachedMarkdownBody == null) {
+      _cachedRenderKey = renderKey;
+      _cachedMarkdownBody = MarkdownBody(
+        key: ValueKey(renderKey),
         data: widget.data,
         selectable: widget.selectable,
-        styleSheet: buildMarkdownStyle(context),
+        styleSheet: styleSheet,
         onTapLink: handleMarkdownLink,
         inlineSyntaxes: [
           if (onFileTap != null) ...[
@@ -104,11 +73,86 @@ class _CachedMarkdownBodyState extends State<CachedMarkdownBody> {
           ...colorCodeInlineSyntaxes,
         ],
         builders: {
-          if (onFileTap != null)
-            'filePath': FilePathBuilder(onTap: onFileTap),
+          if (onFileTap != null) 'filePath': FilePathBuilder(onTap: onFileTap),
           ...markdownBuilders,
         },
-      ),
-    );
+      );
+    }
+
+    return RepaintBoundary(child: _cachedMarkdownBody!);
   }
+}
+
+List<String> _sortedSuffixes(Set<String> suffixes) {
+  if (suffixes.isEmpty) return const [];
+  final sorted = suffixes.toList()..sort();
+  return sorted;
+}
+
+String _themeSignature(BuildContext context) {
+  final theme = Theme.of(context);
+  final colorScheme = theme.colorScheme;
+  final textTheme = theme.textTheme;
+  return [
+    theme.brightness.name,
+    theme.useMaterial3,
+    colorScheme.primary.toARGB32(),
+    colorScheme.onSurface.toARGB32(),
+    colorScheme.secondary.toARGB32(),
+    colorScheme.surface.toARGB32(),
+    textTheme.bodyMedium?.fontFamily,
+    textTheme.bodyMedium?.fontSize,
+    textTheme.bodyMedium?.fontWeight?.value,
+    textTheme.bodyMedium?.height,
+    textTheme.bodyLarge?.fontFamily,
+    textTheme.bodyLarge?.fontSize,
+    textTheme.bodyLarge?.fontWeight?.value,
+    textTheme.bodyLarge?.height,
+  ].join('|');
+}
+
+@immutable
+class _CachedMarkdownRenderKey {
+  final String data;
+  final bool selectable;
+  final bool hasFileTapHandler;
+  final List<String> sortedSuffixes;
+  final String themeSignature;
+
+  const _CachedMarkdownRenderKey({
+    required this.data,
+    required this.selectable,
+    required this.hasFileTapHandler,
+    required this.sortedSuffixes,
+    required this.themeSignature,
+  });
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        other is _CachedMarkdownRenderKey &&
+            data == other.data &&
+            selectable == other.selectable &&
+            hasFileTapHandler == other.hasFileTapHandler &&
+            themeSignature == other.themeSignature &&
+            _listEquals(sortedSuffixes, other.sortedSuffixes);
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    data,
+    selectable,
+    hasFileTapHandler,
+    themeSignature,
+    Object.hashAll(sortedSuffixes),
+  );
+}
+
+bool _listEquals(List<String> left, List<String> right) {
+  if (identical(left, right)) return true;
+  if (left.length != right.length) return false;
+  for (var i = 0; i < left.length; i++) {
+    if (left[i] != right[i]) return false;
+  }
+  return true;
 }

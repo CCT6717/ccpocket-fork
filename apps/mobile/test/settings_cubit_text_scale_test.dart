@@ -1,6 +1,7 @@
 import 'package:ccpocket/features/settings/state/settings_cubit.dart';
 import 'package:ccpocket/models/code_font_family.dart';
 import 'package:ccpocket/models/new_session_tab.dart';
+import 'package:ccpocket/theme/app_theme.dart';
 import 'package:ccpocket/theme/code_text_style.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -15,6 +16,7 @@ void main() {
       final cubit = SettingsCubit(prefs);
 
       expect(cubit.state.speechLocaleId, isEmpty);
+      expect(cubit.state.themePalette, ThemePalette.graphiteEmber);
 
       cubit.setSpeechLocaleId('ja-JP');
       expect(cubit.state.speechLocaleId, 'ja-JP');
@@ -39,6 +41,29 @@ void main() {
 
       final restored = SettingsCubit(prefs);
       expect(restored.state.textScale, 0.9);
+
+      await restored.close();
+    });
+
+    test('persists theme palette through cubit state', () async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final cubit = SettingsCubit(prefs);
+
+      expect(cubit.state.themePalette, ThemePalette.graphiteEmber);
+
+      cubit.setThemePalette(ThemePalette.codex);
+
+      expect(cubit.state.themePalette, ThemePalette.codex);
+      expect(
+        prefs.getInt('settings_theme_palette'),
+        ThemePalette.codex.index,
+      );
+
+      await cubit.close();
+
+      final restored = SettingsCubit(prefs);
+      expect(restored.state.themePalette, ThemePalette.codex);
 
       await restored.close();
     });

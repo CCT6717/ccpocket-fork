@@ -8,6 +8,7 @@ import '../../../providers/bridge_cubits.dart';
 import '../../../services/bridge_service.dart';
 import '../../../widgets/message_bubble.dart';
 import '../../file_peek/file_peek_sheet.dart';
+import '../../file_peek/file_path_syntax.dart';
 import '../../message_images/message_images_screen.dart';
 import '../state/chat_session_cubit.dart';
 import '../state/streaming_state.dart';
@@ -156,8 +157,7 @@ class _ChatMessageListState extends State<ChatMessageList> {
       all.length > _visibleLimit ? all.length - _visibleLimit : 0;
 
   /// Whether there are entries above the visible window (pure computation).
-  bool _computeHasEarlier(List<ChatEntry> all) =>
-      all.length > _visibleLimit;
+  bool _computeHasEarlier(List<ChatEntry> all) => all.length > _visibleLimit;
 
   /// Clip [all] to the latest [_visibleLimit] entries.
   List<ChatEntry> _getVisibleEntries(List<ChatEntry> all) {
@@ -216,6 +216,47 @@ class _ChatMessageListState extends State<ChatMessageList> {
     return null;
   }
 
+  FilePathTapCallback? _buildFileTapHandler(BuildContext context) {
+    return (filePath) {
+      final projectPath = widget.projectPath;
+      if (projectPath == null || projectPath.isEmpty) return;
+      openFilePeek(
+        context,
+        bridge: context.read<BridgeService>(),
+        projectPath: projectPath,
+        filePath: filePath,
+        projectFiles: context.read<FileListCubit>().state,
+        onResolvedFilePath: widget.onFilePeekOpened,
+      );
+    };
+  }
+
+  ValueChanged<UserChatEntry> _buildImageTapHandler(BuildContext context) {
+    return (user) {
+      final claudeSessionId = context
+          .read<ChatSessionCubit>()
+          .state
+          .claudeSessionId;
+      final httpBaseUrl = widget.httpBaseUrl;
+      if (claudeSessionId == null ||
+          claudeSessionId.isEmpty ||
+          httpBaseUrl == null) {
+        return;
+      }
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => MessageImagesScreen(
+            bridge: context.read<BridgeService>(),
+            httpBaseUrl: httpBaseUrl,
+            claudeSessionId: claudeSessionId,
+            messageUuid: user.messageUuid!,
+            imageCount: user.imageCount,
+          ),
+        ),
+      );
+    };
+  }
+
   // ---------------------------------------------------------------------------
   // Build
   // ---------------------------------------------------------------------------
@@ -239,6 +280,8 @@ class _ChatMessageListState extends State<ChatMessageList> {
     final visibleEntries = _getVisibleEntries(allEntries);
     final indexOffset = _indexOffsetFor(allEntries);
     final hasEarlier = _computeHasEarlier(allEntries);
+    final onFileTap = _buildFileTapHandler(context);
+    final onImageTap = _buildImageTapHandler(context);
 
     final visibleCount = visibleEntries.length;
     final totalCount = visibleCount + (hasStreaming ? 1 : 0);
@@ -298,9 +341,9 @@ class _ChatMessageListState extends State<ChatMessageList> {
           final previous = entryIndex > 0 ? allEntries[entryIndex - 1] : null;
           final onForkMessage =
               widget.isCodex &&
-                      shouldShowForkForAssistant(allEntries, entryIndex)
-                  ? widget.onForkMessage
-                  : null;
+                  shouldShowForkForAssistant(allEntries, entryIndex)
+              ? widget.onForkMessage
+              : null;
 
           Widget child = ChatEntryWidget(
             entry: entry,
@@ -312,39 +355,8 @@ class _ChatMessageListState extends State<ChatMessageList> {
             collapseToolResults: widget.collapseToolResults,
             resolvedPlanText: _resolvePlanText(entry),
             hiddenToolUseIds: hiddenToolUseIds,
-            onFileTap: (filePath) {
-              final projectPath = widget.projectPath;
-              if (projectPath == null || projectPath.isEmpty) return;
-              openFilePeek(
-                context,
-                bridge: context.read<BridgeService>(),
-                projectPath: projectPath,
-                filePath: filePath,
-                projectFiles: context.read<FileListCubit>().state,
-                onResolvedFilePath: widget.onFilePeekOpened,
-              );
-            },
-            onImageTap: (user) {
-              final claudeSessionId =
-                  context.read<ChatSessionCubit>().state.claudeSessionId;
-              final httpBaseUrl = widget.httpBaseUrl;
-              if (claudeSessionId == null ||
-                  claudeSessionId.isEmpty ||
-                  httpBaseUrl == null) {
-                return;
-              }
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => MessageImagesScreen(
-                    bridge: context.read<BridgeService>(),
-                    httpBaseUrl: httpBaseUrl,
-                    claudeSessionId: claudeSessionId,
-                    messageUuid: user.messageUuid!,
-                    imageCount: user.imageCount,
-                  ),
-                ),
-              );
-            },
+            onFileTap: onFileTap,
+            onImageTap: onImageTap,
             isCodex: widget.isCodex,
           );
           // Entry animation: subtle slide-up + fade-in
@@ -384,19 +396,20 @@ class _ChatMessageListState extends State<ChatMessageList> {
           messageUuid != null && messageUuid.isNotEmpty
               ? 'assistant_uuid:$messageUuid'
               : message.id.isNotEmpty
-                  ? 'assistant_id:${message.id}'
-                  : 'assistant_ts:${entry.timestamp.microsecondsSinceEpoch}:$index',
+              ? 'assistant_id:${message.id}'
+              : 'assistant_ts:${entry.timestamp.microsecondsSinceEpoch}:$index',
         PermissionRequestMessage(:final toolUseId) => 'permission:$toolUseId',
         ToolUseSummaryMessage() =>
           'tool_summary:${entry.timestamp.microsecondsSinceEpoch}:$index',
-        _ => '${message.runtimeType}:${entry.timestamp.microsecondsSinceEpoch}:$index',
+        _ =>
+          '${message.runtimeType}:${entry.timestamp.microsecondsSinceEpoch}:$index',
       },
       UserChatEntry(:final messageUuid, :final clientMessageId, :final text) =>
         messageUuid != null && messageUuid.isNotEmpty
             ? 'user_uuid:$messageUuid'
             : clientMessageId != null && clientMessageId.isNotEmpty
-                ? 'user_client:$clientMessageId'
-                : 'user_ts:${entry.timestamp.microsecondsSinceEpoch}:${text.hashCode}:$index',
+            ? 'user_client:$clientMessageId'
+            : 'user_ts:${entry.timestamp.microsecondsSinceEpoch}:${text.hashCode}:$index',
       StreamingChatEntry() => 'streaming',
     };
   }

@@ -413,10 +413,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ListTile(
                       leading: Icon(Icons.colorize, color: cs.primary),
                       title: Text('Colour theme'),
-                      subtitle: Text(context.read<SettingsCubit>().currentPalette.label),
+                      subtitle: Text(state.themePalette.label),
                       trailing: const Icon(Icons.chevron_right, size: 20),
-                      onTap: () => _showPalettePicker(context, context.read<SettingsCubit>().currentPalette, (p) =>
-                          context.read<SettingsCubit>().setThemePalette(p)),
+                      onTap: () => _showPalettePicker(
+                        context,
+                        state.themePalette,
+                        (p) =>
+                            context.read<SettingsCubit>().setThemePalette(p),
+                      ),
                     ),
                     // Language
                     ListTile(

@@ -159,10 +159,15 @@ void main() {
         ),
       );
 
+      final bodyText = find.descendant(
+        of: find.byType(RunningSessionCard),
+        matching: find.text('Implemented login flow'),
+      );
+
       // Git branch text
       expect(find.text('feat/auth'), findsOneWidget);
-      // Last message text
-      expect(find.text('Implemented login flow'), findsOneWidget);
+      // Last message appears in title badge and body preview.
+      expect(bodyText, findsNWidgets(2));
       // Fork icon
       expect(find.byIcon(Icons.fork_right), findsOneWidget);
     });
@@ -1061,9 +1066,21 @@ void main() {
           ),
         ),
       );
-      expect(find.text('first prompt text'), findsOneWidget);
-      expect(find.text('last prompt text'), findsNothing);
-      expect(find.text('summary text'), findsNothing);
+      expect(
+        find.descendant(
+          of: find.byType(RecentSessionCard),
+          matching: find.text('first prompt text'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byType(RecentSessionCard),
+          matching: find.text('last prompt text'),
+        ),
+        findsNothing,
+      );
+      expect(find.text('summary text'), findsOneWidget);
 
       await tester.pumpWidget(
         _wrap(
@@ -1074,9 +1091,21 @@ void main() {
           ),
         ),
       );
-      expect(find.text('last prompt text'), findsOneWidget);
-      expect(find.text('first prompt text'), findsNothing);
-      expect(find.text('summary text'), findsNothing);
+      expect(
+        find.descendant(
+          of: find.byType(RecentSessionCard),
+          matching: find.text('last prompt text'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byType(RecentSessionCard),
+          matching: find.text('first prompt text'),
+        ),
+        findsNothing,
+      );
+      expect(find.text('summary text'), findsOneWidget);
 
       await tester.pumpWidget(
         _wrap(
@@ -1087,9 +1116,27 @@ void main() {
           ),
         ),
       );
-      expect(find.text('summary text'), findsOneWidget);
-      expect(find.text('first prompt text'), findsNothing);
-      expect(find.text('last prompt text'), findsNothing);
+      expect(
+        find.descendant(
+          of: find.byType(RecentSessionCard),
+          matching: find.text('summary text'),
+        ),
+        findsNWidgets(2),
+      );
+      expect(
+        find.descendant(
+          of: find.byType(RecentSessionCard),
+          matching: find.text('first prompt text'),
+        ),
+        findsNothing,
+      );
+      expect(
+        find.descendant(
+          of: find.byType(RecentSessionCard),
+          matching: find.text('last prompt text'),
+        ),
+        findsNothing,
+      );
     });
 
     testWidgets('shows codex settings summary for codex provider', (

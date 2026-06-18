@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -91,7 +90,6 @@ class SettingsCubit extends Cubit<SettingsState> {
                (appIconService ?? AppIconService()).isSupportedPlatform,
          ),
        ) {
-    _paletteNotifier.value = loadPalette(_prefs);
     final bridge = _bridge;
     if (bridge != null) {
       _bridgeSub = bridge.connectionStatus.listen((status) {
@@ -244,6 +242,7 @@ class SettingsCubit extends Cubit<SettingsState> {
               themeModeIndex < ThemeMode.values.length)
           ? ThemeMode.values[themeModeIndex]
           : ThemeMode.system,
+      themePalette: loadPalette(prefs),
       appLocaleId: appLocale,
       speechLocaleId: speechLocale ?? '',
       fcmEnabledMachines: fcmMachines,
@@ -323,19 +322,11 @@ class SettingsCubit extends Cubit<SettingsState> {
 
   void setThemePalette(ThemePalette palette) {
     _prefs.setInt(_keyThemePalette, palette.index);
-    _paletteNotifier.value = palette;
+    emit(state.copyWith(themePalette: palette));
   }
 
-  /// Reactive palette notifier — widgets can listen via ValueListenableBuilder
-  /// to get reliable rebuilds on palette change without freezed codegen.
-  final ValueNotifier<ThemePalette> _paletteNotifier =
-      ValueNotifier(ThemePalette.graphiteEmber);
-
-  /// Read-only handle for the notifier (use in ValueListenableBuilder).
-  ValueListenable<ThemePalette> get paletteListenable => _paletteNotifier;
-
   /// Synchronous getter for the current palette.
-  ThemePalette get currentPalette => _paletteNotifier.value;
+  ThemePalette get currentPalette => state.themePalette;
 
   void setAppLocaleId(String localeId) {
     _prefs.setString(_keyAppLocale, localeId);
@@ -637,7 +628,6 @@ class SettingsCubit extends Cubit<SettingsState> {
 
   @override
   Future<void> close() async {
-    _paletteNotifier.dispose();
     await _bridgeSub?.cancel();
     await _tokenRefreshSub?.cancel();
     final listener = _supporterListener;
