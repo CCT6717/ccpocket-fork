@@ -474,7 +474,10 @@ class _CcpocketAppState extends State<CcpocketApp> {
             : Locale(settings.appLocaleId);
         final themeLocale =
             appLocale ?? WidgetsBinding.instance.platformDispatcher.locale;
-        final palette = SettingsCubit.loadPalette(widget.prefs);
+        final settingsCubit = context.read<SettingsCubit>();
+        return ValueListenableBuilder<ThemePalette>(
+          valueListenable: settingsCubit.paletteListenable,
+          builder: (context, palette, _) {
         return MaterialApp.router(
           title: 'CC Pocket',
           theme: AppTheme.lightThemeForLocale(themeLocale, palette: palette),
@@ -501,6 +504,8 @@ class _CcpocketAppState extends State<CcpocketApp> {
             );
           },
           debugShowCheckedModeBanner: false,
+        );
+          },
         );
       },
     );

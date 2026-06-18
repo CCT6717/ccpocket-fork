@@ -1249,6 +1249,13 @@ class _SessionListScreenState extends State<SessionListScreen>
       provider: session.provider ?? 'claude',
       projectPath: session.projectPath,
     );
+    // Safety timeout: auto-clear stuck archiving ID after 15s if no
+    // ArchiveResultMessage arrives (e.g. bridge disconnected).
+    Future.delayed(const Duration(seconds: 15), () {
+      if (mounted && _archivingSessionIds.contains(session.id)) {
+        setState(() => _archivingSessionIds.remove(session.id));
+      }
+    });
   }
 
   void _showRecentSessionActions(
@@ -1362,6 +1369,12 @@ class _SessionListScreenState extends State<SessionListScreen>
       provider: session.provider ?? 'claude',
       projectPath: session.projectPath,
     );
+    // Safety timeout: auto-clear stuck archiving ID after 15s
+    Future.delayed(const Duration(seconds: 15), () {
+      if (mounted && _archivingSessionIds.contains(session.sessionId)) {
+        setState(() => _archivingSessionIds.remove(session.sessionId));
+      }
+    });
   }
 
   void _navigateToChat(

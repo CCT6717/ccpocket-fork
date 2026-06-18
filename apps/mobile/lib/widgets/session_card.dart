@@ -121,8 +121,8 @@ class _RunningSessionCardState extends State<RunningSessionCard> {
     final sessionTitle = session.name?.isNotEmpty == true
         ? session.name!
         : session.lastMessage.isNotEmpty
-            ? (session.lastMessage.length > 30
-                  ? '${session.lastMessage.substring(0, 30)}…'
+            ? (session.lastMessage.characters.length > 30
+                  ? '${session.lastMessage.characters.take(30).toString()}…'
                   : session.lastMessage)
             : null;
     final projectName = pathBasename(session.projectPath);

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -13,11 +14,7 @@ import '../../../models/image_paste_shortcut.dart';
 import '../../../models/new_session_tab.dart';
 import '../../../models/terminal_app.dart';
 import '../../../theme/app_theme.dart';
-import '../../../models/git_diff_interaction_mode.dart';
-import '../../../models/image_paste_shortcut.dart';
 import '../../../models/messages.dart';
-import '../../../models/new_session_tab.dart';
-import '../../../models/terminal_app.dart';
 import '../../../services/app_icon_service.dart';
 import '../../../services/bridge_service.dart';
 import '../../../services/fcm_service.dart';
@@ -94,7 +91,7 @@ class SettingsCubit extends Cubit<SettingsState> {
                (appIconService ?? AppIconService()).isSupportedPlatform,
          ),
        ) {
-    _cachedPalette = loadPalette(_prefs);
+    _paletteNotifier.value = loadPalette(_prefs);
     final bridge = _bridge;
     if (bridge != null) {
       _bridgeSub = bridge.connectionStatus.listen((status) {
@@ -326,17 +323,19 @@ class SettingsCubit extends Cubit<SettingsState> {
 
   void setThemePalette(ThemePalette palette) {
     _prefs.setInt(_keyThemePalette, palette.index);
-    // Refresh the cached palette value and force rebuild
-    _cachedPalette = palette;
-    emit(state.copyWith(themeMode: state.themeMode));
+    _paletteNotifier.value = palette;
   }
 
-  /// Cached palette value, loaded from prefs at cubit startup.
-  /// Updated on setThemePalette so the UI can read it synchronously.
-  ThemePalette _cachedPalette = ThemePalette.graphiteEmber;
+  /// Reactive palette notifier — widgets can listen via ValueListenableBuilder
+  /// to get reliable rebuilds on palette change without freezed codegen.
+  final ValueNotifier<ThemePalette> _paletteNotifier =
+      ValueNotifier(ThemePalette.graphiteEmber);
+
+  /// Read-only handle for the notifier (use in ValueListenableBuilder).
+  ValueListenable<ThemePalette> get paletteListenable => _paletteNotifier;
 
   /// Synchronous getter for the current palette.
-  ThemePalette get currentPalette => _cachedPalette;
+  ThemePalette get currentPalette => _paletteNotifier.value;
 
   void setAppLocaleId(String localeId) {
     _prefs.setString(_keyAppLocale, localeId);
@@ -638,6 +637,7 @@ class SettingsCubit extends Cubit<SettingsState> {
 
   @override
   Future<void> close() async {
+    _paletteNotifier.dispose();
     await _bridgeSub?.cancel();
     await _tokenRefreshSub?.cancel();
     final listener = _supporterListener;

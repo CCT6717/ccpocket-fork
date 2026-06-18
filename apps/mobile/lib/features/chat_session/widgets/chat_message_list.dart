@@ -89,12 +89,11 @@ class _ChatMessageListState extends State<ChatMessageList> {
   static const _initialVisibleLimit = 60;
   static const _loadMoreIncrement = 40;
   int _visibleLimit = _initialVisibleLimit;
-  bool _hasEarlierMessages = false;
   bool _isLoadingMore = false;
 
   // Cache for _resolvePlanText: avoids scanning all entries on every build.
   String? _cachedPlanText;
-  int _cachedPlanTextAtEntryCount = -1;
+  int _cachedPlanEntriesHash = -1;
 
   @override
   void initState() {
@@ -108,6 +107,13 @@ class _ChatMessageListState extends State<ChatMessageList> {
     if (oldWidget.scrollToUserEntry != widget.scrollToUserEntry) {
       oldWidget.scrollToUserEntry?.removeListener(_onScrollToUserEntry);
       widget.scrollToUserEntry?.addListener(_onScrollToUserEntry);
+    }
+    // Reset windowing limit when switching sessions so the new session
+    // starts with the initial visible count (performance optimization).
+    if (oldWidget.sessionId != widget.sessionId) {
+      _visibleLimit = _initialVisibleLimit;
+      _cachedPlanText = null;
+      _cachedPlanEntriesHash = -1;
     }
   }
 
@@ -133,8 +139,6 @@ class _ChatMessageListState extends State<ChatMessageList> {
     final entries = context.read<ChatSessionCubit>().state.entries;
     final idx = entries.indexOf(entry);
     if (idx < 0) return;
-    // Adjust for windowing offset
-    final offset = _indexOffsetFor(entries);
     // The AutoScrollTag is keyed on the real entryIndex so we pass the actual idx
     widget.scrollController.scrollToIndex(
       idx,
@@ -151,14 +155,15 @@ class _ChatMessageListState extends State<ChatMessageList> {
   int _indexOffsetFor(List<ChatEntry> all) =>
       all.length > _visibleLimit ? all.length - _visibleLimit : 0;
 
+  /// Whether there are entries above the visible window (pure computation).
+  bool _computeHasEarlier(List<ChatEntry> all) =>
+      all.length > _visibleLimit;
+
   /// Clip [all] to the latest [_visibleLimit] entries.
-  /// Sets [_hasEarlierMessages] accordingly.
   List<ChatEntry> _getVisibleEntries(List<ChatEntry> all) {
     if (all.length <= _visibleLimit) {
-      _hasEarlierMessages = false;
       return all;
     }
-    _hasEarlierMessages = true;
     return all.sublist(all.length - _visibleLimit);
   }
 
@@ -186,8 +191,9 @@ class _ChatMessageListState extends State<ChatMessageList> {
     if (!hasExitPlan) return null;
 
     final entries = context.read<ChatSessionCubit>().state.entries;
-    if (_cachedPlanTextAtEntryCount != entries.length || _cachedPlanText == null) {
-      _cachedPlanTextAtEntryCount = entries.length;
+    final hash = identityHashCode(entries);
+    if (_cachedPlanEntriesHash != hash || _cachedPlanText == null) {
+      _cachedPlanEntriesHash = hash;
       _cachedPlanText = _findPlanFromWriteTool(entries);
     }
     return _cachedPlanText;
@@ -232,6 +238,7 @@ class _ChatMessageListState extends State<ChatMessageList> {
     // Windowing: only render the latest _visibleLimit entries
     final visibleEntries = _getVisibleEntries(allEntries);
     final indexOffset = _indexOffsetFor(allEntries);
+    final hasEarlier = _computeHasEarlier(allEntries);
 
     final visibleCount = visibleEntries.length;
     final totalCount = visibleCount + (hasStreaming ? 1 : 0);
@@ -247,7 +254,7 @@ class _ChatMessageListState extends State<ChatMessageList> {
 
         // Scroll-to-top triggers load-more (P1 windowing)
         if (notification is ScrollEndNotification &&
-            _hasEarlierMessages &&
+            hasEarlier &&
             !_isLoadingMore &&
             notification.metrics.extentAfter <= 1.0) {
           _loadEarlierMessages();

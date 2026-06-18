@@ -55,28 +55,28 @@ paletteColors(ThemePalette palette, Brightness brightness) {
         primary: isDark ? const Color(0xFF34D399) : const Color(0xFF07C160),
         secondary: isDark ? const Color(0xFF6EE7B7) : const Color(0xFF059669),
         onPrimary: isDark ? Colors.black : Colors.white,
-        primaryContainer: null,
+        primaryContainer: isDark ? const Color(0xFF064E3B) : const Color(0xFFD1FAE5),
       );
     case ThemePalette.qq:
       return (
         primary: isDark ? const Color(0xFF60A5FA) : const Color(0xFF007AFF),
         secondary: isDark ? const Color(0xFF93C5FD) : const Color(0xFF0EA5E9),
         onPrimary: isDark ? Colors.black : Colors.white,
-        primaryContainer: null,
+        primaryContainer: isDark ? const Color(0xFF1E3A5F) : const Color(0xFFDBEAFE),
       );
     case ThemePalette.codex:
       return (
         primary: isDark ? const Color(0xFFA78BFA) : const Color(0xFF8B5CF6),
         secondary: isDark ? const Color(0xFF67E8F9) : const Color(0xFF06B6D4),
         onPrimary: Colors.white,
-        primaryContainer: null,
+        primaryContainer: isDark ? const Color(0xFF3B1F6E) : const Color(0xFFEDE9FE),
       );
     case ThemePalette.opencode:
       return (
         primary: isDark ? const Color(0xFFFBBF24) : const Color(0xFFF59E0B),
         secondary: isDark ? const Color(0xFFFB923C) : const Color(0xFFEA580C),
         onPrimary: isDark ? Colors.black : Colors.white,
-        primaryContainer: null,
+        primaryContainer: isDark ? const Color(0xFF78350F) : const Color(0xFFFEF3C7),
       );
   }
 }

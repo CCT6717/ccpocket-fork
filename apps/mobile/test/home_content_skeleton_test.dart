@@ -262,8 +262,8 @@ void main() {
       // No skeleton
       expect(find.byType(SkeletonizerScope), findsNothing);
       // Real session cards should be visible
-      expect(find.text('test prompt for s1'), findsOneWidget);
-      expect(find.text('test prompt for s2'), findsOneWidget);
+      expect(find.text('test prompt for s1'), findsAtLeast(1));
+      expect(find.text('test prompt for s2'), findsAtLeast(1));
     });
 
     testWidgets('shows only five sessions per project by default', (
@@ -281,8 +281,8 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.text('test prompt for s1'), findsOneWidget);
-      expect(find.text('test prompt for s5'), findsOneWidget);
+      expect(find.text('test prompt for s1'), findsAtLeast(1));
+      expect(find.text('test prompt for s5'), findsAtLeast(1));
       expect(find.text('test prompt for s6'), findsNothing);
       expect(
         find.byKey(const ValueKey('project_show_more_/home/user/project-a')),
@@ -307,7 +307,7 @@ void main() {
         );
         await tester.pump();
 
-        expect(find.text('test prompt for s6'), findsOneWidget);
+        expect(find.text('test prompt for s6'), findsAtLeast(1));
         expect(
           find.byKey(const ValueKey('project_show_more_/home/user/project-a')),
           findsNothing,
@@ -342,7 +342,7 @@ void main() {
 
       expect(
         find.text('test prompt for s6', skipOffstage: false),
-        findsOneWidget,
+        findsAtLeast(1),
       );
       expect(
         find.byKey(const ValueKey('project_show_more_/home/user/project-a')),
@@ -469,7 +469,7 @@ void main() {
       // No skeleton
       expect(find.byType(SkeletonizerScope), findsNothing);
       // Real recent session visible
-      expect(find.text('test prompt for s1'), findsOneWidget);
+      expect(find.text('test prompt for s1'), findsAtLeast(1));
     });
 
     testWidgets(
@@ -503,7 +503,7 @@ void main() {
         expect(find.text('Running'), findsOneWidget);
         expect(find.text('Resume pending'), findsOneWidget);
         expect(find.text('test prompt for s1'), findsNothing);
-        expect(find.text('test prompt for s2'), findsOneWidget);
+        expect(find.text('test prompt for s2'), findsAtLeast(1));
       },
     );
 

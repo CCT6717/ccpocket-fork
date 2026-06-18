@@ -45,26 +45,42 @@ class CachedMarkdownBody extends StatefulWidget {
 }
 
 class _CachedMarkdownBodyState extends State<CachedMarkdownBody> {
-  /// When [widget.data] changes, we swap this key so Flutter discards the old
-  /// MarkdownBody Element tree and builds a fresh one from scratch.
-  Key _childKey = UniqueKey();
+  /// Counter-based key: incremented whenever any render-affecting prop changes,
+  /// causing Flutter to discard the old MarkdownBody Element tree.
+  int _keyCounter = 0;
+  Key _childKey = const ValueKey(0);
 
-  /// The data value that produced [_childKey].
+  /// Cached prop values from the last build that produced [_childKey].
   String _lastData = '';
+  bool _lastSelectable = true;
+  Set<String> _lastSuffixes = const {};
+  // Note: onFileTap is a closure — we track identity via hashCode as a
+  // best-effort signal. If the parent recreates the closure on every build the
+  // key will change every time, which is still correct (just less cached).
+  int _lastTapHash = 0;
 
   @override
   void initState() {
     super.initState();
     _lastData = widget.data;
-    _childKey = const ValueKey<bool>(true);
+    _lastSelectable = widget.selectable;
+    _lastSuffixes = widget.knownFileSuffixes;
+    _lastTapHash = widget.onFileTap.hashCode;
   }
 
   @override
   void didUpdateWidget(covariant CachedMarkdownBody oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.data != _lastData) {
-      _childKey = UniqueKey();
+    final tapHash = widget.onFileTap.hashCode;
+    if (widget.data != _lastData ||
+        widget.selectable != _lastSelectable ||
+        widget.knownFileSuffixes != _lastSuffixes ||
+        tapHash != _lastTapHash) {
+      _childKey = ValueKey(++_keyCounter);
       _lastData = widget.data;
+      _lastSelectable = widget.selectable;
+      _lastSuffixes = widget.knownFileSuffixes;
+      _lastTapHash = tapHash;
     }
   }
 
