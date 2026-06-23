@@ -192,8 +192,21 @@ class _ChatMessageListState extends State<ChatMessageList> {
   void _loadEarlierMessages() {
     if (_isLoadingMore) return;
     _isLoadingMore = true;
+
+    // P7: Pre-mark entry keys that will become visible so _shouldAnimateEntry
+    // returns false — avoids spawning N TweenAnimationBuilders at once.
+    final allEntries = context.read<ChatSessionCubit>().state.entries;
+    final newLimit = _visibleLimit + _loadMoreIncrement;
+    if (allEntries.length > _visibleLimit) {
+      final startIndex = (allEntries.length - newLimit).clamp(0, allEntries.length);
+      final endIndex = allEntries.length - _visibleLimit;
+      for (var i = startIndex; i < endIndex; i++) {
+        _seenEntryKeys.add(_entryKey(allEntries[i], i));
+      }
+    }
+
     setState(() {
-      _visibleLimit += _loadMoreIncrement;
+      _visibleLimit = newLimit;
       _isLoadingMore = false;
     });
   }
