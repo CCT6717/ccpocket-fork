@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
+import '../theme/app_theme.dart';
+import '../theme/code_text_style.dart';
 import '../theme/markdown_style.dart';
 import '../features/file_peek/file_path_syntax.dart';
 
@@ -57,7 +59,7 @@ class _CachedMarkdownBodyState extends State<CachedMarkdownBody> {
       sortedSuffixes: _sortedSuffixes(fileSuffixes),
       themeSignature: _themeSignature(context),
     );
-    if (_cachedRenderKey != renderKey || _cachedMarkdownBody == null) {
+    if (_cachedRenderKey != renderKey) {
       _cachedRenderKey = renderKey;
       _cachedMarkdownBody = MarkdownBody(
         key: ValueKey(renderKey),
@@ -91,23 +93,29 @@ List<String> _sortedSuffixes(Set<String> suffixes) {
 
 String _themeSignature(BuildContext context) {
   final theme = Theme.of(context);
+  final appColors = theme.extension<AppColors>()!;
   final colorScheme = theme.colorScheme;
-  final textTheme = theme.textTheme;
+  final baseStyle = theme.textTheme.bodyMedium ?? const TextStyle();
+  final codeSettings = codeTextSettingsOf(context);
   return [
     theme.brightness.name,
     theme.useMaterial3,
     colorScheme.primary.toARGB32(),
     colorScheme.onSurface.toARGB32(),
     colorScheme.secondary.toARGB32(),
+    colorScheme.tertiary.toARGB32(),
+    colorScheme.outline.toARGB32(),
     colorScheme.surface.toARGB32(),
-    textTheme.bodyMedium?.fontFamily,
-    textTheme.bodyMedium?.fontSize,
-    textTheme.bodyMedium?.fontWeight?.value,
-    textTheme.bodyMedium?.height,
-    textTheme.bodyLarge?.fontFamily,
-    textTheme.bodyLarge?.fontSize,
-    textTheme.bodyLarge?.fontWeight?.value,
-    textTheme.bodyLarge?.height,
+    appColors.subtleText.toARGB32(),
+    appColors.codeBackground.toARGB32(),
+    appColors.codeBorder.toARGB32(),
+    baseStyle.fontFamily,
+    baseStyle.fontSize,
+    baseStyle.fontWeight?.value,
+    baseStyle.height,
+    baseStyle.color?.toARGB32(),
+    codeSettings.family.fontFamily,
+    codeSettings.fontSize,
   ].join('|');
 }
 

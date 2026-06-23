@@ -95,11 +95,13 @@ class _ChatMessageListState extends State<ChatMessageList> {
   // Cache for _resolvePlanText: avoids scanning all entries on every build.
   String? _cachedPlanText;
   int _cachedPlanEntriesHash = -1;
+  final Set<String> _seenEntryKeys = <String>{};
 
   @override
   void initState() {
     super.initState();
     widget.scrollToUserEntry?.addListener(_onScrollToUserEntry);
+    _seedSeenEntryKeys(context.read<ChatSessionCubit>().state.entries);
   }
 
   @override
@@ -115,6 +117,9 @@ class _ChatMessageListState extends State<ChatMessageList> {
       _visibleLimit = _initialVisibleLimit;
       _cachedPlanText = null;
       _cachedPlanEntriesHash = -1;
+      _seenEntryKeys
+        ..clear()
+        ..addAll(_collectEntryKeys(context.read<ChatSessionCubit>().state.entries));
     }
   }
 
@@ -214,6 +219,26 @@ class _ChatMessageListState extends State<ChatMessageList> {
       }
     }
     return null;
+  }
+
+  void _seedSeenEntryKeys(List<ChatEntry> entries) {
+    _seenEntryKeys
+      ..clear()
+      ..addAll(_collectEntryKeys(entries));
+  }
+
+  Set<String> _collectEntryKeys(List<ChatEntry> entries) {
+    final keys = <String>{};
+    for (var i = 0; i < entries.length; i++) {
+      keys.add(_entryKey(entries[i], i));
+    }
+    return keys;
+  }
+
+  bool _shouldAnimateEntry(String entryKey) {
+    if (_seenEntryKeys.contains(entryKey)) return false;
+    _seenEntryKeys.add(entryKey);
+    return true;
   }
 
   FilePathTapCallback? _buildFileTapHandler(BuildContext context) {
@@ -339,6 +364,7 @@ class _ChatMessageListState extends State<ChatMessageList> {
 
           final entry = allEntries[entryIndex];
           final previous = entryIndex > 0 ? allEntries[entryIndex - 1] : null;
+          final entryKey = _entryKey(entry, entryIndex);
           final onForkMessage =
               widget.isCodex &&
                   shouldShowForkForAssistant(allEntries, entryIndex)
@@ -359,25 +385,27 @@ class _ChatMessageListState extends State<ChatMessageList> {
             onImageTap: onImageTap,
             isCodex: widget.isCodex,
           );
-          // Entry animation: subtle slide-up + fade-in
-          child = TweenAnimationBuilder<double>(
-            tween: Tween(begin: 0.0, end: 1.0),
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeOut,
-            builder: (context, value, child) {
-              return Opacity(
-                opacity: value,
-                child: Transform.translate(
-                  offset: Offset(0, 16 * (1 - value)),
-                  child: child,
-                ),
-              );
-            },
-            child: child,
-          );
+          if (_shouldAnimateEntry(entryKey)) {
+            // Animate only when an entry first appears in the list.
+            child = TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0.0, end: 1.0),
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOut,
+              builder: (context, value, child) {
+                return Opacity(
+                  opacity: value,
+                  child: Transform.translate(
+                    offset: Offset(0, 16 * (1 - value)),
+                    child: child,
+                  ),
+                );
+              },
+              child: child,
+            );
+          }
           // AutoScrollTag keyed on the real entryIndex for scroll-to-index
           child = AutoScrollTag(
-            key: ValueKey(_entryKey(entry, entryIndex)),
+            key: ValueKey(entryKey),
             controller: widget.scrollController,
             index: entryIndex,
             child: child,
