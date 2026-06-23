@@ -97,11 +97,16 @@ class _ChatMessageListState extends State<ChatMessageList> {
   int _cachedPlanEntriesHash = -1;
   final Set<String> _seenEntryKeys = <String>{};
 
+  // P5: Cached tap closures — rebuilt only when relevant widget props change.
+  FilePathTapCallback? _cachedFileTap;
+  ValueChanged<UserChatEntry>? _cachedImageTap;
+
   @override
   void initState() {
     super.initState();
     widget.scrollToUserEntry?.addListener(_onScrollToUserEntry);
     _seedSeenEntryKeys(context.read<ChatSessionCubit>().state.entries);
+    _rebuildTapClosures();
   }
 
   @override
@@ -121,12 +126,23 @@ class _ChatMessageListState extends State<ChatMessageList> {
         ..clear()
         ..addAll(_collectEntryKeys(context.read<ChatSessionCubit>().state.entries));
     }
+    // P5: Rebuild tap closures when relevant props change.
+    if (oldWidget.projectPath != widget.projectPath ||
+        oldWidget.httpBaseUrl != widget.httpBaseUrl ||
+        oldWidget.onFilePeekOpened != widget.onFilePeekOpened) {
+      _rebuildTapClosures();
+    }
   }
 
   @override
   void dispose() {
     widget.scrollToUserEntry?.removeListener(_onScrollToUserEntry);
     super.dispose();
+  }
+
+  void _rebuildTapClosures() {
+    _cachedFileTap = _buildFileTapHandler();
+    _cachedImageTap = _buildImageTapHandler();
   }
 
   void _onScrollToUserEntry() {
@@ -241,7 +257,7 @@ class _ChatMessageListState extends State<ChatMessageList> {
     return true;
   }
 
-  FilePathTapCallback? _buildFileTapHandler(BuildContext context) {
+  FilePathTapCallback _buildFileTapHandler() {
     return (filePath) {
       final projectPath = widget.projectPath;
       if (projectPath == null || projectPath.isEmpty) return;
@@ -256,7 +272,7 @@ class _ChatMessageListState extends State<ChatMessageList> {
     };
   }
 
-  ValueChanged<UserChatEntry> _buildImageTapHandler(BuildContext context) {
+  ValueChanged<UserChatEntry> _buildImageTapHandler() {
     return (user) {
       final claudeSessionId = context
           .read<ChatSessionCubit>()
@@ -305,8 +321,6 @@ class _ChatMessageListState extends State<ChatMessageList> {
     final visibleEntries = _getVisibleEntries(allEntries);
     final indexOffset = _indexOffsetFor(allEntries);
     final hasEarlier = _computeHasEarlier(allEntries);
-    final onFileTap = _buildFileTapHandler(context);
-    final onImageTap = _buildImageTapHandler(context);
 
     final visibleCount = visibleEntries.length;
     final totalCount = visibleCount + (hasStreaming ? 1 : 0);
@@ -381,8 +395,8 @@ class _ChatMessageListState extends State<ChatMessageList> {
             collapseToolResults: widget.collapseToolResults,
             resolvedPlanText: _resolvePlanText(entry),
             hiddenToolUseIds: hiddenToolUseIds,
-            onFileTap: onFileTap,
-            onImageTap: onImageTap,
+            onFileTap: _cachedFileTap,
+            onImageTap: _cachedImageTap,
             isCodex: widget.isCodex,
           );
           if (_shouldAnimateEntry(entryKey)) {
