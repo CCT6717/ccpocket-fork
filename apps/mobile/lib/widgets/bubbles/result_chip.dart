@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
 
 import '../../models/messages.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_theme.dart';
-import '../../theme/markdown_style.dart';
+import '../../widgets/cached_markdown_body.dart';
 
 class ResultChip extends StatelessWidget {
   final ResultMessage message;
@@ -78,13 +77,9 @@ class ResultChip extends StatelessWidget {
                 color: appColors.assistantBubble,
                 borderRadius: AppSpacing.assistantBubbleBorderRadius,
               ),
-              child: MarkdownBody(
+              child: CachedMarkdownBody(
                 data: resultText,
                 selectable: true,
-                styleSheet: buildMarkdownStyle(context),
-                onTapLink: handleMarkdownLink,
-                inlineSyntaxes: colorCodeInlineSyntaxes,
-                builders: markdownBuilders,
               ),
             ),
           ),

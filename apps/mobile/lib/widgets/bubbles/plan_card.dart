@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
 
 import '../../theme/app_spacing.dart';
-import '../../theme/markdown_style.dart';
+import '../../widgets/cached_markdown_body.dart';
 
 /// A visually distinct card for rendering implementation plans inline in chat.
 ///
@@ -117,13 +116,9 @@ class _PlanBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final markdownWidget = Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      child: MarkdownBody(
+      child: CachedMarkdownBody(
         data: planText,
         selectable: true,
-        styleSheet: buildMarkdownStyle(context),
-        onTapLink: handleMarkdownLink,
-        inlineSyntaxes: colorCodeInlineSyntaxes,
-        builders: markdownBuilders,
       ),
     );
 
