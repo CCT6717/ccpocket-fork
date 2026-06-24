@@ -1,4 +1,7 @@
-# CC Pocket
+# CC Pocket (Performance Fork)
+
+> **Fork of [K9i-0/ccpocket](https://github.com/K9i-0/ccpocket)** with 34 performance optimizations.
+> Upstream: `https://github.com/K9i-0/ccpocket.git`
 
 CC Pocket is a mobile and desktop app for controlling Codex and Claude coding-agent sessions.
 Run the agents through a self-hosted Bridge Server on your own Mac, Linux, or Windows machine,
@@ -52,6 +55,44 @@ New to mobile coding agents? See [How to run Codex from iPhone or Android](https
 - **Work in parallel safely**: run sessions in separate git worktrees and keep long-running work isolated.
 - **Manage your machines**: save hosts, connect with QR codes or mDNS discovery, use Tailscale, start/stop/update over SSH, and receive push notifications.
 - **Use larger screens when helpful**: CC Pocket adapts to iPad, macOS, Linux, and Windows with workspace layouts for chat, Git, Explorer, screenshots, and images.
+
+## Performance Optimizations (This Fork)
+
+This fork includes 34 performance optimizations across 6 categories:
+
+### Frame Rate (P0-P14)
+- `context.select` / `watch` optimization to reduce unnecessary rebuilds
+- `RepaintBoundary` isolation for streaming bubbles, assistant bubbles, image previews
+- `CachedMarkdownBody` for markdown rendering cache
+- Animation controller isolation (dual controllers split into independent widgets)
+- BackdropFilter replaced with static translucent backgrounds
+- Windowed message list (only render recent N messages)
+
+### Memory
+- 5 memory leak fixes in `BridgeService` (pingTimer, StreamControllers, ValueNotifier)
+
+### Battery / Lifecycle
+- Ping timer adapts interval: foreground 10s, background 60s
+- Health check interval 4x longer in background
+- mDNS scanning stops on connection, resumes on disconnect
+- `WidgetsBindingObserver` for app lifecycle awareness
+
+### Startup
+- `NotificationService` + `MarkdownHighlight` parallel initialization
+- `InAppReviewService.attachToBridge` deferred (unawaited)
+
+### Network
+- mDNS stops after successful connection (saves battery/network)
+- Version info cache skip (avoids redundant `/version` requests)
+- Health check version fetch non-blocking
+
+### CPU / Isolate
+- WebSocket message `jsonDecode` runs on background isolate via `compute()`
+- Status refresh timer exponential backoff (3s → 30s max)
+
+### Other
+- Shared `http.Client` reuse across services
+- `SharedPreferences` optional injection (falls back to `getInstance()`)
 
 ## Why Fork CC Pocket?
 
@@ -121,8 +162,8 @@ see the [Bridge package README](packages/bridge/README.md#configuration).
 ## Development
 
 ```bash
-git clone https://github.com/K9i-0/ccpocket.git
-cd ccpocket
+git clone https://github.com/CCT6717/ccpocket-fork.git
+cd ccpocket-fork
 npm install
 cd apps/mobile && flutter pub get && cd ../..
 ```
@@ -146,3 +187,15 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines.
 ## License
 
 [MIT](LICENSE)
+
+## Syncing with Upstream
+
+To pull updates from the original repository:
+
+```bash
+git remote add upstream https://github.com/K9i-0/ccpocket.git
+git fetch upstream
+git merge upstream/main
+```
+
+To push this fork's optimizations back upstream, create a PR from this fork to the original repository.
