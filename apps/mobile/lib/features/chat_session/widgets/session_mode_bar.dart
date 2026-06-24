@@ -39,103 +39,98 @@ class SessionModeBar extends StatelessWidget {
 
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bar = ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
-          decoration: BoxDecoration(
-            color: isDark
-                ? cs.surface.withValues(alpha: 0.6)
-                : cs.surface.withValues(alpha: 0.7),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.1)
-                  : Colors.white.withValues(alpha: 0.6),
-            ),
-          ),
-          child: IntrinsicHeight(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (isCodex) ...[
-                  CodexModelChip(
-                    model: codexModel!,
-                    reasoningEffort: codexReasoningEffort,
-                    onTap: () => showCodexModelMenu(context, chatCubit),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: VerticalDivider(
-                      width: 1,
-                      thickness: 1,
-                      color: cs.outlineVariant.withValues(alpha: 0.4),
-                    ),
-                  ),
-                  PlanModeChip(
-                    enabled: planMode,
-                    activeGlow: false,
-                    onTap: () => togglePlanMode(
-                      context,
-                      chatCubit,
-                      onBeforeRestart: onBeforeRestart,
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: VerticalDivider(
-                      width: 1,
-                      thickness: 1,
-                      color: cs.outlineVariant.withValues(alpha: 0.4),
-                    ),
-                  ),
-                  ExecutionModeChip(
-                    currentMode: executionMode,
-                    codexApprovalPolicy: chatCubit.state.codexApprovalPolicy,
-                    codexApprovalsReviewer:
-                        chatCubit.state.codexApprovalsReviewer,
-                    codexPermissionsMode: chatCubit.state.codexPermissionsMode,
-                    provider: chatCubit.provider,
-                    onTap: () => showCodexPermissionsMenu(
-                      context,
-                      chatCubit,
-                      onBeforeRestart: onBeforeRestart,
-                    ),
-                  ),
-                ] else ...[
-                  PermissionModeChip(
-                    currentMode: permissionMode,
-                    onTap: () => showPermissionModeMenu(
-                      context,
-                      chatCubit,
-                      onBeforeRestart: onBeforeRestart,
-                    ),
-                  ),
-                ],
-                if (!isCodex) ...[
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: VerticalDivider(
-                      width: 1,
-                      thickness: 1,
-                      color: cs.outlineVariant.withValues(alpha: 0.4),
-                    ),
-                  ),
-                  SandboxModeChip(
-                    currentMode: sandboxMode,
-                    provider: chatCubit.provider,
-                    onTap: () => showSandboxModeMenu(
-                      context,
-                      chatCubit,
-                      onBeforeRestart: onBeforeRestart,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
+    final bar = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+      decoration: BoxDecoration(
+        color: isDark
+            ? cs.surface.withValues(alpha: 0.6)
+            : cs.surface.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.1)
+              : Colors.white.withValues(alpha: 0.6),
+        ),
+      ),
+      child: IntrinsicHeight(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isCodex) ...[
+              CodexModelChip(
+                model: codexModel!,
+                reasoningEffort: codexReasoningEffort,
+                onTap: () => showCodexModelMenu(context, chatCubit),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: VerticalDivider(
+                  width: 1,
+                  thickness: 1,
+                  color: cs.outlineVariant.withValues(alpha: 0.4),
+                ),
+              ),
+              PlanModeChip(
+                enabled: planMode,
+                activeGlow: false,
+                onTap: () => togglePlanMode(
+                  context,
+                  chatCubit,
+                  onBeforeRestart: onBeforeRestart,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: VerticalDivider(
+                  width: 1,
+                  thickness: 1,
+                  color: cs.outlineVariant.withValues(alpha: 0.4),
+                ),
+              ),
+              ExecutionModeChip(
+                currentMode: executionMode,
+                codexApprovalPolicy: chatCubit.state.codexApprovalPolicy,
+                codexApprovalsReviewer:
+                    chatCubit.state.codexApprovalsReviewer,
+                codexPermissionsMode:
+                    chatCubit.state.codexPermissionsMode,
+                provider: chatCubit.provider,
+                onTap: () => showCodexPermissionsMenu(
+                  context,
+                  chatCubit,
+                  onBeforeRestart: onBeforeRestart,
+                ),
+              ),
+            ] else ...[
+              PermissionModeChip(
+                currentMode: permissionMode,
+                onTap: () => showPermissionModeMenu(
+                  context,
+                  chatCubit,
+                  onBeforeRestart: onBeforeRestart,
+                ),
+              ),
+            ],
+            if (!isCodex) ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: VerticalDivider(
+                  width: 1,
+                  thickness: 1,
+                  color: cs.outlineVariant.withValues(alpha: 0.4),
+                ),
+              ),
+              SandboxModeChip(
+                currentMode: sandboxMode,
+                provider: chatCubit.provider,
+                onTap: () => showSandboxModeMenu(
+                  context,
+                  chatCubit,
+                  onBeforeRestart: onBeforeRestart,
+                ),
+              ),
+            ],
+          ],
         ),
       ),
     );
