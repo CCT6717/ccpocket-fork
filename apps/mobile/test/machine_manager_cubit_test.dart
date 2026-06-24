@@ -6,6 +6,7 @@ import 'package:ccpocket/providers/machine_manager_cubit.dart';
 import 'package:ccpocket/services/bridge_latest_version_service.dart';
 import 'package:ccpocket/services/machine_manager_service.dart';
 import 'package:ccpocket/services/ssh_startup_service.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -13,7 +14,7 @@ import 'package:http/testing.dart';
 import 'helpers/bridge_version_test_values.dart';
 
 /// Minimal mock for MachineManagerService.
-class MockMachineManagerService implements MachineManagerService {
+class MockMachineManagerService with WidgetsBindingObserver implements MachineManagerService {
   final _controller = StreamController<List<MachineWithStatus>>.broadcast();
   final List<String> calls = [];
 

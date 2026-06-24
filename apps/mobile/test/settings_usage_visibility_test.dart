@@ -133,7 +133,7 @@ class _FakeSshStartupService extends SshStartupService {
   }
 }
 
-class _StaticMachineManagerService implements MachineManagerService {
+class _StaticMachineManagerService with WidgetsBindingObserver implements MachineManagerService {
   final _controller = StreamController<List<MachineWithStatus>>.broadcast();
   List<MachineWithStatus> _statuses;
   final String? sshPassword;

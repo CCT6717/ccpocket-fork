@@ -4,6 +4,7 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -15,7 +16,7 @@ import '../utils/codex_plan_update.dart';
 import 'bridge_service_base.dart';
 import 'session_runtime_store.dart';
 
-class BridgeService implements BridgeServiceBase {
+class BridgeService with WidgetsBindingObserver implements BridgeServiceBase {
   void Function(ClientMessage message)? onOutgoingMessage;
   FutureOr<void> Function()? onDisconnect;
 
@@ -146,11 +147,13 @@ class BridgeService implements BridgeServiceBase {
   DateTime? _lastConnectedAt;
 
   // Application-layer RTT measurement
-  static const _pingInterval = Duration(seconds: 10);
+  static const _foregroundPingInterval = Duration(seconds: 10);
+  static const _backgroundPingInterval = Duration(seconds: 60);
   Timer? _pingTimer;
   final Map<String, int> _pendingPings = {};
   final _lastRttMs = ValueNotifier<int>(0);
   ValueListenable<int> get lastRttMs => _lastRttMs;
+  bool _isInForeground = true;
 
   int get reconnectCount => _totalReconnectAttempts;
 
@@ -254,7 +257,16 @@ class BridgeService implements BridgeServiceBase {
       _offlinePendingActions;
 
   BridgeService() {
+    _tryAddObserver();
     unawaited(_ensureOfflineQueueRestored());
+  }
+
+  void _tryAddObserver() {
+    try {
+      WidgetsBinding.instance.addObserver(this);
+    } catch (_) {
+      // Binding not yet initialized (e.g. in tests). Will register on first connect.
+    }
   }
 
   /// The last WebSocket URL used for connection (or reconnection).
@@ -812,7 +824,8 @@ class BridgeService implements BridgeServiceBase {
   void _startPingTimer() {
     _pingTimer?.cancel();
     _pendingPings.clear();
-    _pingTimer = Timer.periodic(_pingInterval, (_) {
+    final interval = _isInForeground ? _foregroundPingInterval : _backgroundPingInterval;
+    _pingTimer = Timer.periodic(interval, (_) {
       if (!isConnected) return;
       final id = 'ping_${DateTime.now().microsecondsSinceEpoch}';
       _pendingPings[id] = DateTime.now().millisecondsSinceEpoch;
@@ -835,6 +848,28 @@ class BridgeService implements BridgeServiceBase {
     _pingTimer?.cancel();
     _pingTimer = null;
     _pendingPings.clear();
+  }
+
+  void _updatePingInterval() {
+    if (!isConnected) return;
+    _startPingTimer();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    switch (state) {
+      case AppLifecycleState.resumed:
+        _isInForeground = true;
+        _updatePingInterval();
+        break;
+      case AppLifecycleState.paused:
+        _isInForeground = false;
+        _updatePingInterval();
+        break;
+      default:
+        break;
+    }
   }
 
   void _scheduleReconnect() {
@@ -2329,8 +2364,14 @@ class BridgeService implements BridgeServiceBase {
   void clearDiffImageCache() => _diffImageCache.clear();
 
   void dispose() {
+    try {
+      WidgetsBinding.instance.removeObserver(this);
+    } catch (_) {
+      // Binding not available (e.g. in tests).
+    }
     _intentionalDisconnect = true;
     _reconnectTimer?.cancel();
+    _pingTimer?.cancel();
     for (final timer in _inFlightPendingVisibilityTimers.values) {
       timer.cancel();
     }
@@ -2362,6 +2403,9 @@ class BridgeService implements BridgeServiceBase {
     _offlinePendingActionsController.close();
     _debugBundleController.close();
     _usageController.close();
+    _fileContentController.close();
+    _recordingListController.close();
+    _recordingContentController.close();
     _backupResultController.close();
     _restoreResultController.close();
     _backupInfoController.close();
@@ -2384,6 +2428,7 @@ class BridgeService implements BridgeServiceBase {
     _gitStatusResultController.close();
     _gitRemoteStatusResultController.close();
     clearDiffImageCache();
+    _lastRttMs.dispose();
   }
 }
 

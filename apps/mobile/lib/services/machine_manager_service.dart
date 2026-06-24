@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../core/logger.dart';
@@ -33,7 +34,7 @@ typedef BridgeHttpBaseUrlResolver =
 /// - Periodic health checks with version fetching
 /// - Secure credential storage (API keys, SSH passwords/keys)
 /// - Migration from old data formats
-class MachineManagerService {
+class MachineManagerService with WidgetsBindingObserver {
   // New storage key for unified Machine model
   static const _prefsKey = 'machines_v2';
   // Old keys for migration
@@ -55,8 +56,20 @@ class MachineManagerService {
   BridgeWsUrlResolver? _bridgeWsUrlResolver;
   BridgeHttpBaseUrlResolver? _bridgeHttpBaseUrlResolver;
   Timer? _healthCheckTimer;
+  Duration _healthCheckInterval = const Duration(seconds: 30);
+  bool _isInForeground = true;
 
-  MachineManagerService(this._prefs, this._secureStorage);
+  MachineManagerService(this._prefs, this._secureStorage) {
+    _tryAddObserver();
+  }
+
+  void _tryAddObserver() {
+    try {
+      WidgetsBinding.instance.addObserver(this);
+    } catch (_) {
+      // Binding not yet initialized (e.g. in tests).
+    }
+  }
 
   void configureBridgeTunnelResolvers({
     BridgeWsUrlResolver? wsUrlResolver,
@@ -648,14 +661,43 @@ class MachineManagerService {
   void startPeriodicHealthCheck({
     Duration interval = const Duration(seconds: 30),
   }) {
+    _healthCheckInterval = interval;
+    _restartHealthCheckTimer();
+  }
+
+  void _restartHealthCheckTimer() {
     stopPeriodicHealthCheck();
-    _healthCheckTimer = Timer.periodic(interval, (_) => checkAllHealth());
+    final effectiveInterval = _isInForeground
+        ? _healthCheckInterval
+        : _healthCheckInterval * 4;
+    _healthCheckTimer = Timer.periodic(effectiveInterval, (_) => checkAllHealth());
   }
 
   /// Stop periodic health check
   void stopPeriodicHealthCheck() {
     _healthCheckTimer?.cancel();
     _healthCheckTimer = null;
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    switch (state) {
+      case AppLifecycleState.resumed:
+        _isInForeground = true;
+        if (_healthCheckTimer != null) {
+          _restartHealthCheckTimer();
+        }
+        break;
+      case AppLifecycleState.paused:
+        _isInForeground = false;
+        if (_healthCheckTimer != null) {
+          _restartHealthCheckTimer();
+        }
+        break;
+      default:
+        break;
+    }
   }
 
   // ---- Secure Credential Management ----
@@ -808,6 +850,11 @@ class MachineManagerService {
 
   /// Dispose resources
   void dispose() {
+    try {
+      WidgetsBinding.instance.removeObserver(this);
+    } catch (_) {
+      // Binding not available (e.g. in tests).
+    }
     stopPeriodicHealthCheck();
     _machinesController.close();
   }
