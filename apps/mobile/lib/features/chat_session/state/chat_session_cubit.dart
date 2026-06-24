@@ -162,14 +162,29 @@ class ChatSessionCubit extends Cubit<ChatSessionState> {
   }
 
   void _startStatusRefreshTimer() {
-    _statusRefreshTimer = Timer.periodic(const Duration(seconds: 3), (_) {
-      if (state.status != ProcessStatus.starting) {
-        _statusRefreshTimer?.cancel();
-        _statusRefreshTimer = null;
-        return;
-      }
-      _bridge.requestSessionHistory(sessionId);
-    });
+    // Exponential backoff: 3s → 6s → 12s → 24s → max 30s
+    var interval = const Duration(seconds: 3);
+    const maxInterval = Duration(seconds: 30);
+
+    void scheduleNext() {
+      _statusRefreshTimer = Timer(interval, () {
+        if (state.status != ProcessStatus.starting) {
+          _statusRefreshTimer?.cancel();
+          _statusRefreshTimer = null;
+          return;
+        }
+        _bridge.requestSessionHistory(sessionId);
+        // Double the interval for next poll, capped at maxInterval.
+        interval = Duration(
+          milliseconds: (interval.inMilliseconds * 2)
+              .clamp(3000, maxInterval.inMilliseconds)
+              .toInt(),
+        );
+        scheduleNext();
+      });
+    }
+
+    scheduleNext();
   }
 
   // ---------------------------------------------------------------------------
