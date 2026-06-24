@@ -166,40 +166,45 @@ class _AnimatedStatusDotState extends State<_AnimatedStatusDot>
     super.dispose();
   }
 
+  List<BoxShadow> _buildShadow() {
+    return [
+      BoxShadow(
+        color: widget.color.withValues(alpha: 0.5),
+        blurRadius: 4,
+        spreadRadius: 1,
+      ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
+    final shadow = widget.isAnimating ? _buildShadow() : null;
     return AnimatedBuilder(
       animation: _animation,
-      builder: (context, child) {
-        return Container(
-          width: 22,
-          height: 22,
-          decoration: BoxDecoration(
-            color: widget.color.withValues(alpha: 0.12),
-            shape: BoxShape.circle,
-          ),
-          child: Center(
-            child: Transform.scale(
-              scale: widget.isAnimating ? _animation.value : 1.0,
-              child: Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: widget.color,
-                  shape: BoxShape.circle,
-                  boxShadow: widget.isAnimating
-                      ? [
-                          BoxShadow(
-                            color: widget.color.withValues(alpha: 0.5),
-                            blurRadius: 4,
-                            spreadRadius: 1,
-                          ),
-                        ]
-                      : null,
-                ),
-              ),
+      child: Container(
+        width: 22,
+        height: 22,
+        decoration: BoxDecoration(
+          color: widget.color.withValues(alpha: 0.12),
+          shape: BoxShape.circle,
+        ),
+        child: Center(
+          child: Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: widget.color,
+              shape: BoxShape.circle,
+              boxShadow: shadow,
             ),
           ),
+        ),
+      ),
+      builder: (context, child) {
+        if (!widget.isAnimating) return child!;
+        return Transform.scale(
+          scale: _animation.value,
+          child: child,
         );
       },
     );

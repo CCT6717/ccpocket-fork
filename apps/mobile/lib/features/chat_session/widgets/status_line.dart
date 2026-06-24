@@ -75,27 +75,29 @@ class _StatusLineState extends State<StatusLine>
       ProcessStatus.compacting => appColors.statusCompacting,
     };
 
-    return AnimatedBuilder(
-      animation: _glowAnimation,
-      builder: (context, child) {
-        final glowOpacity = _isActive ? _glowAnimation.value : 0.4;
-        final blurRadius = _isActive ? 6.0 * _glowAnimation.value : 0.0;
+    return RepaintBoundary(
+      child: AnimatedBuilder(
+        animation: _glowAnimation,
+        builder: (context, child) {
+          final glowOpacity = _isActive ? _glowAnimation.value : 0.4;
+          final blurRadius = _isActive ? 6.0 * _glowAnimation.value : 0.0;
 
-        return Container(
-          height: 2,
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: glowOpacity),
-            boxShadow: [
-              if (blurRadius > 0)
-                BoxShadow(
-                  color: color.withValues(alpha: glowOpacity * 0.6),
-                  blurRadius: blurRadius,
-                  spreadRadius: 1,
-                ),
-            ],
-          ),
-        );
-      },
+          return Container(
+            height: 2,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: glowOpacity),
+              boxShadow: [
+                if (blurRadius > 0)
+                  BoxShadow(
+                    color: color.withValues(alpha: glowOpacity * 0.6),
+                    blurRadius: blurRadius,
+                    spreadRadius: 1,
+                  ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 }
