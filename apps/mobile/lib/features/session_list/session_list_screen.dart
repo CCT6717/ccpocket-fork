@@ -13,6 +13,7 @@ import '../../utils/platform_helper.dart';
 
 import '../../models/messages.dart';
 import '../../models/machine.dart';
+import '../../models/new_session_tab.dart';
 import '../../models/offline_pending_action.dart';
 import '../../providers/bridge_cubits.dart';
 import '../../providers/machine_manager_cubit.dart';
@@ -1720,16 +1721,16 @@ class _SessionListScreenState extends State<SessionListScreen>
   }
 
   String? _connectedBridgeLabel({
-    required SettingsState settingsState,
+    required bool showBridgeNameInSessionList,
+    required String? activeMachineId,
     required MachineManagerState? machineState,
   }) {
     if (widget.debugRecentSessions != null) return null;
-    if (!settingsState.showBridgeNameInSessionList) return null;
+    if (!showBridgeNameInSessionList) return null;
 
     final machines = machineState?.machines ?? const <MachineWithStatus>[];
     if (machines.length < 2) return null;
 
-    final activeMachineId = settingsState.activeMachineId;
     if (activeMachineId != null) {
       for (final item in machines) {
         if (item.machine.id == activeMachineId) {
@@ -1775,7 +1776,9 @@ class _SessionListScreenState extends State<SessionListScreen>
     final slState = context.watch<SessionListCubit>().state;
     final connectionState = widget.debugRecentSessions != null
         ? BridgeConnectionState.connected
-        : context.watch<ConnectionCubit>().state;
+        : context.select<ConnectionCubit, BridgeConnectionState>(
+            (cubit) => cubit.state,
+          );
     final sessions = context.watch<ActiveSessionsCubit>().state;
     final recentSessionsList = _factualRecentSessions(
       widget.debugRecentSessions ?? slState.sessions,
@@ -1789,12 +1792,18 @@ class _SessionListScreenState extends State<SessionListScreen>
     final l = AppLocalizations.of(context);
 
     // Try to get MachineManagerCubit if available
-    final machineManagerCubit = context.watch<MachineManagerCubit?>();
+    final machineManagerCubit = context.read<MachineManagerCubit?>();
     final machineState = machineManagerCubit?.state;
-    final settingsState = context.watch<SettingsCubit>().state;
+    final showBridgeNameInSessionList = context.select<SettingsCubit, bool>(
+      (cubit) => cubit.state.showBridgeNameInSessionList,
+    );
+    final activeMachineId = context.select<SettingsCubit, String?>(
+      (cubit) => cubit.state.activeMachineId,
+    );
     final bridge = context.read<BridgeService>();
     final connectedBridgeLabel = _connectedBridgeLabel(
-      settingsState: settingsState,
+      showBridgeNameInSessionList: showBridgeNameInSessionList,
+      activeMachineId: activeMachineId,
       machineState: machineState,
     );
     final rttMs = showConnectedUI ? bridge.lastRttMs : null;
@@ -1990,9 +1999,11 @@ class _SessionListScreenState extends State<SessionListScreen>
 
     if (showConnectedUI) {
       final bridge = context.read<BridgeService>();
-      final settingsState = context.watch<SettingsCubit>().state;
+      final newSessionTabs = context.select<SettingsCubit, List<NewSessionTab>>(
+        (cubit) => cubit.state.newSessionTabs,
+      );
       final allowedProviderFilters = providerFiltersForEnabledTabs(
-        settingsState.newSessionTabs,
+        newSessionTabs,
       );
       final effectiveProviderFilter = coerceProviderFilter(
         slState.providerFilter,
@@ -2002,7 +2013,7 @@ class _SessionListScreenState extends State<SessionListScreen>
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
           context.read<SessionListCubit>().applyEnabledAgents(
-            settingsState.newSessionTabs,
+            newSessionTabs,
           );
         });
       }
