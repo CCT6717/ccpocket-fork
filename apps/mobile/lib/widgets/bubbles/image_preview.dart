@@ -25,23 +25,27 @@ class ImagePreviewWidget extends StatelessWidget {
     if (images.isEmpty) return const SizedBox.shrink();
 
     if (images.length == 1) {
-      return _SingleImage(image: images.first, httpBaseUrl: httpBaseUrl);
+      return RepaintBoundary(
+        child: _SingleImage(image: images.first, httpBaseUrl: httpBaseUrl),
+      );
     }
 
-    return SizedBox(
-      height: 150,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: images.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 8),
-        itemBuilder: (context, index) {
-          final image = images[index];
-          return _ImageThumbnail(
-            image: image,
-            httpBaseUrl: httpBaseUrl,
-            height: 150,
-          );
-        },
+    return RepaintBoundary(
+      child: SizedBox(
+        height: 150,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          itemCount: images.length,
+          separatorBuilder: (_, _) => const SizedBox(width: 8),
+          itemBuilder: (context, index) {
+            final image = images[index];
+            return _ImageThumbnail(
+              image: image,
+              httpBaseUrl: httpBaseUrl,
+              height: 150,
+            );
+          },
+        ),
       ),
     );
   }

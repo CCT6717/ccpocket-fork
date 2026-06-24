@@ -205,32 +205,34 @@ class _DefaultLayout extends StatelessWidget {
     final fileSuffixes = onFileTap != null
         ? FilePathSyntax.buildSuffixSet(context.watch<FileListCubit>().state)
         : const <String>{};
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        for (final content in contents)
-          switch (content) {
-            TextContent(:final text) => _buildTextContent(
-              context,
-              text,
-              fileSuffixes,
+    return RepaintBoundary(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (final content in contents)
+            switch (content) {
+              TextContent(:final text) => _buildTextContent(
+                context,
+                text,
+                fileSuffixes,
+              ),
+              ToolUseContent(:final id, :final name, :final input) =>
+                name == 'TodoWrite' || isCodexUpdatePlanTool(name)
+                    ? TodoWriteWidget(input: input)
+                    : ToolUseTile(toolUseId: id, name: name, input: input),
+              ThinkingContent(:final thinking) => ThinkingBubble(
+                thinking: thinking,
+              ),
+            },
+          if (hasTextContent)
+            MessageActionBar(
+              textToCopy: allText,
+              isPlainTextMode: plainTextMode,
+              onFork: onFork,
+              onTogglePlainText: onTogglePlainText,
             ),
-            ToolUseContent(:final id, :final name, :final input) =>
-              name == 'TodoWrite' || isCodexUpdatePlanTool(name)
-                  ? TodoWriteWidget(input: input)
-                  : ToolUseTile(toolUseId: id, name: name, input: input),
-            ThinkingContent(:final thinking) => ThinkingBubble(
-              thinking: thinking,
-            ),
-          },
-        if (hasTextContent)
-          MessageActionBar(
-            textToCopy: allText,
-            isPlainTextMode: plainTextMode,
-            onFork: onFork,
-            onTogglePlainText: onTogglePlainText,
-          ),
-      ],
+        ],
+      ),
     );
   }
 
