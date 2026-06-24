@@ -18,6 +18,7 @@ import 'dart:convert';
 import 'package:app_links/app_links.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -120,6 +121,7 @@ void main() async {
   // Initialize SharedPreferences and services
   final prefs = await SharedPreferences.getInstance();
   const secureStorage = FlutterSecureStorage();
+  final httpClient = http.Client();
   final machineManagerService = MachineManagerService(prefs, secureStorage);
   // SSH is only supported on native platforms (not web)
   final sshStartupService = kIsWeb
@@ -143,7 +145,7 @@ void main() async {
     unawaited(_checkShorebirdUpdate(prefs));
   }
 
-  final bridge = BridgeService();
+  final bridge = BridgeService(prefs: prefs);
   bridge.onDisconnect = sshBridgeTunnelService?.closeAll;
   final fcmService = FcmService();
   final draftService = DraftService(prefs);
@@ -248,6 +250,7 @@ void main() async {
             create: (_) => MachineManagerCubit(
               machineManagerService,
               sshStartupService,
+              httpClient: httpClient,
               refreshLatestBridgeVersionOnInit: true,
             ),
           ),

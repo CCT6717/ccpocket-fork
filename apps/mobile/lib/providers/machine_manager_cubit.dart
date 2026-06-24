@@ -1,7 +1,9 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:http/http.dart' as http;
 
 import '../constants/app_constants.dart';
 import '../models/machine.dart';
@@ -69,6 +71,7 @@ class MachineManagerCubit extends Cubit<MachineManagerState> {
     this._service,
     this._sshService, {
     BridgeLatestVersionService? latestVersionService,
+    http.Client? httpClient,
     bool refreshLatestBridgeVersionOnInit = false,
     Duration? healthTimeout,
     Duration? startHealthTimeout,
@@ -77,7 +80,7 @@ class MachineManagerCubit extends Cubit<MachineManagerState> {
     Duration postStartHealthRequestTimeout =
         _defaultPostStartHealthRequestTimeout,
   }) : _latestVersionService =
-           latestVersionService ?? BridgeLatestVersionService(),
+           latestVersionService ?? BridgeLatestVersionService(httpClient: httpClient),
        _ownsLatestVersionService = latestVersionService == null,
        _startHealthTimeout =
            startHealthTimeout ?? healthTimeout ?? _defaultStartHealthTimeout,

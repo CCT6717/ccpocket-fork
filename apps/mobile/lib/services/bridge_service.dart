@@ -16,6 +16,10 @@ import '../utils/codex_plan_update.dart';
 import 'bridge_service_base.dart';
 import 'session_runtime_store.dart';
 
+/// Top-level function for Isolate-based JSON decoding.
+Map<String, dynamic> _decodeJson(String data) =>
+    jsonDecode(data) as Map<String, dynamic>;
+
 class BridgeService with WidgetsBindingObserver implements BridgeServiceBase {
   void Function(ClientMessage message)? onOutgoingMessage;
   FutureOr<void> Function()? onDisconnect;
@@ -256,10 +260,15 @@ class BridgeService with WidgetsBindingObserver implements BridgeServiceBase {
   List<OfflinePendingAction> get offlinePendingActions =>
       _offlinePendingActions;
 
-  BridgeService() {
+  SharedPreferences? _prefsOverride;
+
+  BridgeService({SharedPreferences? prefs}) : _prefsOverride = prefs {
     _tryAddObserver();
     unawaited(_ensureOfflineQueueRestored());
   }
+
+  Future<SharedPreferences> get _prefs async =>
+      _prefsOverride ?? await SharedPreferences.getInstance();
 
   void _tryAddObserver() {
     try {
@@ -386,10 +395,10 @@ class BridgeService with WidgetsBindingObserver implements BridgeServiceBase {
       _flushMessageQueue();
 
       _channelSub = _channel!.stream.listen(
-        (data) {
+        (data) async {
           if (epoch != _connectionEpoch) return;
           try {
-            final json = jsonDecode(data as String) as Map<String, dynamic>;
+            final json = await compute(_decodeJson, data as String);
             final sessionId = json['sessionId'] as String?;
             final msg = ServerMessage.fromJson(json);
             if (sessionId != null && msg is HistoryDeltaMessage) {
@@ -738,7 +747,7 @@ class BridgeService with WidgetsBindingObserver implements BridgeServiceBase {
 
   Future<void> _clearPersistedOfflinePendingMessages() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _prefs;
       await prefs.remove(_prefKeyOfflinePendingMessages);
     } catch (error, stackTrace) {
       logger.warning(
@@ -1384,7 +1393,7 @@ class BridgeService with WidgetsBindingObserver implements BridgeServiceBase {
   Future<void> _restoreOfflinePendingMessages() async {
     final generation = _offlineQueueGeneration;
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _prefs;
       final encoded = prefs.getStringList(_prefKeyOfflinePendingMessages);
       if (encoded == null || encoded.isEmpty) return;
       if (generation != _offlineQueueGeneration) return;
@@ -1445,7 +1454,7 @@ class BridgeService with WidgetsBindingObserver implements BridgeServiceBase {
         .map((message) => message.toJson())
         .toList();
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _prefs;
       if (pending.isEmpty) {
         await prefs.remove(_prefKeyOfflinePendingMessages);
       } else {
@@ -2176,7 +2185,7 @@ class BridgeService with WidgetsBindingObserver implements BridgeServiceBase {
   /// [MachineManagerService]. Falls back to legacy [SharedPreferences]
   /// for migration.
   Future<bool> autoConnect({String? apiKey}) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _prefs;
     final url = prefs.getString(_prefKeyUrl);
     if (url == null || url.isEmpty) return false;
 
@@ -2204,7 +2213,7 @@ class BridgeService with WidgetsBindingObserver implements BridgeServiceBase {
   /// API keys are stored separately via [FlutterSecureStorage] in
   /// [MachineManagerService], not in [SharedPreferences].
   Future<void> savePreferences(String url) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _prefs;
     await prefs.setString(_prefKeyUrl, url);
     // API key is no longer stored in SharedPreferences (plaintext).
     // It is managed by MachineManagerService via FlutterSecureStorage.
