@@ -438,6 +438,31 @@ class _StoreSessionListRouteState extends State<_StoreSessionListRoute> {
       ...recent.map((s) => s.projectPath),
     };
 
+    final runningIds = <String>{};
+    for (final s in running) {
+      runningIds.add(s.id);
+      if (s.claudeSessionId != null) runningIds.add(s.claudeSessionId!);
+    }
+    final filteredRecentSessions = recent.where((rs) {
+      if (runningIds.contains(rs.sessionId)) return false;
+      for (final s in running) {
+        if (s.provider == rs.provider &&
+            s.projectPath == rs.projectPath &&
+            s.createdAt == rs.created) {
+          return false;
+        }
+      }
+      return true;
+    }).toList();
+    final allProjectPaths = <String>{
+      ...projectPaths,
+      ...filteredRecentSessions.map((session) => session.projectPath),
+    }.where((path) => path.isNotEmpty).toList();
+    final groupedRecentSessions = groupSessionsByProject(
+      projectPaths: allProjectPaths,
+      sessions: filteredRecentSessions,
+    );
+
     Widget body = Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
@@ -482,6 +507,10 @@ class _StoreSessionListRouteState extends State<_StoreSessionListRoute> {
         namedOnly: false,
         onToggleProvider: () {},
         onToggleNamed: () {},
+        filteredRecentSessions: filteredRecentSessions,
+        groupedRecentSessions: groupedRecentSessions,
+        runningSessionIds: runningIds,
+        pendingResumeSessionIds: const {},
       ),
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 16),
@@ -970,6 +999,31 @@ class _StoreNewSessionRouteState extends State<_StoreNewSessionRoute> {
       ...recent.map((s) => s.projectPath),
     };
 
+    final runningIds = <String>{};
+    for (final s in running) {
+      runningIds.add(s.id);
+      if (s.claudeSessionId != null) runningIds.add(s.claudeSessionId!);
+    }
+    final filteredRecentSessions = recent.where((rs) {
+      if (runningIds.contains(rs.sessionId)) return false;
+      for (final s in running) {
+        if (s.provider == rs.provider &&
+            s.projectPath == rs.projectPath &&
+            s.createdAt == rs.created) {
+          return false;
+        }
+      }
+      return true;
+    }).toList();
+    final allProjectPaths = <String>{
+      ...projectPaths,
+      ...filteredRecentSessions.map((session) => session.projectPath),
+    }.where((path) => path.isNotEmpty).toList();
+    final groupedRecentSessions = groupSessionsByProject(
+      projectPaths: allProjectPaths,
+      sessions: filteredRecentSessions,
+    );
+
     Widget body = Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
@@ -1014,6 +1068,10 @@ class _StoreNewSessionRouteState extends State<_StoreNewSessionRoute> {
         namedOnly: false,
         onToggleProvider: () {},
         onToggleNamed: () {},
+        filteredRecentSessions: filteredRecentSessions,
+        groupedRecentSessions: groupedRecentSessions,
+        runningSessionIds: runningIds,
+        pendingResumeSessionIds: const {},
       ),
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 16),
@@ -1328,6 +1386,31 @@ class _StoreWorkspaceListPane extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final runningIds = <String>{};
+    for (final s in runningSessions) {
+      runningIds.add(s.id);
+      if (s.claudeSessionId != null) runningIds.add(s.claudeSessionId!);
+    }
+    final filteredRecentSessions = recentSessions.where((rs) {
+      if (runningIds.contains(rs.sessionId)) return false;
+      for (final s in runningSessions) {
+        if (s.provider == rs.provider &&
+            s.projectPath == rs.projectPath &&
+            s.createdAt == rs.created) {
+          return false;
+        }
+      }
+      return true;
+    }).toList();
+    final allProjectPaths = <String>{
+      ...projectPaths,
+      ...filteredRecentSessions.map((session) => session.projectPath),
+    }.where((path) => path.isNotEmpty).toList();
+    final groupedRecentSessions = groupSessionsByProject(
+      projectPaths: allProjectPaths,
+      sessions: filteredRecentSessions,
+    );
+
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: SafeArea(
@@ -1377,6 +1460,10 @@ class _StoreWorkspaceListPane extends StatelessWidget {
                 onToggleProvider: () {},
                 onToggleNamed: () {},
                 showInlineStopButtonOverride: true,
+                filteredRecentSessions: filteredRecentSessions,
+                groupedRecentSessions: groupedRecentSessions,
+                runningSessionIds: runningIds,
+                pendingResumeSessionIds: const {},
               ),
             ),
           ],

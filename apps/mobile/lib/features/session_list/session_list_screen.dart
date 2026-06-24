@@ -2135,6 +2135,10 @@ class _SessionListScreenState extends State<SessionListScreen>
               onOpenBridgeSettings: _openBridgeSettings,
               onOpenSupportSettings: _openSupportSettings,
               connectedBridgeLabel: connectedBridgeLabel,
+              filteredRecentSessions: slState.filteredRecentSessions,
+              groupedRecentSessions: slState.groupedRecentSessions,
+              runningSessionIds: slState.runningSessionIds,
+              pendingResumeSessionIds: slState.pendingResumeSessionIds,
             ),
           );
         },

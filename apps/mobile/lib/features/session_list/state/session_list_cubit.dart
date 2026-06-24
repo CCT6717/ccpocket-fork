@@ -1,10 +1,12 @@
 import 'dart:async';
 
+import 'package:collection/collection.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../models/messages.dart';
 import '../../../models/new_session_tab.dart';
+import '../../../models/offline_pending_action.dart';
 import '../../../services/bridge_service.dart';
 import 'session_list_state.dart';
 
@@ -294,6 +296,69 @@ class SessionListCubit extends Cubit<SessionListState> {
     ProviderFilter.claude => 'claude',
     ProviderFilter.codex => 'codex',
   };
+
+  void updateDerivedState({
+    required List<SessionInfo> activeSessions,
+    required List<OfflinePendingAction> offlinePendingActions,
+    String? currentProjectFilter,
+    Set<String>? accumulatedProjectPaths,
+  }) {
+    final runningSessionIds = activeSessions
+        .expand((s) => [s.id, if (s.claudeSessionId != null) s.claudeSessionId!])
+        .toSet();
+
+    final pendingResumeSessionIds = offlinePendingActions
+        .where((action) => action.kind == OfflinePendingActionKind.resume)
+        .map((action) => action.sessionId)
+        .whereType<String>()
+        .toSet();
+
+    final filteredRecentSessions = state.sessions
+        .where((s) {
+          if (pendingResumeSessionIds.contains(s.sessionId)) return false;
+          if (runningSessionIds.contains(s.sessionId)) return false;
+          for (final a in activeSessions) {
+            if (a.provider == s.provider &&
+                a.projectPath == s.projectPath &&
+                a.createdAt == s.created) {
+              return false;
+            }
+          }
+          return true;
+        })
+        .toList();
+
+    final allProjectPaths = <String>{
+      if (currentProjectFilter != null) currentProjectFilter!,
+      if (currentProjectFilter == null) ...?accumulatedProjectPaths,
+      if (currentProjectFilter == null)
+        ...filteredRecentSessions.map((session) => session.projectPath),
+    }.where((path) => path.isNotEmpty).toList();
+
+    final groupedRecentSessions = groupSessionsByProject(
+      projectPaths: allProjectPaths,
+      sessions: filteredRecentSessions,
+    );
+
+    if (const SetEquality().equals(state.runningSessionIds, runningSessionIds) &&
+        const SetEquality()
+            .equals(state.pendingResumeSessionIds, pendingResumeSessionIds) &&
+        const ListEquality()
+            .equals(state.filteredRecentSessions, filteredRecentSessions) &&
+        const ListEquality()
+            .equals(state.groupedRecentSessions, groupedRecentSessions)) {
+      return;
+    }
+
+    emit(
+      state.copyWith(
+        runningSessionIds: runningSessionIds,
+        pendingResumeSessionIds: pendingResumeSessionIds,
+        filteredRecentSessions: filteredRecentSessions,
+        groupedRecentSessions: groupedRecentSessions,
+      ),
+    );
+  }
 
   @override
   Future<void> close() {

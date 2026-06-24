@@ -105,6 +105,37 @@ Widget _buildHomeContent({
   required RevenueCatService revenueCatService,
   required SupportBannerService supportBannerService,
 }) {
+  final runningIds = <String>{};
+  for (final s in sessions) {
+    runningIds.add(s.id);
+    if (s.claudeSessionId != null) runningIds.add(s.claudeSessionId!);
+  }
+  final pendingResumeIds = offlinePendingActions
+      .where((action) => action.kind == OfflinePendingActionKind.resume)
+      .map((action) => action.sessionId)
+      .whereType<String>()
+      .toSet();
+  final filteredRecentSessions = recentSessions.where((rs) {
+    if (pendingResumeIds.contains(rs.sessionId)) return false;
+    if (runningIds.contains(rs.sessionId)) return false;
+    for (final s in sessions) {
+      if (s.provider == rs.provider &&
+          s.projectPath == rs.projectPath &&
+          s.createdAt == rs.created) {
+        return false;
+      }
+    }
+    return true;
+  }).toList();
+  final allProjectPaths = <String>{
+    if (currentProjectFilter != null) currentProjectFilter!,
+    ...filteredRecentSessions.map((session) => session.projectPath),
+  }.where((path) => path.isNotEmpty).toList();
+  final groupedRecentSessions = groupSessionsByProject(
+    projectPaths: allProjectPaths,
+    sessions: filteredRecentSessions,
+  );
+
   return MultiRepositoryProvider(
     providers: [
       RepositoryProvider<DraftService>.value(value: draftService),
@@ -161,6 +192,10 @@ Widget _buildHomeContent({
             onToggleNamed: () {},
             showMacOSNativeAppBanner: showMacOSNativeAppBanner,
             onDismissMacOSNativeAppBanner: onDismissMacOSNativeAppBanner,
+            filteredRecentSessions: filteredRecentSessions,
+            groupedRecentSessions: groupedRecentSessions,
+            runningSessionIds: runningIds,
+            pendingResumeSessionIds: pendingResumeIds,
           ),
         ),
       ),

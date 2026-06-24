@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../models/messages.dart';
@@ -6,6 +7,55 @@ part 'session_list_state.freezed.dart';
 
 /// Provider filter for recent sessions (toggles: All → Codex → Claude → All).
 enum ProviderFilter { all, claude, codex }
+
+/// A group of recent sessions under the same project path.
+class ProjectSessionGroup {
+  final String projectPath;
+  final String projectName;
+  final List<RecentSession> sessions;
+
+  const ProjectSessionGroup({
+    required this.projectPath,
+    required this.projectName,
+    required this.sessions,
+  });
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! ProjectSessionGroup) return false;
+    return projectPath == other.projectPath &&
+        projectName == other.projectName &&
+        const ListEquality().equals(sessions, other.sessions);
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(projectPath, projectName, const ListEquality().hash(sessions));
+}
+
+/// Group [sessions] by [projectPaths], preserving the order of [projectPaths].
+List<ProjectSessionGroup> groupSessionsByProject({
+  required Iterable<String> projectPaths,
+  required List<RecentSession> sessions,
+}) {
+  final grouped = <String, List<RecentSession>>{
+    for (final path in projectPaths)
+      if (path.isNotEmpty) path: <RecentSession>[],
+  };
+  for (final session in sessions) {
+    grouped.putIfAbsent(session.projectPath, () => <RecentSession>[]);
+    grouped[session.projectPath]!.add(session);
+  }
+  return [
+    for (final entry in grouped.entries)
+      ProjectSessionGroup(
+        projectPath: entry.key,
+        projectName: pathBasename(entry.key),
+        sessions: entry.value,
+      ),
+  ];
+}
 
 /// Core state for the session list screen.
 @freezed
@@ -49,5 +99,18 @@ abstract class SessionListState with _$SessionListState {
 
     /// Named-only filter toggle. Applied server-side.
     @Default(false) bool namedOnly,
+
+    /// Precomputed deduplicated recent sessions after removing running/pending
+    /// sessions. Computed by [SessionListCubit.updateDerivedState].
+    @Default([]) List<RecentSession> filteredRecentSessions,
+
+    /// Precomputed project groups for the recent sessions list.
+    @Default([]) List<ProjectSessionGroup> groupedRecentSessions,
+
+    /// IDs of currently running sessions (including claudeSessionId aliases).
+    @Default({}) Set<String> runningSessionIds,
+
+    /// IDs of offline pending resume actions.
+    @Default({}) Set<String> pendingResumeSessionIds,
   }) = _SessionListState;
 }

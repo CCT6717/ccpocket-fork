@@ -32,40 +32,6 @@ import 'macos_native_app_banner.dart';
 import 'session_reconnect_banner.dart';
 import 'support_banner.dart';
 
-class _ProjectSessionGroup {
-  final String projectPath;
-  final String projectName;
-  final List<RecentSession> sessions;
-
-  const _ProjectSessionGroup({
-    required this.projectPath,
-    required this.projectName,
-    required this.sessions,
-  });
-}
-
-List<_ProjectSessionGroup> _groupSessionsByProject({
-  required Iterable<String> projectPaths,
-  required List<RecentSession> sessions,
-}) {
-  final grouped = <String, List<RecentSession>>{
-    for (final path in projectPaths)
-      if (path.isNotEmpty) path: <RecentSession>[],
-  };
-  for (final session in sessions) {
-    grouped.putIfAbsent(session.projectPath, () => <RecentSession>[]);
-    grouped[session.projectPath]!.add(session);
-  }
-  return [
-    for (final entry in grouped.entries)
-      _ProjectSessionGroup(
-        projectPath: entry.key,
-        projectName: pathBasename(entry.key),
-        sessions: entry.value,
-      ),
-  ];
-}
-
 class HomeContent extends StatefulWidget {
   final BridgeConnectionState connectionState;
   final String? bridgeVersion;
@@ -131,6 +97,10 @@ class HomeContent extends StatefulWidget {
   final VoidCallback? onOpenSupportSettings;
   final bool? showInlineStopButtonOverride;
   final String? connectedBridgeLabel;
+  final List<ProjectSessionGroup> groupedRecentSessions;
+  final Set<String> runningSessionIds;
+  final Set<String> pendingResumeSessionIds;
+  final List<RecentSession> filteredRecentSessions;
 
   const HomeContent({
     super.key,
@@ -182,6 +152,10 @@ class HomeContent extends StatefulWidget {
     this.onOpenSupportSettings,
     this.showInlineStopButtonOverride,
     this.connectedBridgeLabel,
+    this.filteredRecentSessions = const [],
+    this.groupedRecentSessions = const [],
+    this.runningSessionIds = const {},
+    this.pendingResumeSessionIds = const {},
   });
 
   @override
@@ -284,6 +258,23 @@ class HomeContentState extends State<HomeContent> {
       _updateBannerDismissed = false;
       _refreshSupportBannerVisibility();
     }
+    if (widget.sessions != oldWidget.sessions ||
+        widget.offlinePendingActions != oldWidget.offlinePendingActions ||
+        widget.currentProjectFilter != oldWidget.currentProjectFilter ||
+        widget.accumulatedProjectPaths != oldWidget.accumulatedProjectPaths) {
+      _syncDerivedState();
+    }
+  }
+
+  void _syncDerivedState() {
+    final cubit = context.read<SessionListCubit>();
+    if (cubit.isClosed) return;
+    cubit.updateDerivedState(
+      activeSessions: widget.sessions,
+      offlinePendingActions: widget.offlinePendingActions,
+      currentProjectFilter: widget.currentProjectFilter,
+      accumulatedProjectPaths: widget.accumulatedProjectPaths,
+    );
   }
 
   @override
@@ -479,50 +470,6 @@ class HomeContentState extends State<HomeContent> {
     final showInlineStopButton =
         widget.showInlineStopButtonOverride ?? shell != null;
     final connectedBridgeBanner = _buildConnectedBridgeBanner(context);
-
-    // Compute derived state
-    // Exclude running sessions from recent list to avoid duplicates
-    final runningSessionIds = widget.sessions
-        .expand(
-          (s) => [s.id, if (s.claudeSessionId != null) s.claudeSessionId!],
-        )
-        .toSet();
-    final pendingResumeSessionIds = widget.offlinePendingActions
-        .where((action) => action.kind == OfflinePendingActionKind.resume)
-        .map((action) => action.sessionId)
-        .whereType<String>()
-        .toSet();
-
-    // Fallback for Codex sessions which use a short proxy ID instead of UUID
-    bool isDuplicate(RecentSession rs) {
-      if (pendingResumeSessionIds.contains(rs.sessionId)) return true;
-      if (runningSessionIds.contains(rs.sessionId)) return true;
-      for (final s in widget.sessions) {
-        if (s.provider == rs.provider &&
-            s.projectPath == rs.projectPath &&
-            s.createdAt == rs.created) {
-          return true;
-        }
-      }
-      return false;
-    }
-
-    // All filtering (project, provider, namedOnly, searchQuery) is applied
-    // server-side. Only deduplicate running sessions here.
-    final filteredSessions = widget.recentSessions
-        .where((s) => !isDuplicate(s))
-        .toList();
-    final allProjectPaths = <String>{
-      if (widget.currentProjectFilter != null) widget.currentProjectFilter!,
-      if (widget.currentProjectFilter == null)
-        ...widget.accumulatedProjectPaths,
-      if (widget.currentProjectFilter == null)
-        ...filteredSessions.map((session) => session.projectPath),
-    }.where((path) => path.isNotEmpty).toList();
-    final groupedRecentSessions = _groupSessionsByProject(
-      projectPaths: allProjectPaths,
-      sessions: filteredSessions,
-    );
 
     final hasActiveFilter =
         widget.currentProjectFilter != null ||
@@ -770,8 +717,8 @@ class HomeContentState extends State<HomeContent> {
           if (widget.isInitialLoading)
             const _SessionListSkeleton()
           else ...[
-            if ((!_groupRecentSessions && filteredSessions.isEmpty) ||
-                (_groupRecentSessions && groupedRecentSessions.isEmpty))
+            if ((!_groupRecentSessions && widget.filteredRecentSessions.isEmpty) ||
+                (_groupRecentSessions && widget.groupedRecentSessions.isEmpty))
               _RecentSessionsEmptyResult(
                 title: hasActiveFilter
                     ? l.noSessionsMatchFilters
@@ -779,7 +726,7 @@ class HomeContentState extends State<HomeContent> {
                 subtitle: hasActiveFilter ? l.adjustFiltersAndSearch : null,
               )
             else if (!_groupRecentSessions) ...[
-              for (final session in filteredSessions)
+              for (final session in widget.filteredRecentSessions)
                 _RecentSessionSlidable(
                   session: session,
                   displayMode: _displayMode,
@@ -797,7 +744,7 @@ class HomeContentState extends State<HomeContent> {
                 const SizedBox(height: 8),
               ],
             ] else
-              for (final group in groupedRecentSessions)
+              for (final group in widget.groupedRecentSessions)
                 _ProjectRecentSessionGroup(
                   group: group,
                   displayMode: _displayMode,
@@ -983,7 +930,7 @@ class _RecentSessionsEmptyResult extends StatelessWidget {
 }
 
 class _ProjectRecentSessionGroup extends StatelessWidget {
-  final _ProjectSessionGroup group;
+  final ProjectSessionGroup group;
   final SessionDisplayMode displayMode;
   final bool isCollapsed;
   final bool isLoadingMore;
