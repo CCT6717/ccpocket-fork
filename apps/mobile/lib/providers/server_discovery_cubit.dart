@@ -11,9 +11,14 @@ class ServerDiscoveryCubit extends Cubit<List<DiscoveredServer>> {
   ServerDiscoveryCubit()
     : _service = ServerDiscoveryService(),
       super(const []) {
-    _service.startDiscovery();
     _sub = _service.servers.listen(emit);
   }
+
+  /// Start mDNS discovery. Call from UI when the screen is first visible.
+  void startDiscovery() => _service.startDiscovery();
+
+  /// Stop mDNS discovery (e.g. when connected to a bridge).
+  void stopDiscovery() => _service.stopDiscovery();
 
   @override
   Future<void> close() {

@@ -591,12 +591,12 @@ class MachineManagerService with WidgetsBindingObserver {
         _statusCache[machineId] = MachineStatus.online;
         _lastErrors.remove(machineId);
 
-        // Fetch version info for online machines
-        await _fetchVersionInfo(
+        // Fetch version info in parallel (don't block health status).
+        unawaited(_fetchVersionInfo(
           machine,
           password: password,
           promptForPassword: promptForPassword,
-        );
+        ));
       } else {
         _statusCache[machineId] = MachineStatus.offline;
         _lastErrors[machineId] = 'HTTP ${response.statusCode}';
@@ -622,12 +622,15 @@ class MachineManagerService with WidgetsBindingObserver {
     return _statusCache[machineId]!;
   }
 
-  /// Fetch version info from /version endpoint
+  /// Fetch version info from /version endpoint (skips if recently cached).
   Future<void> _fetchVersionInfo(
     Machine machine, {
     String? password,
     Future<String?> Function()? promptForPassword,
   }) async {
+    // Skip if version info is already cached (avoids redundant HTTP request).
+    if (_versionCache.containsKey(machine.id)) return;
+
     try {
       final httpBaseUrl = await _buildHttpBaseUrl(
         machine,

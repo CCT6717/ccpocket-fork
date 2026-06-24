@@ -105,20 +105,17 @@ void main() async {
       details.stack,
     );
   };
-  // Initialize notifications eagerly so the Android notification channel is
-  // created before any FCM message arrives. Without this, FCM falls back to
-  // the low-importance fcm_fallback_notification_channel and notifications
-  // appear only in the history drawer instead of as heads-up popups.
-  try {
-    await NotificationService.instance.init();
-  } catch (e) {
-    logger.error('[main] NotificationService init failed', e);
-  }
-  try {
-    await initializeMarkdownSyntaxHighlight();
-  } catch (e) {
-    logger.error('[main] syntax_highlight init failed', e);
-  }
+  // Initialize notifications and markdown syntax highlight in parallel.
+  // NotificationService creates the Android notification channel eagerly so
+  // FCM messages don't fall back to the low-importance channel.
+  await Future.wait([
+    NotificationService.instance.init().catchError((e) {
+      logger.error('[main] NotificationService init failed', e);
+    }),
+    initializeMarkdownSyntaxHighlight().catchError((e) {
+      logger.error('[main] syntax_highlight init failed', e);
+    }),
+  ]);
 
   // Initialize SharedPreferences and services
   final prefs = await SharedPreferences.getInstance();
@@ -151,7 +148,7 @@ void main() async {
   final fcmService = FcmService();
   final draftService = DraftService(prefs);
   final inAppReviewService = InAppReviewService(prefs: prefs);
-  await inAppReviewService.attachToBridge(bridge);
+  unawaited(inAppReviewService.attachToBridge(bridge));
   final supportBannerService = SupportBannerService(
     prefs: prefs,
     reviewService: inAppReviewService,

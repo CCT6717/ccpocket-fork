@@ -404,6 +404,9 @@ class _SessionListScreenState extends State<SessionListScreen>
     widget.deepLinkNotifier?.addListener(_onDeepLink);
     _loadPreferencesAndAutoConnect();
 
+    // Start mDNS discovery when the session list screen is first visible.
+    context.read<ServerDiscoveryCubit?>()?.startDiscovery();
+
     // Feed active session updates to the unseen tracker.
     final activeCubit = context.read<ActiveSessionsCubit>();
     _unseenCubit.updateSessions(activeCubit.state);
@@ -1820,6 +1823,8 @@ class _SessionListScreenState extends State<SessionListScreen>
                 }
                 if (nextState == BridgeConnectionState.connected) {
                   context.read<SessionListCubit>().refresh();
+                  // Stop mDNS scanning once connected — saves battery/network.
+                  context.read<ServerDiscoveryCubit?>()?.stopDiscovery();
                 }
               },
               child: CallbackShortcuts(
