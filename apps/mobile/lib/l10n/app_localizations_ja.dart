@@ -1018,7 +1018,13 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get tapInterruptHoldStop => 'タップ: 中断, 長押し: 停止';
+  String get interrupt => '中断';
+
+  @override
+  String get interruptTooltip => '現在の生成を中断';
+
+  @override
+  String get stopTooltip => 'セッション全体を停止';
 
   @override
   String get rewind => '巻き戻す';
@@ -2336,4 +2342,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get exitPlanModeNotificationBody => '作成したプランの確認が必要です';
+
+  @override
+  String get imageOnlyFallback => 'この画像に何が写っていますか？';
 }

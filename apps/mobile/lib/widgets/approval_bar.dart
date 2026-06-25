@@ -182,14 +182,14 @@ class _ApprovalHeader extends StatelessWidget {
                 ...detailLines.map(
                   (line) => Padding(
                     padding: const EdgeInsets.only(bottom: 2),
-                    child: Text(
-                      line,
+                    child: ExpandableSummaryText(
+                      text: line,
                       style: TextStyle(
                         fontSize: 11,
                         color: appColors.subtleText,
                       ),
                       maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                      backgroundColor: appColors.approvalBar,
                     ),
                   ),
                 ),
@@ -447,8 +447,8 @@ class _ApprovalButtons extends StatelessWidget {
             onPressed: onApproveAlways,
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 8),
-              foregroundColor: cs.error,
-              side: BorderSide(color: cs.error.withValues(alpha: 0.5)),
+              foregroundColor: cs.tertiary,
+              side: BorderSide(color: cs.tertiary.withValues(alpha: 0.5)),
             ),
             child: Text(
               isCodex || alwaysSub.isEmpty

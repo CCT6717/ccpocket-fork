@@ -1007,7 +1007,13 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get tapInterruptHoldStop => '点按：中断，长按：停止';
+  String get interrupt => '中断';
+
+  @override
+  String get interruptTooltip => '中断当前生成';
+
+  @override
+  String get stopTooltip => '停止整个会话';
 
   @override
   String get rewind => '回退';
@@ -2310,4 +2316,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get exitPlanModeNotificationBody => '生成的计划需要你确认';
+
+  @override
+  String get imageOnlyFallback => '这张图片里是什么？';
 }

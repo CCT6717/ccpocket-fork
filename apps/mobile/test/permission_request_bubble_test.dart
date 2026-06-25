@@ -46,6 +46,67 @@ void main() {
     );
   });
 
+  testWidgets('collapsed mode shows single-line summary only', (tester) async {
+    await tester.pumpWidget(
+      _wrap(const PermissionRequestBubble(
+        message: permission,
+        isCodex: true,
+        collapsed: true,
+      )),
+    );
+
+    // Collapsed: title visible
+    expect(find.text('Command Approval'), findsOneWidget);
+    // Collapsed: summary, primaryTarget, detailLines are hidden
+    expect(find.text('Verify whether Flutter 3.41.6 finished installing'),
+        findsNothing);
+    expect(find.text('Additional permissions: fileSystem.write=/tmp/project'),
+        findsNothing);
+    // Expand icon should be present
+    expect(find.byIcon(Icons.expand_more), findsOneWidget);
+  });
+
+  testWidgets('collapsed mode expands on tap', (tester) async {
+    await tester.pumpWidget(
+      _wrap(const PermissionRequestBubble(
+        message: permission,
+        isCodex: true,
+        collapsed: true,
+      )),
+    );
+
+    // Initially collapsed
+    expect(find.text('Verify whether Flutter 3.41.6 finished installing'),
+        findsNothing);
+
+    // Tap to expand
+    await tester.tap(find.text('Command Approval'));
+    await tester.pumpAndSettle();
+
+    // Now summary should be visible
+    expect(find.text('Verify whether Flutter 3.41.6 finished installing'),
+        findsOneWidget);
+    expect(find.text('Additional permissions: fileSystem.write=/tmp/project'),
+        findsOneWidget);
+    expect(find.byIcon(Icons.expand_less), findsOneWidget);
+  });
+
+  testWidgets('non-collapsed mode shows details by default', (tester) async {
+    await tester.pumpWidget(
+      _wrap(const PermissionRequestBubble(
+        message: permission,
+        isCodex: true,
+        collapsed: false,
+      )),
+    );
+
+    // Non-collapsed: summary visible immediately
+    expect(find.text('Verify whether Flutter 3.41.6 finished installing'),
+        findsOneWidget);
+    expect(find.text('Additional permissions: fileSystem.write=/tmp/project'),
+        findsOneWidget);
+  });
+
   testWidgets('bubble also dedupes duplicated reason line for non-codex', (
     tester,
   ) async {

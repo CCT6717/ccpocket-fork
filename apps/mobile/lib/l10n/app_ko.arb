@@ -401,7 +401,9 @@
       }
     }
   },
-  "tapInterruptHoldStop": "탭: 중단, 길게 누르기: 정지",
+  "interrupt": "중단",
+  "interruptTooltip": "현재 생성 중단",
+  "stopTooltip": "세션 전체 정지",
   "rewind": "되돌리기",
   "rewindToHere": "여기로 되돌리기",
   "rewindModeConversationAndCode": "대화와 코드 복원",
@@ -957,5 +959,7 @@
   "googleSearchSelectionAction": "Google 검색",
   "approvalQuestionNotificationTitle": "질문이 있습니다 - ccpocket",
   "approvalRequiredNotificationTitle": "승인 대기 중 - ccpocket",
-  "exitPlanModeNotificationBody": "작성된 계획을 확인해야 합니다"
+  "exitPlanModeNotificationBody": "작성된 계획을 확인해야 합니다",
+
+  "imageOnlyFallback": "이 이미지에 무엇이 있나요?"
 }

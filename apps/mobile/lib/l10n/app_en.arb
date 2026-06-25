@@ -411,7 +411,9 @@
       }
     }
   },
-  "tapInterruptHoldStop": "Tap: interrupt, Hold: stop",
+  "interrupt": "Interrupt",
+  "interruptTooltip": "Interrupt the current generation",
+  "stopTooltip": "Stop the entire session",
 
   "rewind": "Rewind",
   "rewindToHere": "Rewind to here",
@@ -969,5 +971,7 @@
   "googleSearchSelectionAction": "Search with Google",
   "approvalQuestionNotificationTitle": "Question - ccpocket",
   "approvalRequiredNotificationTitle": "Approval Required - ccpocket",
-  "exitPlanModeNotificationBody": "The generated plan needs your review"
+  "exitPlanModeNotificationBody": "The generated plan needs your review",
+
+  "imageOnlyFallback": "What is in this image?"
 }

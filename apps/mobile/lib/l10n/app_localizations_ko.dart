@@ -1034,7 +1034,13 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get tapInterruptHoldStop => '탭: 중단, 길게 누르기: 정지';
+  String get interrupt => '중단';
+
+  @override
+  String get interruptTooltip => '현재 생성 중단';
+
+  @override
+  String get stopTooltip => '세션 전체 정지';
 
   @override
   String get rewind => '되돌리기';
@@ -2360,4 +2366,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get exitPlanModeNotificationBody => '작성된 계획을 확인해야 합니다';
+
+  @override
+  String get imageOnlyFallback => '이 이미지에 무엇이 있나요?';
 }

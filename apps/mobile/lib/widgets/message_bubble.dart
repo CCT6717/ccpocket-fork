@@ -39,6 +39,10 @@ class ChatEntryWidget extends StatelessWidget {
   final FilePathTapCallback? onFileTap;
   final bool isCodex;
 
+  /// When true, permission request bubbles default to collapsed single-line
+  /// mode to avoid duplicating information shown in the approval bar.
+  final bool isApprovalBarVisible;
+
   const ChatEntryWidget({
     super.key,
     required this.entry,
@@ -53,6 +57,7 @@ class ChatEntryWidget extends StatelessWidget {
     this.onImageTap,
     this.onFileTap,
     this.isCodex = false,
+    this.isApprovalBarVisible = false,
   });
 
   @override
@@ -71,6 +76,7 @@ class ChatEntryWidget extends StatelessWidget {
             onFileTap: onFileTap,
             onForkMessage: onForkMessage,
             isCodex: isCodex,
+            isApprovalBarVisible: isApprovalBarVisible,
           ),
           final UserChatEntry user => UserBubble(
             text: user.text,
@@ -156,6 +162,10 @@ class ServerMessageWidget extends StatelessWidget {
   final void Function(AssistantServerMessage)? onForkMessage;
   final bool isCodex;
 
+  /// When true, permission request bubbles default to collapsed single-line
+  /// mode to avoid duplicating information shown in the approval bar.
+  final bool isApprovalBarVisible;
+
   const ServerMessageWidget({
     super.key,
     required this.message,
@@ -166,6 +176,7 @@ class ServerMessageWidget extends StatelessWidget {
     this.onFileTap,
     this.onForkMessage,
     this.isCodex = false,
+    this.isApprovalBarVisible = false,
   });
 
   @override
@@ -200,7 +211,11 @@ class ServerMessageWidget extends StatelessWidget {
                 msg.toolName == 'AskUserQuestion' ||
                 msg.toolName == 'McpElicitation'
             ? const SizedBox.shrink()
-            : PermissionRequestBubble(message: msg, isCodex: isCodex),
+            : PermissionRequestBubble(
+                message: msg,
+                isCodex: isCodex,
+                collapsed: isApprovalBarVisible,
+              ),
       PermissionResolvedMessage() => const SizedBox.shrink(),
       StreamDeltaMessage() => const SizedBox.shrink(),
       ThinkingDeltaMessage() => const SizedBox.shrink(),

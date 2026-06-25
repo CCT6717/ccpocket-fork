@@ -147,7 +147,7 @@ void main() {
       expect(sent, isTrue);
     });
 
-    testWidgets('interrupt callback fires on stop button tap', (tester) async {
+    testWidgets('interrupt callback fires on interrupt button tap', (tester) async {
       var interrupted = false;
       await tester.pumpWidget(
         buildSubject(
@@ -156,11 +156,11 @@ void main() {
         ),
       );
 
-      await tester.tap(find.byKey(const ValueKey('stop_button')));
+      await tester.tap(find.byKey(const ValueKey('interrupt_button')));
       expect(interrupted, isTrue);
     });
 
-    testWidgets('stop callback fires on long press', (tester) async {
+    testWidgets('stop callback fires on stop button tap', (tester) async {
       var stopped = false;
       await tester.pumpWidget(
         buildSubject(
@@ -169,7 +169,7 @@ void main() {
         ),
       );
 
-      await tester.longPress(find.byKey(const ValueKey('stop_button')));
+      await tester.tap(find.byKey(const ValueKey('stop_button')));
       expect(stopped, isTrue);
     });
 

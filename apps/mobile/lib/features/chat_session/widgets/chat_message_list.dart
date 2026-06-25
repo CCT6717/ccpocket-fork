@@ -56,6 +56,10 @@ class ChatMessageList extends StatefulWidget {
   final bool isCodex;
   final ValueChanged<String>? onFilePeekOpened;
 
+  /// When true, permission request bubbles default to collapsed single-line
+  /// mode to avoid duplicating information shown in the approval bar.
+  final bool isApprovalBarVisible;
+
   /// Project path for file peek (reading files from Bridge).
   final String? projectPath;
 
@@ -77,6 +81,7 @@ class ChatMessageList extends StatefulWidget {
     this.projectPath,
     this.isCodex = false,
     this.onFilePeekOpened,
+    this.isApprovalBarVisible = false,
   });
 
   @override
@@ -411,6 +416,7 @@ class _ChatMessageListState extends State<ChatMessageList> {
             onFileTap: _cachedFileTap,
             onImageTap: _cachedImageTap,
             isCodex: widget.isCodex,
+            isApprovalBarVisible: widget.isApprovalBarVisible,
           );
           if (_shouldAnimateEntry(entryKey)) {
             // Animate only when an entry first appears in the list.

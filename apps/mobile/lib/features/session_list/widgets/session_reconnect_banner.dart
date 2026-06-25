@@ -6,8 +6,9 @@ import '../../../theme/app_theme.dart';
 class SessionReconnectBanner extends StatelessWidget {
   /// Number of reconnection attempts made so far.
   final int reconnectCount;
+  final VoidCallback? onRetry;
 
-  const SessionReconnectBanner({super.key, this.reconnectCount = 0});
+  const SessionReconnectBanner({super.key, this.reconnectCount = 0, this.onRetry});
 
   @override
   Widget build(BuildContext context) {
@@ -30,10 +31,31 @@ class SessionReconnectBanner extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          Text(
-            label,
-            style: TextStyle(fontSize: 13, color: appColors.statusApproval),
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(fontSize: 13, color: appColors.statusApproval),
+            ),
           ),
+          if (onRetry != null) ...[
+            const SizedBox(width: 4),
+            SizedBox(
+              height: 28,
+              child: TextButton(
+                onPressed: onRetry,
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  foregroundColor: appColors.statusApproval,
+                ),
+                child: Text(
+                  l.retry,
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

@@ -1187,7 +1187,14 @@ class _CodexChatBody extends HookWidget {
               children: [
                 if (bridgeState == BridgeConnectionState.reconnecting ||
                     bridgeState == BridgeConnectionState.disconnected)
-                  ReconnectBanner(bridgeState: bridgeState),
+                  ReconnectBanner(
+                    bridgeState: bridgeState,
+                    onRetry: () {
+                      final bridge = context.read<BridgeService>();
+                      final url = bridge.lastUrl;
+                      if (url != null) bridge.connect(url);
+                    },
+                  ),
                 Expanded(
                   child: BottomOverlayLayout(
                     overlay:
@@ -1308,6 +1315,7 @@ class _CodexChatBody extends HookWidget {
                       collapseToolResults: collapseToolResults,
                       bottomPadding: 8,
                       isCodex: true,
+                      isApprovalBarVisible: pendingToolUseId != null,
                       onFilePeekOpened: context
                           .read<ChatSessionCubit>()
                           .recordPeekedFile,

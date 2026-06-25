@@ -436,7 +436,9 @@
       "count": { "type": "int" }
     }
   },
-  "tapInterruptHoldStop": "タップ: 中断, 長押し: 停止",
+  "interrupt": "中断",
+  "interruptTooltip": "現在の生成を中断",
+  "stopTooltip": "セッション全体を停止",
 
   "rewind": "巻き戻す",
   "rewindToHere": "ここまで巻き戻す",
@@ -1020,5 +1022,7 @@
   "googleSearchSelectionAction": "Google で検索",
   "approvalQuestionNotificationTitle": "質問があります - ccpocket",
   "approvalRequiredNotificationTitle": "承認待ち - ccpocket",
-  "exitPlanModeNotificationBody": "作成したプランの確認が必要です"
+  "exitPlanModeNotificationBody": "作成したプランの確認が必要です",
+
+  "imageOnlyFallback": "この画像に何が写っていますか？"
 }

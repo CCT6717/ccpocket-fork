@@ -1980,11 +1980,23 @@ abstract class AppLocalizations {
   /// **'{count}ファイル'**
   String fileCount(int count);
 
-  /// No description provided for @tapInterruptHoldStop.
+  /// No description provided for @interrupt.
   ///
   /// In ja, this message translates to:
-  /// **'タップ: 中断, 長押し: 停止'**
-  String get tapInterruptHoldStop;
+  /// **'中断'**
+  String get interrupt;
+
+  /// No description provided for @interruptTooltip.
+  ///
+  /// In ja, this message translates to:
+  /// **'現在の生成を中断'**
+  String get interruptTooltip;
+
+  /// No description provided for @stopTooltip.
+  ///
+  /// In ja, this message translates to:
+  /// **'セッション全体を停止'**
+  String get stopTooltip;
 
   /// No description provided for @rewind.
   ///
@@ -4415,6 +4427,12 @@ abstract class AppLocalizations {
   /// In ja, this message translates to:
   /// **'作成したプランの確認が必要です'**
   String get exitPlanModeNotificationBody;
+
+  /// No description provided for @imageOnlyFallback.
+  ///
+  /// In ja, this message translates to:
+  /// **'この画像に何が写っていますか？'**
+  String get imageOnlyFallback;
 }
 
 class _AppLocalizationsDelegate

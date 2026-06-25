@@ -409,7 +409,8 @@ class _AskUserQuestionWidgetState extends State<AskUserQuestionWidget> {
               const SizedBox(height: 10),
               ConstrainedBox(
                 constraints: BoxConstraints(
-                  maxHeight: (availableHeight - keyboardHeight) * 0.42,
+                  maxHeight: (availableHeight - keyboardHeight) *
+                      (keyboardHeight > 0 ? 0.72 : 0.42),
                 ),
                 child: ExpandablePageView.builder(
                   controller: _pageController,
@@ -449,7 +450,8 @@ class _AskUserQuestionWidgetState extends State<AskUserQuestionWidget> {
             ] else ...[
               ConstrainedBox(
                 constraints: BoxConstraints(
-                  maxHeight: (availableHeight - keyboardHeight) * 0.42,
+                  maxHeight: (availableHeight - keyboardHeight) *
+                      (keyboardHeight > 0 ? 0.72 : 0.42),
                 ),
                 child: SingleChildScrollView(
                   key: const ValueKey('ask_single_question_scroll_view'),

@@ -7,10 +7,17 @@ import '../../theme/app_theme.dart';
 class PermissionRequestBubble extends StatefulWidget {
   final PermissionRequestMessage message;
   final bool isCodex;
+
+  /// When true, the bubble defaults to a single-line collapsed view
+  /// (shield icon + tool name + expand arrow). Tap to expand and see details.
+  /// Typically set to true when the approval bar is visible, to avoid
+  /// presenting duplicate information.
+  final bool collapsed;
   const PermissionRequestBubble({
     super.key,
     required this.message,
     this.isCodex = false,
+    this.collapsed = false,
   });
 
   @override
@@ -20,6 +27,9 @@ class PermissionRequestBubble extends StatefulWidget {
 
 class _PermissionRequestBubbleState extends State<PermissionRequestBubble> {
   bool _expanded = false;
+
+  /// Whether the bubble is in collapsed single-line mode.
+  bool get _isCollapsed => widget.collapsed && !_expanded;
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +42,9 @@ class _PermissionRequestBubbleState extends State<PermissionRequestBubble> {
         vertical: AppSpacing.bubbleMarginV,
         horizontal: AppSpacing.bubbleMarginH,
       ),
-      padding: const EdgeInsets.all(10),
+      padding: _isCollapsed
+          ? const EdgeInsets.symmetric(horizontal: 10, vertical: 6)
+          : const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: appColors.permissionBubble,
         borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
@@ -50,10 +62,12 @@ class _PermissionRequestBubbleState extends State<PermissionRequestBubble> {
                 Expanded(
                   child: Text(
                     presentation.title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 14,
+                      fontSize: _isCollapsed ? 13 : 14,
                     ),
+                    maxLines: _isCollapsed ? 1 : null,
+                    overflow: _isCollapsed ? TextOverflow.ellipsis : null,
                   ),
                 ),
                 Icon(
@@ -64,74 +78,79 @@ class _PermissionRequestBubbleState extends State<PermissionRequestBubble> {
               ],
             ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            presentation.summary,
-            style: TextStyle(fontSize: 12, color: appColors.subtleText),
-          ),
-          if (presentation.primaryTarget != null) ...[
-            const SizedBox(height: 8),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              decoration: BoxDecoration(
-                color: appColors.permissionBubble.withValues(alpha: 0.35),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: appColors.permissionBubbleBorder.withValues(
-                    alpha: 0.7,
+          if (!_isCollapsed) ...[
+            const SizedBox(height: 4),
+            Text(
+              presentation.summary,
+              style: TextStyle(fontSize: 12, color: appColors.subtleText),
+            ),
+            if (presentation.primaryTarget != null) ...[
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: appColors.permissionBubble.withValues(alpha: 0.35),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: appColors.permissionBubbleBorder.withValues(
+                      alpha: 0.7,
+                    ),
+                  ),
+                ),
+                child: Text(
+                  presentation.primaryTarget!,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontFamily: 'monospace',
+                    color: appColors.subtleText,
                   ),
                 ),
               ),
-              child: Text(
-                presentation.primaryTarget!,
+            ],
+            if (detailLines.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              for (final line in detailLines)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(top: 5, right: 6),
+                        child: Icon(
+                          Icons.circle,
+                          size: 5,
+                          color: appColors.subtleText,
+                        ),
+                      ),
+                      Expanded(
+                        child: Text(
+                          line,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: appColors.subtleText,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+            if (_expanded) ...[
+              const SizedBox(height: 8),
+              Text(
+                inputStr,
                 style: TextStyle(
                   fontSize: 11,
                   fontFamily: 'monospace',
                   color: appColors.subtleText,
                 ),
               ),
-            ),
-          ],
-          if (detailLines.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            for (final line in detailLines)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(top: 5, right: 6),
-                      child: Icon(
-                        Icons.circle,
-                        size: 5,
-                        color: appColors.subtleText,
-                      ),
-                    ),
-                    Expanded(
-                      child: Text(
-                        line,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: appColors.subtleText,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-          ],
-          if (_expanded) ...[
-            const SizedBox(height: 8),
-            Text(
-              inputStr,
-              style: TextStyle(
-                fontSize: 11,
-                fontFamily: 'monospace',
-                color: appColors.subtleText,
-              ),
-            ),
+            ],
           ],
         ],
       ),

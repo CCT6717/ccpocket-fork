@@ -1069,7 +1069,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get tapInterruptHoldStop => 'Tap: interrupt, Hold: stop';
+  String get interrupt => 'Interrupt';
+
+  @override
+  String get interruptTooltip => 'Interrupt the current generation';
+
+  @override
+  String get stopTooltip => 'Stop the entire session';
 
   @override
   String get rewind => 'Rewind';
@@ -2426,4 +2432,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get exitPlanModeNotificationBody =>
       'The generated plan needs your review';
+
+  @override
+  String get imageOnlyFallback => 'What is in this image?';
 }

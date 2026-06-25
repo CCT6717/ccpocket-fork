@@ -5,7 +5,8 @@ import '../../../models/messages.dart';
 
 class ReconnectBanner extends StatelessWidget {
   final BridgeConnectionState bridgeState;
-  const ReconnectBanner({super.key, required this.bridgeState});
+  final VoidCallback? onRetry;
+  const ReconnectBanner({super.key, required this.bridgeState, this.onRetry});
 
   @override
   Widget build(BuildContext context) {
@@ -40,6 +41,25 @@ class ReconnectBanner extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
           ),
+          if (onRetry != null) ...[
+            const SizedBox(width: 4),
+            SizedBox(
+              height: 28,
+              child: TextButton(
+                onPressed: onRetry,
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  foregroundColor: errorColor,
+                ),
+                child: Text(
+                  l.retry,
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

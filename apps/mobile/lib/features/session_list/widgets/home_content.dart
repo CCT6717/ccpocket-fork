@@ -488,7 +488,14 @@ class HomeContentState extends State<HomeContent> {
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(12),
           children: [
-            if (isReconnecting) SessionReconnectBanner(reconnectCount: reconnectCount),
+            if (isReconnecting) SessionReconnectBanner(
+              reconnectCount: reconnectCount,
+              onRetry: () {
+                final bridge = context.read<BridgeService>();
+                final url = bridge.lastUrl;
+                if (url != null) bridge.connect(url);
+              },
+            ),
             ?connectedBridgeBanner,
             ?updateBanner,
             ?supportBanner,
@@ -509,7 +516,13 @@ class HomeContentState extends State<HomeContent> {
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
-          if (isReconnecting) const SessionReconnectBanner(),
+          if (isReconnecting) SessionReconnectBanner(
+            onRetry: () {
+              final bridge = context.read<BridgeService>();
+              final url = bridge.lastUrl;
+              if (url != null) bridge.connect(url);
+            },
+          ),
           ?connectedBridgeBanner,
           ?updateBanner,
           ?supportBanner,

@@ -1030,23 +1030,62 @@ class _StopButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final l = AppLocalizations.of(context);
-    return Tooltip(
-      message: l.tapInterruptHoldStop,
-      child: Material(
-        color: cs.error,
-        borderRadius: BorderRadius.circular(20),
-        child: InkWell(
-          key: const ValueKey('stop_button'),
-          onTap: onInterrupt,
-          onLongPress: onStop,
-          borderRadius: BorderRadius.circular(20),
-          child: SizedBox(
-            width: 40,
-            height: 40,
-            child: Icon(Icons.stop_rounded, color: cs.onError, size: 20),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Interrupt — commonly used, smaller button with label
+        Tooltip(
+          message: l.interruptTooltip,
+          child: Material(
+            color: cs.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(16),
+            child: InkWell(
+              key: const ValueKey('interrupt_button'),
+              onTap: onInterrupt,
+              borderRadius: BorderRadius.circular(16),
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.pause_rounded,
+                        color: cs.onSurfaceVariant, size: 16),
+                    const SizedBox(width: 4),
+                    Text(
+                      l.interrupt,
+                      style: TextStyle(
+                        color: cs.onSurfaceVariant,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
-      ),
+        const SizedBox(width: 6),
+        // Stop — strong action, larger round button
+        Tooltip(
+          message: l.stopTooltip,
+          child: Material(
+            color: cs.error,
+            borderRadius: BorderRadius.circular(20),
+            child: InkWell(
+              key: const ValueKey('stop_button'),
+              onTap: onStop,
+              borderRadius: BorderRadius.circular(20),
+              child: SizedBox(
+                width: 40,
+                height: 40,
+                child: Icon(Icons.stop_rounded, color: cs.onError, size: 20),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

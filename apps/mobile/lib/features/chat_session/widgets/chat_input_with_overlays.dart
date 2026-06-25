@@ -36,6 +36,9 @@ import '../state/chat_session_cubit.dart';
 
 enum _CompletionOverlay { slash, dollar, file }
 
+/// Maximum number of images that can be attached to a single message.
+const _kMaxImages = 5;
+
 /// Manages the chat input bar together with slash-command and @-mention
 /// overlays using [OverlayPortal].
 ///
@@ -544,8 +547,7 @@ class ChatInputWithOverlays extends HookWidget {
 
     /// Add image bytes to attachment list (shared by paste and drag-and-drop).
     void addImageBytes(Uint8List bytes, String mimeType) {
-      const maxImages = 5;
-      if (attachedImages.value.length >= maxImages) return;
+      if (attachedImages.value.length >= _kMaxImages) return;
       final updated = [
         ...attachedImages.value,
         (bytes: bytes, mimeType: mimeType),
@@ -582,6 +584,7 @@ class ChatInputWithOverlays extends HookWidget {
 
     void sendMessage() {
       if (inputBlocked) return;
+      final l = AppLocalizations.of(context);
       final text = inputController.text.trim();
       if (text.isEmpty &&
           attachedImages.value.isEmpty &&
@@ -617,7 +620,7 @@ class ChatInputWithOverlays extends HookWidget {
       }
 
       final messageToSend = finalText.isEmpty
-          ? 'What is in this image?'
+          ? l.imageOnlyFallback
           : finalText;
       cubit.sendMessage(
         messageToSend,
@@ -643,16 +646,15 @@ class ChatInputWithOverlays extends HookWidget {
     }
 
     Future<void> pickImageFromGallery() async {
-      const maxImages = 5;
       final currentCount = attachedImages.value.length;
-      final remaining = maxImages - currentCount;
+      final remaining = _kMaxImages - currentCount;
 
       if (remaining <= 0) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                AppLocalizations.of(context).imageLimitReached(maxImages),
+                AppLocalizations.of(context).imageLimitReached(_kMaxImages),
               ),
             ),
           );
@@ -693,7 +695,7 @@ class ChatInputWithOverlays extends HookWidget {
             SnackBar(
               content: Text(
                 AppLocalizations.of(context).imageLimitTruncated(
-                  maxImages,
+                  _kMaxImages,
                   picked.length - filesToAdd.length,
                 ),
               ),
@@ -704,13 +706,12 @@ class ChatInputWithOverlays extends HookWidget {
     }
 
     Future<void> pasteFromClipboard() async {
-      const maxImages = 5;
-      if (attachedImages.value.length >= maxImages) {
+      if (attachedImages.value.length >= _kMaxImages) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                AppLocalizations.of(context).imageLimitReached(maxImages),
+                AppLocalizations.of(context).imageLimitReached(_kMaxImages),
               ),
             ),
           );
@@ -796,8 +797,7 @@ class ChatInputWithOverlays extends HookWidget {
     /// found, false if only text (or nothing) is in the clipboard.
     /// Used by Cmd+V handler to decide whether to fall back to text paste.
     Future<bool> tryPasteImage() async {
-      const maxImages = 5;
-      if (attachedImages.value.length >= maxImages) return false;
+      if (attachedImages.value.length >= _kMaxImages) return false;
       final clipboard = SystemClipboard.instance;
       if (clipboard == null) return false;
       try {

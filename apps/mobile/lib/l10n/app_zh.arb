@@ -434,7 +434,9 @@
       }
     }
   },
-  "tapInterruptHoldStop": "点按：中断，长按：停止",
+  "interrupt": "中断",
+  "interruptTooltip": "中断当前生成",
+  "stopTooltip": "停止整个会话",
 
   "rewind": "回退",
   "rewindToHere": "回退到这里",
@@ -1100,5 +1102,7 @@
   "googleSearchSelectionAction": "用 Google 搜索",
   "approvalQuestionNotificationTitle": "有一个问题 - ccpocket",
   "approvalRequiredNotificationTitle": "等待审批 - ccpocket",
-  "exitPlanModeNotificationBody": "生成的计划需要你确认"
+  "exitPlanModeNotificationBody": "生成的计划需要你确认",
+
+  "imageOnlyFallback": "这张图片里是什么？"
 }

@@ -1120,7 +1120,14 @@ class _ChatScreenBody extends HookWidget {
                 ),
                 if (bridgeState == BridgeConnectionState.reconnecting ||
                     bridgeState == BridgeConnectionState.disconnected)
-                  ReconnectBanner(bridgeState: bridgeState),
+                  ReconnectBanner(
+                    bridgeState: bridgeState,
+                    onRetry: () {
+                      final bridge = context.read<BridgeService>();
+                      final url = bridge.lastUrl;
+                      if (url != null) bridge.connect(url);
+                    },
+                  ),
                 Expanded(
                   child: BottomOverlayLayout(
                     overlay:
@@ -1236,6 +1243,7 @@ class _ChatScreenBody extends HookWidget {
                       scrollToUserEntry: scrollToUserEntry,
                       bottomPadding: 8,
                       isCodex: false,
+                      isApprovalBarVisible: pendingToolUseId != null,
                       onFilePeekOpened: context
                           .read<ChatSessionCubit>()
                           .recordPeekedFile,
