@@ -12,7 +12,7 @@ part of 'machine_manager_cubit.dart';
 // dart format off
 T _$identity<T>(T value) => value;
 /// @nodoc
-mixin _$MachineManagerState {
+mixin _$MachineManagerState implements DiagnosticableTreeMixin {
 
 /// List of machines with their current status
  List<MachineWithStatus> get machines;/// Whether we're loading/refreshing
@@ -31,6 +31,12 @@ mixin _$MachineManagerState {
 $MachineManagerStateCopyWith<MachineManagerState> get copyWith => _$MachineManagerStateCopyWithImpl<MachineManagerState>(this as MachineManagerState, _$identity);
 
 
+@override
+void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+  properties
+    ..add(DiagnosticsProperty('type', 'MachineManagerState'))
+    ..add(DiagnosticsProperty('machines', machines))..add(DiagnosticsProperty('isLoading', isLoading))..add(DiagnosticsProperty('startingMachineId', startingMachineId))..add(DiagnosticsProperty('updatingMachineId', updatingMachineId))..add(DiagnosticsProperty('latestBridgeVersion', latestBridgeVersion))..add(DiagnosticsProperty('isCheckingLatestBridgeVersion', isCheckingLatestBridgeVersion))..add(DiagnosticsProperty('latestBridgeVersionError', latestBridgeVersionError))..add(DiagnosticsProperty('error', error))..add(DiagnosticsProperty('successMessage', successMessage));
+}
 
 @override
 bool operator ==(Object other) {
@@ -42,7 +48,7 @@ bool operator ==(Object other) {
 int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(machines),isLoading,startingMachineId,updatingMachineId,latestBridgeVersion,isCheckingLatestBridgeVersion,latestBridgeVersionError,error,successMessage);
 
 @override
-String toString() {
+String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
   return 'MachineManagerState(machines: $machines, isLoading: $isLoading, startingMachineId: $startingMachineId, updatingMachineId: $updatingMachineId, latestBridgeVersion: $latestBridgeVersion, isCheckingLatestBridgeVersion: $isCheckingLatestBridgeVersion, latestBridgeVersionError: $latestBridgeVersionError, error: $error, successMessage: $successMessage)';
 }
 
@@ -222,7 +228,7 @@ return $default(_that.machines,_that.isLoading,_that.startingMachineId,_that.upd
 /// @nodoc
 
 
-class _MachineManagerState implements MachineManagerState {
+class _MachineManagerState with DiagnosticableTreeMixin implements MachineManagerState {
   const _MachineManagerState({final  List<MachineWithStatus> machines = const [], this.isLoading = false, this.startingMachineId, this.updatingMachineId, this.latestBridgeVersion, this.isCheckingLatestBridgeVersion = false, this.latestBridgeVersionError, this.error, this.successMessage}): _machines = machines;
   
 
@@ -259,6 +265,12 @@ class _MachineManagerState implements MachineManagerState {
 _$MachineManagerStateCopyWith<_MachineManagerState> get copyWith => __$MachineManagerStateCopyWithImpl<_MachineManagerState>(this, _$identity);
 
 
+@override
+void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+  properties
+    ..add(DiagnosticsProperty('type', 'MachineManagerState'))
+    ..add(DiagnosticsProperty('machines', machines))..add(DiagnosticsProperty('isLoading', isLoading))..add(DiagnosticsProperty('startingMachineId', startingMachineId))..add(DiagnosticsProperty('updatingMachineId', updatingMachineId))..add(DiagnosticsProperty('latestBridgeVersion', latestBridgeVersion))..add(DiagnosticsProperty('isCheckingLatestBridgeVersion', isCheckingLatestBridgeVersion))..add(DiagnosticsProperty('latestBridgeVersionError', latestBridgeVersionError))..add(DiagnosticsProperty('error', error))..add(DiagnosticsProperty('successMessage', successMessage));
+}
 
 @override
 bool operator ==(Object other) {
@@ -270,7 +282,7 @@ bool operator ==(Object other) {
 int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_machines),isLoading,startingMachineId,updatingMachineId,latestBridgeVersion,isCheckingLatestBridgeVersion,latestBridgeVersionError,error,successMessage);
 
 @override
-String toString() {
+String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
   return 'MachineManagerState(machines: $machines, isLoading: $isLoading, startingMachineId: $startingMachineId, updatingMachineId: $updatingMachineId, latestBridgeVersion: $latestBridgeVersion, isCheckingLatestBridgeVersion: $isCheckingLatestBridgeVersion, latestBridgeVersionError: $latestBridgeVersionError, error: $error, successMessage: $successMessage)';
 }
 

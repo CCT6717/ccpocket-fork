@@ -106,6 +106,9 @@ class _ChatMessageListState extends State<ChatMessageList> {
   FilePathTapCallback? _cachedFileTap;
   ValueChanged<UserChatEntry>? _cachedImageTap;
 
+  // P8: Skip entry animation during user scrolling to reduce jank.
+  bool _isUserScrolling = false;
+
   @override
   void initState() {
     super.initState();
@@ -270,6 +273,7 @@ class _ChatMessageListState extends State<ChatMessageList> {
   }
 
   bool _shouldAnimateEntry(String entryKey) {
+    if (_isUserScrolling) return false;
     if (_seenEntryKeys.contains(entryKey)) return false;
     _seenEntryKeys.add(entryKey);
     return true;
@@ -322,10 +326,12 @@ class _ChatMessageListState extends State<ChatMessageList> {
 
   @override
   Widget build(BuildContext context) {
-    // Use context.select so only the fields we read trigger a rebuild.
-    final allEntries = context.select<ChatSessionCubit, List<ChatEntry>>(
-      (c) => c.state.entries,
+    // Use entriesVersion (int comparison, O(1)) instead of list identity to
+    // decide whether entries changed.  The actual list is read via context.read.
+    context.select<ChatSessionCubit, int>(
+      (c) => c.state.entriesVersion,
     );
+    final allEntries = context.read<ChatSessionCubit>().state.entries;
     final hiddenToolUseIds = context.select<ChatSessionCubit, Set<String>>(
       (c) => c.state.hiddenToolUseIds,
     );
@@ -333,6 +339,11 @@ class _ChatMessageListState extends State<ChatMessageList> {
     // Streaming flag — scoped BlocBuilder handles text deltas locally.
     final hasStreaming = context.select<StreamingStateCubit, bool>(
       (cubit) => cubit.state.isStreaming,
+    );
+
+    // P9: Compute fileSuffixes once at the list level instead of per-bubble.
+    final fileSuffixes = context.select<FileListCubit, Set<String>>(
+      (c) => FilePathSyntax.buildSuffixSet(c.state),
     );
 
     // Windowing: only render the latest _visibleLimit entries
@@ -345,19 +356,24 @@ class _ChatMessageListState extends State<ChatMessageList> {
 
     return NotificationListener<ScrollNotification>(
       onNotification: (notification) {
-        // Unfocus on user drag (not programmatic scroll)
-        if (notification is UserScrollNotification &&
-            notification.direction != ScrollDirection.idle) {
-          FocusScope.of(context).unfocus();
+        // Track user scrolling state for P8 (skip entry animation).
+        if (notification is UserScrollNotification) {
+          _isUserScrolling = notification.direction != ScrollDirection.idle;
+          // Unfocus on user drag (not programmatic scroll)
+          if (notification.direction != ScrollDirection.idle) {
+            FocusScope.of(context).unfocus();
+          }
           return false;
         }
+        if (notification is ScrollEndNotification) {
+          _isUserScrolling = false;
 
-        // Scroll-to-top triggers load-more (P1 windowing)
-        if (notification is ScrollEndNotification &&
-            hasEarlier &&
-            !_isLoadingMore &&
-            notification.metrics.extentAfter <= 1.0) {
-          _loadEarlierMessages();
+          // Scroll-to-top triggers load-more (P1 windowing)
+          if (hasEarlier &&
+              !_isLoadingMore &&
+              notification.metrics.extentAfter <= 1.0) {
+            _loadEarlierMessages();
+          }
         }
 
         return false;
@@ -377,6 +393,9 @@ class _ChatMessageListState extends State<ChatMessageList> {
           // Streaming entry sits at the bottom of the visible list
           if (hasStreaming && visIndex == visibleCount) {
             return BlocBuilder<StreamingStateCubit, StreamingState>(
+              buildWhen: (prev, curr) =>
+                  prev.text != curr.text ||
+                  prev.isStreaming != curr.isStreaming,
               builder: (context, streamingState) {
                 if (!streamingState.isStreaming) {
                   return const SizedBox.shrink();
@@ -389,6 +408,7 @@ class _ChatMessageListState extends State<ChatMessageList> {
                   collapseToolResults: null,
                   hiddenToolUseIds: const {},
                   isCodex: widget.isCodex,
+                  fileSuffixes: fileSuffixes,
                 );
               },
             );
@@ -417,6 +437,7 @@ class _ChatMessageListState extends State<ChatMessageList> {
             onImageTap: _cachedImageTap,
             isCodex: widget.isCodex,
             isApprovalBarVisible: widget.isApprovalBarVisible,
+            fileSuffixes: fileSuffixes,
           );
           if (_shouldAnimateEntry(entryKey)) {
             // Animate only when an entry first appears in the list.

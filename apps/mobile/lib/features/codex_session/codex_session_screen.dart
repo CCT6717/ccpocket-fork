@@ -1282,6 +1282,7 @@ class _CodexChatBody extends HookWidget {
                         bottom: overlayHeight + 12,
                         child: ScrollToBottomButton(
                           onPressed: () {
+                            scroll.unlockScroll();
                             if (scroll.controller.hasClients) {
                               scroll.controller.animateTo(
                                 0.0,

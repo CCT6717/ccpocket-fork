@@ -43,6 +43,10 @@ class ChatEntryWidget extends StatelessWidget {
   /// mode to avoid duplicating information shown in the approval bar.
   final bool isApprovalBarVisible;
 
+  /// Pre-computed file suffixes from FileListCubit, passed down from the
+  /// list level to avoid per-bubble context.watch calls.
+  final Set<String> fileSuffixes;
+
   const ChatEntryWidget({
     super.key,
     required this.entry,
@@ -58,6 +62,7 @@ class ChatEntryWidget extends StatelessWidget {
     this.onFileTap,
     this.isCodex = false,
     this.isApprovalBarVisible = false,
+    this.fileSuffixes = const <String>{},
   });
 
   @override
@@ -77,6 +82,7 @@ class ChatEntryWidget extends StatelessWidget {
             onForkMessage: onForkMessage,
             isCodex: isCodex,
             isApprovalBarVisible: isApprovalBarVisible,
+            fileSuffixes: fileSuffixes,
           ),
           final UserChatEntry user => UserBubble(
             text: user.text,
@@ -166,6 +172,9 @@ class ServerMessageWidget extends StatelessWidget {
   /// mode to avoid duplicating information shown in the approval bar.
   final bool isApprovalBarVisible;
 
+  /// Pre-computed file suffixes from FileListCubit.
+  final Set<String> fileSuffixes;
+
   const ServerMessageWidget({
     super.key,
     required this.message,
@@ -177,6 +186,7 @@ class ServerMessageWidget extends StatelessWidget {
     this.onForkMessage,
     this.isCodex = false,
     this.isApprovalBarVisible = false,
+    this.fileSuffixes = const <String>{},
   });
 
   @override
@@ -189,6 +199,7 @@ class ServerMessageWidget extends StatelessWidget {
         resolvedPlanText: resolvedPlanText,
         onFileTap: onFileTap,
         onFork: onForkMessage != null ? () => onForkMessage!(msg) : null,
+        fileSuffixes: fileSuffixes,
       ),
       // Hide tool results that are summarized by a tool_use_summary
       final ToolResultMessage msg =>

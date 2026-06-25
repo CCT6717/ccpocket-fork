@@ -3,10 +3,8 @@ import 'dart:convert';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../l10n/app_localizations.dart';
-import '../../providers/bridge_cubits.dart';
 import '../../models/messages.dart';
 import '../../router/app_router.dart';
 import '../../theme/app_spacing.dart';
@@ -41,12 +39,17 @@ class AssistantBubble extends StatefulWidget {
   final FilePathTapCallback? onFileTap;
   final VoidCallback? onFork;
 
+  /// Pre-computed file suffixes from FileListCubit, passed from the list level
+  /// to avoid per-bubble context.watch calls.
+  final Set<String> fileSuffixes;
+
   const AssistantBubble({
     super.key,
     required this.message,
     this.resolvedPlanText,
     this.onFileTap,
     this.onFork,
+    this.fileSuffixes = const <String>{},
   });
 
   @override
@@ -110,6 +113,7 @@ class _AssistantBubbleState extends State<AssistantBubble> {
       allText: _allText(),
       onFileTap: widget.onFileTap,
       onFork: widget.onFork,
+      fileSuffixes: widget.fileSuffixes,
       onTogglePlainText: () {
         setState(() => _plainTextMode = !_plainTextMode);
       },
@@ -189,6 +193,7 @@ class _DefaultLayout extends StatelessWidget {
   final FilePathTapCallback? onFileTap;
   final VoidCallback? onFork;
   final VoidCallback onTogglePlainText;
+  final Set<String> fileSuffixes;
 
   const _DefaultLayout({
     required this.contents,
@@ -198,13 +203,13 @@ class _DefaultLayout extends StatelessWidget {
     this.onFileTap,
     this.onFork,
     required this.onTogglePlainText,
+    required this.fileSuffixes,
   });
 
   @override
   Widget build(BuildContext context) {
-    final fileSuffixes = onFileTap != null
-        ? FilePathSyntax.buildSuffixSet(context.watch<FileListCubit>().state)
-        : const <String>{};
+    // fileSuffixes now comes from the parent (list-level compute), no more
+    // per-bubble context.watch<FileListCubit>() call.
     return RepaintBoundary(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

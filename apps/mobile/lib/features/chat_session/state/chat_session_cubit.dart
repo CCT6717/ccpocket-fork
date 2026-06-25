@@ -639,7 +639,15 @@ class ChatSessionCubit extends Cubit<ChatSessionState> {
         itemId: current.queuedInput!.itemId,
       );
     }
-    final usage = _calculateUsageTotals(nextEntries);
+    final usage = didModifyEntries
+        ? _calculateUsageTotalsDelta(
+            currentEntries: current.entries,
+            nextEntries: nextEntries,
+            previousTotalCost: current.totalCost,
+            previousTotalDuration: current.totalDuration,
+            isFullReplace: update.replaceEntries,
+          )
+        : (totalCost: current.totalCost, totalDuration: current.totalDuration);
 
     emit(
       current.copyWith(
@@ -648,6 +656,9 @@ class ChatSessionCubit extends Cubit<ChatSessionState> {
         approval: approval,
         totalCost: usage.totalCost,
         totalDuration: usage.totalDuration,
+        entriesVersion: didModifyEntries
+            ? current.entriesVersion + 1
+            : current.entriesVersion,
         inPlanMode: update.inPlanMode ?? current.inPlanMode,
         permissionMode: update.permissionMode ?? current.permissionMode,
         executionMode: update.executionMode ?? current.executionMode,
@@ -713,6 +724,58 @@ class ChatSessionCubit extends Cubit<ChatSessionState> {
           ? Duration(milliseconds: durationMs.round())
           : null,
     );
+  }
+
+  /// Incrementally update usage totals by only scanning entries that are new
+  /// or changed, avoiding a full traversal on every state update.
+  ///
+  /// Falls back to full recomputation for [replaceEntries] (history replace)
+  /// since the entire list is rebuilt.
+  ({double totalCost, Duration? totalDuration}) _calculateUsageTotalsDelta({
+    required List<ChatEntry> currentEntries,
+    required List<ChatEntry> nextEntries,
+    required double previousTotalCost,
+    required Duration? previousTotalDuration,
+    required bool isFullReplace,
+  }) {
+    // History replace — full recompute (list is rebuilt from scratch).
+    if (isFullReplace) {
+      final full = _calculateUsageTotals(nextEntries);
+      return (totalCost: full.totalCost, totalDuration: full.totalDuration);
+    }
+
+    // Find newly added entries by scanning the tail that was appended.
+    // Since _applyUpdate only appends (or mutates in-place via _appendEntriesDeduped),
+    // new ResultMessage entries are at indices >= currentEntries.length.
+    final addedCount = nextEntries.length - currentEntries.length;
+    if (addedCount <= 0) {
+      // No new entries appended — usage totals unchanged.
+      return (totalCost: previousTotalCost, totalDuration: previousTotalDuration);
+    }
+
+    var deltaCost = 0.0;
+    var deltaDurationMs = 0.0;
+    var hasNewDuration = false;
+
+    for (var i = currentEntries.length; i < nextEntries.length; i++) {
+      final entry = nextEntries[i];
+      if (entry is! ServerChatEntry) continue;
+      final msg = entry.message;
+      if (msg is! ResultMessage) continue;
+      if (msg.cost != null) deltaCost += msg.cost!;
+      if (msg.duration != null && msg.duration! >= 0) {
+        deltaDurationMs += msg.duration!;
+        hasNewDuration = true;
+      }
+    }
+
+    final newTotalCost = previousTotalCost + deltaCost;
+    final previousMs = previousTotalDuration?.inMilliseconds.toDouble() ?? 0.0;
+    final newTotalDuration = (previousTotalDuration != null || hasNewDuration)
+        ? Duration(milliseconds: (previousMs + deltaDurationMs).round())
+        : null;
+
+    return (totalCost: newTotalCost, totalDuration: newTotalDuration);
   }
 
   List<ChatEntry> _entriesToPreserveAfterHistoryReplace({
@@ -1093,7 +1156,10 @@ class ChatSessionCubit extends Cubit<ChatSessionState> {
         status: isOffline ? MessageStatus.queued : MessageStatus.sending,
         messageUuid: isCodex ? _nextOptimisticCodexUserTurnUuid() : null,
       );
-      emit(state.copyWith(entries: [...state.entries, entry]));
+      emit(state.copyWith(
+        entries: [...state.entries, entry],
+        entriesVersion: state.entriesVersion + 1,
+      ));
     } else if (shouldUseOfflineQueuePanel) {
       emit(
         state.copyWith(
@@ -1178,7 +1244,11 @@ class ChatSessionCubit extends Cubit<ChatSessionState> {
       final nextEntries = entryIndex == -1
           ? entries
           : [...entries.take(entryIndex), ...entries.skip(entryIndex + 1)];
-      emit(state.copyWith(entries: nextEntries, queuedInput: item));
+      emit(state.copyWith(
+        entries: nextEntries,
+        queuedInput: item,
+        entriesVersion: state.entriesVersion + 1,
+      ));
     });
   }
 
@@ -1817,6 +1887,7 @@ class ChatSessionCubit extends Cubit<ChatSessionState> {
           }
           return e;
         }).toList(),
+        entriesVersion: state.entriesVersion + 1,
       ),
     );
     _bridge.send(

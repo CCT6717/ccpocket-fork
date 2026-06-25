@@ -51,7 +51,6 @@ class _CachedMarkdownBodyState extends State<CachedMarkdownBody> {
   Widget build(BuildContext context) {
     final onFileTap = widget.onFileTap;
     final fileSuffixes = widget.knownFileSuffixes;
-    final styleSheet = buildMarkdownStyle(context);
     final renderKey = _CachedMarkdownRenderKey(
       data: widget.data,
       selectable: widget.selectable,
@@ -61,6 +60,9 @@ class _CachedMarkdownBodyState extends State<CachedMarkdownBody> {
     );
     if (_cachedRenderKey != renderKey) {
       _cachedRenderKey = renderKey;
+      // Defer styleSheet computation until we know the cache is stale,
+      // avoiding wasted work when the cache hits.
+      final styleSheet = buildMarkdownStyle(context);
       _cachedMarkdownBody = MarkdownBody(
         key: ValueKey(renderKey),
         data: widget.data,

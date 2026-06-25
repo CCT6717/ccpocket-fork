@@ -5,6 +5,7 @@ import 'package:ccpocket/features/chat_session/state/streaming_state_cubit.dart'
 import 'package:ccpocket/features/chat_session/widgets/chat_message_list.dart';
 import 'package:ccpocket/l10n/app_localizations.dart';
 import 'package:ccpocket/models/messages.dart';
+import 'package:ccpocket/providers/bridge_cubits.dart';
 import 'package:ccpocket/services/bridge_service.dart';
 import 'package:ccpocket/theme/app_theme.dart';
 import 'package:flutter/material.dart';
@@ -61,7 +62,10 @@ class _TestChatSessionCubit extends ChatSessionCubit {
   });
 
   void setEntries(List<ChatEntry> entries) {
-    emit(state.copyWith(entries: entries));
+    emit(state.copyWith(
+      entries: entries,
+      entriesVersion: state.entriesVersion + 1,
+    ));
   }
 
   void setHiddenToolUseIds(Set<String> hiddenToolUseIds) {
@@ -83,6 +87,9 @@ Widget _wrapChatList({
       providers: [
         BlocProvider<ChatSessionCubit>.value(value: cubit),
         BlocProvider<StreamingStateCubit>.value(value: streamingCubit),
+        BlocProvider<FileListCubit>(
+          create: (_) => FileListCubit(const <String>[], Stream<List<String>>.empty()),
+        ),
       ],
       child: Scaffold(
         body: ChatMessageList(

@@ -14,6 +14,12 @@ typedef ScrollTrackingResult = ({
   AutoScrollController controller,
   bool isScrolledUp,
   void Function() scrollToBottom,
+  /// Locks the scroll position at the current offset while streaming,
+  /// preventing the list from jumping back when new content arrives.
+  /// Returns true if the lock was saved (user was scrolled up).
+  bool Function() lockScrollDuringStreaming,
+  /// Releases the scroll lock so the list can scroll naturally again.
+  void Function() unlockScroll,
 });
 
 /// Manages scroll position tracking with three responsibilities:
@@ -33,6 +39,10 @@ ScrollTrackingResult useScrollTracking(String sessionId) {
 
   // Ref to track isScrolledUp without rebuilds (for scrollToBottom closure).
   final isScrolledUpRef = useRef(false);
+
+  // Streaming scroll lock — saves offset while user is scrolled up during
+  // streaming to prevent the list from jumping back to the bottom.
+  final savedScrollOffset = useRef<double?>(null);
 
   // Track previous maxScrollExtent to detect layout-driven changes
   // (e.g. Android notification shade toggling safe-area padding).
@@ -63,6 +73,10 @@ ScrollTrackingResult useScrollTracking(String sessionId) {
       isScrolledUpRef.value = scrolled;
       if (scrolled != isScrolledUp.value) {
         isScrolledUp.value = scrolled;
+        // When user scrolls back to bottom, clear any streaming lock.
+        if (!scrolled) {
+          savedScrollOffset.value = null;
+        }
       }
     }
 
@@ -87,6 +101,8 @@ ScrollTrackingResult useScrollTracking(String sessionId) {
   }, [sessionId]);
 
   void scrollToBottom() {
+    // Clear any streaming scroll lock when user explicitly scrolls to bottom.
+    savedScrollOffset.value = null;
     if (isScrolledUpRef.value) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (controller.hasClients) {
@@ -99,9 +115,34 @@ ScrollTrackingResult useScrollTracking(String sessionId) {
     });
   }
 
+  /// Saves the current scroll offset while the user is scrolled up during
+  /// streaming. Returns true if the lock was saved (user was scrolled up).
+  bool lockScrollDuringStreaming() {
+    if (!isScrolledUpRef.value) return false;
+    if (!controller.hasClients) return false;
+    savedScrollOffset.value = controller.offset;
+    // Schedule a post-frame check to restore offset if the list was rebuilt.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!controller.hasClients) return;
+      final locked = savedScrollOffset.value;
+      if (locked == null) return; // lock was released
+      if (controller.offset != locked) {
+        controller.jumpTo(locked);
+      }
+    });
+    return true;
+  }
+
+  /// Releases the scroll lock and clears the saved offset.
+  void unlockScroll() {
+    savedScrollOffset.value = null;
+  }
+
   return (
     controller: controller,
     isScrolledUp: isScrolledUp.value,
     scrollToBottom: scrollToBottom,
+    lockScrollDuringStreaming: lockScrollDuringStreaming,
+    unlockScroll: unlockScroll,
   );
 }

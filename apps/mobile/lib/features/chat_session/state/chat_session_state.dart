@@ -59,6 +59,10 @@ abstract class ChatSessionState with _$ChatSessionState {
     @Default(0.0) double totalCost,
     Duration? totalDuration,
 
+    // Monotonic counter: incremented whenever entries list identity changes.
+    // Used by ChatMessageList to avoid O(n) list comparison in context.select.
+    @Default(0) int entriesVersion,
+
     // Slash commands available in this session
     @Default([]) List<SlashCommand> slashCommands,
 
