@@ -261,6 +261,7 @@ class BridgeService with WidgetsBindingObserver implements BridgeServiceBase {
       _offlinePendingActions;
 
   SharedPreferences? _prefsOverride;
+  Future<void> _incomingMessageQueue = Future.value();
 
   BridgeService({SharedPreferences? prefs}) : _prefsOverride = prefs {
     _tryAddObserver();
@@ -368,6 +369,7 @@ class BridgeService with WidgetsBindingObserver implements BridgeServiceBase {
     _connectionEpoch++;
     final epoch = _connectionEpoch;
     _intentionalDisconnect = false;
+    _incomingMessageQueue = Future.value();
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
     _channelSub?.cancel();
@@ -395,253 +397,11 @@ class BridgeService with WidgetsBindingObserver implements BridgeServiceBase {
       _flushMessageQueue();
 
       _channelSub = _channel!.stream.listen(
-        (data) async {
+        (data) {
           if (epoch != _connectionEpoch) return;
-          try {
-            final json = await compute(_decodeJson, data as String);
-            final sessionId = json['sessionId'] as String?;
-            final msg = ServerMessage.fromJson(json);
-            if (sessionId != null && msg is HistoryDeltaMessage) {
-              _handleHistoryDelta(sessionId, msg);
-              return;
-            }
-            if (sessionId != null && msg is HistorySnapshotMessage) {
-              _handleHistorySnapshot(sessionId, msg);
-              return;
-            }
-            if (sessionId != null) {
-              _cacheAcceptedInFlightInput(msg, sessionId: sessionId);
-              _runtimeStore.applyServerMessage(
-                sessionId,
-                msg,
-                historySeq:
-                    _readHistorySeq(json['historySeq']) ??
-                    (msg is InputAckMessage ? msg.acceptedSeq : null),
-              );
-            }
-            _clearDeliveredDeliveryPendingInput(msg, sessionId: sessionId);
-            _clearDeliveredInFlightInput(msg, sessionId: sessionId);
-            switch (msg) {
-              case SessionListMessage(
-                :final sessions,
-                :final allowedDirs,
-                :final claudeModels,
-                :final claudeModelEfforts,
-                :final codexModels,
-                :final codexModelReasoningEfforts,
-                :final codexProfiles,
-                :final defaultCodexProfile,
-                :final bridgeVersion,
-              ):
-                _sessions = _applyLocalDeliveryPendingInputs(sessions);
-                _clearPendingStartActionsForSessions(_sessions);
-                _sessionListController.add(_sessions);
-                _allowedDirs = allowedDirs;
-                _claudeModels = claudeModels;
-                _claudeModelEfforts = claudeModelEfforts;
-                _codexModels = codexModels;
-                _codexModelReasoningEfforts = codexModelReasoningEfforts;
-                _codexProfiles = codexProfiles;
-                _defaultCodexProfile = defaultCodexProfile;
-                _bridgeVersion = bridgeVersion;
-              case RecentSessionsMessage(:final sessions, :final hasMore):
-                _lastRecentSessionsMessage = msg;
-                final isProjectMerge =
-                    msg.requestScope == 'project' &&
-                    msg.projectPath != null &&
-                    msg.projectPath!.isNotEmpty;
-                if (isProjectMerge) {
-                  _recentSessions = _mergeRecentSessions(
-                    _recentSessions,
-                    sessions,
-                  );
-                } else {
-                  _recentSessionsHasMore = hasMore;
-                  if (_appendMode) {
-                    _recentSessions = _mergeRecentSessions(
-                      _recentSessions,
-                      sessions,
-                    );
-                  } else {
-                    _recentSessions = sessions;
-                  }
-                  _appendMode = false;
-                }
-                _recentSessionsController.add(_recentSessions);
-              case PastHistoryMessage():
-                _taggedMessageController.add((msg, sessionId));
-                _messageController.add(msg);
-              case GalleryListMessage(:final images):
-                _galleryImages = images;
-                _galleryController.add(images);
-              case GalleryNewImageMessage(:final image):
-                _galleryImages = [image, ..._galleryImages];
-                _galleryController.add(_galleryImages);
-              case FileContentMessage():
-                _fileContentController.add(msg);
-              case FileListMessage(:final files):
-                _fileListController.add(files);
-              case ProjectHistoryMessage(:final projects):
-                _projectHistory = projects;
-                _projectHistoryController.add(projects);
-              case DiffResultMessage():
-                _diffResultController.add(msg);
-              case DiffImageResultMessage():
-                _diffImageResultController.add(msg);
-              case WorktreeListMessage():
-                _worktreeListController.add(msg);
-              case WindowListMessage(:final windows):
-                _windowListController.add(windows);
-              case ScreenshotResultMessage():
-                _screenshotResultController.add(msg);
-              case DebugBundleMessage():
-                _debugBundleController.add(msg);
-              case UsageResultMessage():
-                _lastUsageResult = msg;
-                _usageController.add(msg);
-              case RecordingListMessage():
-                _recordingListController.add(msg);
-              case RecordingContentMessage():
-                _recordingContentController.add(msg);
-              case PromptHistoryBackupResultMessage():
-                _backupResultController.add(msg);
-              case PromptHistoryRestoreResultMessage():
-                _restoreResultController.add(msg);
-              case PromptHistoryBackupInfoMessage():
-                _backupInfoController.add(msg);
-              case PromptHistorySyncResultMessage():
-                _rememberPromptHistoryBridgeId(msg.bridgeInstanceId);
-                _promptHistorySyncController.add(msg);
-              case PromptHistoryMutationResultMessage():
-                _rememberPromptHistoryBridgeId(msg.bridgeInstanceId);
-                _promptHistoryMutationController.add(msg);
-              case PromptHistoryStatusMessage():
-                _rememberPromptHistoryBridgeId(msg.bridgeInstanceId);
-                _promptHistoryStatusController.add(msg);
-              // Git Operations
-              case GitStageResultMessage():
-                _gitStageResultController.add(msg);
-              case GitUnstageResultMessage():
-                _gitUnstageResultController.add(msg);
-              case GitUnstageHunksResultMessage():
-                _gitUnstageHunksResultController.add(msg);
-              case GitCommitResultMessage():
-                _gitCommitResultController.add(msg);
-              case GitPushResultMessage():
-                _gitPushResultController.add(msg);
-              case GitBranchesResultMessage():
-                _gitBranchesResultController.add(msg);
-              case GitCreateBranchResultMessage():
-                _gitCreateBranchResultController.add(msg);
-              case GitCheckoutBranchResultMessage():
-                _gitCheckoutBranchResultController.add(msg);
-              case GitRevertFileResultMessage():
-                _gitRevertFileResultController.add(msg);
-              case GitRevertHunksResultMessage():
-                _gitRevertHunksResultController.add(msg);
-              case GitFetchResultMessage():
-                _gitFetchResultController.add(msg);
-              case GitPullResultMessage():
-                _gitPullResultController.add(msg);
-              case GitStatusResultMessage():
-                _gitStatusResultController.add(msg);
-              case GitRemoteStatusResultMessage():
-                _gitRemoteStatusResultController.add(msg);
-              case ArchiveResultMessage(:final success):
-                if (success) {
-                  // Refresh the recent sessions list to reflect the archived session
-                  requestRecentSessions();
-                }
-              case WorktreeRemovedMessage():
-                _messageController.add(msg);
-              case ConversationQueueMessage(:final items):
-                if (sessionId != null) {
-                  _patchSessionQueuedInput(
-                    sessionId,
-                    items.isNotEmpty ? items.first : null,
-                  );
-                }
-                _taggedMessageController.add((msg, sessionId));
-                _messageController.add(msg);
-              case AssistantServerMessage(:final message):
-                if (sessionId != null) {
-                  _patchSessionLastMessage(sessionId, message);
-                }
-                _taggedMessageController.add((msg, sessionId));
-                _messageController.add(msg);
-              case PermissionRequestMessage():
-                if (sessionId != null) {
-                  _patchSessionPermission(sessionId, msg);
-                }
-                _taggedMessageController.add((msg, sessionId));
-                _messageController.add(msg);
-              case PermissionResolvedMessage():
-                if (sessionId != null) {
-                  clearSessionPermission(sessionId);
-                }
-                _taggedMessageController.add((msg, sessionId));
-                _messageController.add(msg);
-              case SystemMessage(:final permissionMode):
-                if (msg.subtype == 'session_created') {
-                  _clearPendingSessionActionFor(msg);
-                }
-                if (sessionId != null && permissionMode != null) {
-                  _patchSessionPermissionMode(
-                    sessionId,
-                    permissionMode,
-                    provider: msg.provider,
-                    executionMode: msg.executionMode,
-                    planMode: msg.planMode,
-                    approvalPolicy: msg.approvalPolicy,
-                    approvalsReviewer: msg.approvalsReviewer,
-                    codexPermissionsMode: msg.codexPermissionsMode,
-                  );
-                }
-                if (sessionId != null) {
-                  _patchSessionSystemSettings(sessionId, msg);
-                }
-                _taggedMessageController.add((msg, sessionId));
-                _messageController.add(msg);
-              case StatusMessage(:final status):
-                // Patch cached session list so the session list screen
-                // reflects status changes in real-time.
-                if (sessionId != null) {
-                  _patchSessionStatus(sessionId, status);
-                }
-                _taggedMessageController.add((msg, sessionId));
-                _messageController.add(msg);
-              case ResultMessage(:final subtype) when subtype == 'stopped':
-                if (sessionId != null) {
-                  clearExplorerHistory(sessionId);
-                  _sessions = _sessions
-                      .where((session) => session.id != sessionId)
-                      .toList();
-                  _sessionListController.add(_sessions);
-                  _sessionStoppedController.add(sessionId);
-                  clearDiffImageCache();
-                }
-                _taggedMessageController.add((msg, sessionId));
-                _messageController.add(msg);
-              case ErrorMessage(:final message):
-                if (msg.errorCode == 'unsupported_message' &&
-                    message == 'get_history_delta') {
-                  _fallbackPendingHistoryDeltaRequests();
-                }
-                logger.error('Bridge error: $message');
-                _taggedMessageController.add((msg, sessionId));
-                _messageController.add(msg);
-              case PongMessage(:final id, :final t):
-                _handlePong(id, t);
-              default:
-                _taggedMessageController.add((msg, sessionId));
-                _messageController.add(msg);
-            }
-          } catch (e, st) {
-            logger.error('WS parse error', e, st);
-            final errorMsg = ErrorMessage(message: 'Parse error: $e');
-            _taggedMessageController.add((errorMsg, null));
-            _messageController.add(errorMsg);
-          }
+          _incomingMessageQueue = _incomingMessageQueue
+              .catchError((_) {})
+              .then((_) => _handleIncomingMessage(data as String, epoch));
         },
         onError: (error, stackTrace) {
           if (epoch != _connectionEpoch) return;
@@ -862,6 +622,254 @@ class BridgeService with WidgetsBindingObserver implements BridgeServiceBase {
   void _updatePingInterval() {
     if (!isConnected) return;
     _startPingTimer();
+  }
+
+  Future<void> _handleIncomingMessage(String data, int epoch) async {
+    if (epoch != _connectionEpoch) return;
+    try {
+      final json = await compute(_decodeJson, data);
+      if (epoch != _connectionEpoch) return;
+
+      final sessionId = json['sessionId'] as String?;
+      final msg = ServerMessage.fromJson(json);
+      if (sessionId != null && msg is HistoryDeltaMessage) {
+        _handleHistoryDelta(sessionId, msg);
+        return;
+      }
+      if (sessionId != null && msg is HistorySnapshotMessage) {
+        _handleHistorySnapshot(sessionId, msg);
+        return;
+      }
+      if (sessionId != null) {
+        _cacheAcceptedInFlightInput(msg, sessionId: sessionId);
+        _runtimeStore.applyServerMessage(
+          sessionId,
+          msg,
+          historySeq:
+              _readHistorySeq(json['historySeq']) ??
+              (msg is InputAckMessage ? msg.acceptedSeq : null),
+        );
+      }
+      _clearDeliveredDeliveryPendingInput(msg, sessionId: sessionId);
+      _clearDeliveredInFlightInput(msg, sessionId: sessionId);
+      switch (msg) {
+        case SessionListMessage(
+          :final sessions,
+          :final allowedDirs,
+          :final claudeModels,
+          :final claudeModelEfforts,
+          :final codexModels,
+          :final codexModelReasoningEfforts,
+          :final codexProfiles,
+          :final defaultCodexProfile,
+          :final bridgeVersion,
+        ):
+          _sessions = _applyLocalDeliveryPendingInputs(sessions);
+          _clearPendingStartActionsForSessions(_sessions);
+          _sessionListController.add(_sessions);
+          _allowedDirs = allowedDirs;
+          _claudeModels = claudeModels;
+          _claudeModelEfforts = claudeModelEfforts;
+          _codexModels = codexModels;
+          _codexModelReasoningEfforts = codexModelReasoningEfforts;
+          _codexProfiles = codexProfiles;
+          _defaultCodexProfile = defaultCodexProfile;
+          _bridgeVersion = bridgeVersion;
+        case RecentSessionsMessage(:final sessions, :final hasMore):
+          _lastRecentSessionsMessage = msg;
+          final isProjectMerge =
+              msg.requestScope == 'project' &&
+              msg.projectPath != null &&
+              msg.projectPath!.isNotEmpty;
+          if (isProjectMerge) {
+            _recentSessions = _mergeRecentSessions(
+              _recentSessions,
+              sessions,
+            );
+          } else {
+            _recentSessionsHasMore = hasMore;
+            if (_appendMode) {
+              _recentSessions = _mergeRecentSessions(
+                _recentSessions,
+                sessions,
+              );
+            } else {
+              _recentSessions = sessions;
+            }
+            _appendMode = false;
+          }
+          _recentSessionsController.add(_recentSessions);
+        case PastHistoryMessage():
+          _taggedMessageController.add((msg, sessionId));
+          _messageController.add(msg);
+        case GalleryListMessage(:final images):
+          _galleryImages = images;
+          _galleryController.add(images);
+        case GalleryNewImageMessage(:final image):
+          _galleryImages = [image, ..._galleryImages];
+          _galleryController.add(_galleryImages);
+        case FileContentMessage():
+          _fileContentController.add(msg);
+        case FileListMessage(:final files):
+          _fileListController.add(files);
+        case ProjectHistoryMessage(:final projects):
+          _projectHistory = projects;
+          _projectHistoryController.add(projects);
+        case DiffResultMessage():
+          _diffResultController.add(msg);
+        case DiffImageResultMessage():
+          _diffImageResultController.add(msg);
+        case WorktreeListMessage():
+          _worktreeListController.add(msg);
+        case WindowListMessage(:final windows):
+          _windowListController.add(windows);
+        case ScreenshotResultMessage():
+          _screenshotResultController.add(msg);
+        case DebugBundleMessage():
+          _debugBundleController.add(msg);
+        case UsageResultMessage():
+          _lastUsageResult = msg;
+          _usageController.add(msg);
+        case RecordingListMessage():
+          _recordingListController.add(msg);
+        case RecordingContentMessage():
+          _recordingContentController.add(msg);
+        case PromptHistoryBackupResultMessage():
+          _backupResultController.add(msg);
+        case PromptHistoryRestoreResultMessage():
+          _restoreResultController.add(msg);
+        case PromptHistoryBackupInfoMessage():
+          _backupInfoController.add(msg);
+        case PromptHistorySyncResultMessage():
+          _rememberPromptHistoryBridgeId(msg.bridgeInstanceId);
+          _promptHistorySyncController.add(msg);
+        case PromptHistoryMutationResultMessage():
+          _rememberPromptHistoryBridgeId(msg.bridgeInstanceId);
+          _promptHistoryMutationController.add(msg);
+        case PromptHistoryStatusMessage():
+          _rememberPromptHistoryBridgeId(msg.bridgeInstanceId);
+          _promptHistoryStatusController.add(msg);
+        // Git Operations
+        case GitStageResultMessage():
+          _gitStageResultController.add(msg);
+        case GitUnstageResultMessage():
+          _gitUnstageResultController.add(msg);
+        case GitUnstageHunksResultMessage():
+          _gitUnstageHunksResultController.add(msg);
+        case GitCommitResultMessage():
+          _gitCommitResultController.add(msg);
+        case GitPushResultMessage():
+          _gitPushResultController.add(msg);
+        case GitBranchesResultMessage():
+          _gitBranchesResultController.add(msg);
+        case GitCreateBranchResultMessage():
+          _gitCreateBranchResultController.add(msg);
+        case GitCheckoutBranchResultMessage():
+          _gitCheckoutBranchResultController.add(msg);
+        case GitRevertFileResultMessage():
+          _gitRevertFileResultController.add(msg);
+        case GitRevertHunksResultMessage():
+          _gitRevertHunksResultController.add(msg);
+        case GitFetchResultMessage():
+          _gitFetchResultController.add(msg);
+        case GitPullResultMessage():
+          _gitPullResultController.add(msg);
+        case GitStatusResultMessage():
+          _gitStatusResultController.add(msg);
+        case GitRemoteStatusResultMessage():
+          _gitRemoteStatusResultController.add(msg);
+        case ArchiveResultMessage(:final success):
+          if (success) {
+            requestRecentSessions();
+          }
+        case WorktreeRemovedMessage():
+          _messageController.add(msg);
+        case ConversationQueueMessage(:final items):
+          if (sessionId != null) {
+            _patchSessionQueuedInput(
+              sessionId,
+              items.isNotEmpty ? items.first : null,
+            );
+          }
+          _taggedMessageController.add((msg, sessionId));
+          _messageController.add(msg);
+        case AssistantServerMessage(:final message):
+          if (sessionId != null) {
+            _patchSessionLastMessage(sessionId, message);
+          }
+          _taggedMessageController.add((msg, sessionId));
+          _messageController.add(msg);
+        case PermissionRequestMessage():
+          if (sessionId != null) {
+            _patchSessionPermission(sessionId, msg);
+          }
+          _taggedMessageController.add((msg, sessionId));
+          _messageController.add(msg);
+        case PermissionResolvedMessage():
+          if (sessionId != null) {
+            clearSessionPermission(sessionId);
+          }
+          _taggedMessageController.add((msg, sessionId));
+          _messageController.add(msg);
+        case SystemMessage(:final permissionMode):
+          if (msg.subtype == 'session_created') {
+            _clearPendingSessionActionFor(msg);
+          }
+          if (sessionId != null && permissionMode != null) {
+            _patchSessionPermissionMode(
+              sessionId,
+              permissionMode,
+              provider: msg.provider,
+              executionMode: msg.executionMode,
+              planMode: msg.planMode,
+              approvalPolicy: msg.approvalPolicy,
+              approvalsReviewer: msg.approvalsReviewer,
+              codexPermissionsMode: msg.codexPermissionsMode,
+            );
+          }
+          if (sessionId != null) {
+            _patchSessionSystemSettings(sessionId, msg);
+          }
+          _taggedMessageController.add((msg, sessionId));
+          _messageController.add(msg);
+        case StatusMessage(:final status):
+          if (sessionId != null) {
+            _patchSessionStatus(sessionId, status);
+          }
+          _taggedMessageController.add((msg, sessionId));
+          _messageController.add(msg);
+        case ResultMessage(:final subtype) when subtype == 'stopped':
+          if (sessionId != null) {
+            clearExplorerHistory(sessionId);
+            _sessions = _sessions
+                .where((session) => session.id != sessionId)
+                .toList();
+            _sessionListController.add(_sessions);
+            _sessionStoppedController.add(sessionId);
+            clearDiffImageCache();
+          }
+          _taggedMessageController.add((msg, sessionId));
+          _messageController.add(msg);
+        case ErrorMessage(:final message):
+          if (msg.errorCode == 'unsupported_message' &&
+              message == 'get_history_delta') {
+            _fallbackPendingHistoryDeltaRequests();
+          }
+          logger.error('Bridge error: $message');
+          _taggedMessageController.add((msg, sessionId));
+          _messageController.add(msg);
+        case PongMessage(:final id, :final t):
+          _handlePong(id, t);
+        default:
+          _taggedMessageController.add((msg, sessionId));
+          _messageController.add(msg);
+      }
+    } catch (e, st) {
+      logger.error('WS parse error', e, st);
+      final errorMsg = ErrorMessage(message: 'Parse error: $e');
+      _taggedMessageController.add((errorMsg, null));
+      _messageController.add(errorMsg);
+    }
   }
 
   @override
