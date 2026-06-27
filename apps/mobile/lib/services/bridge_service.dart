@@ -143,6 +143,7 @@ class BridgeService with WidgetsBindingObserver implements BridgeServiceBase {
   int _connectionEpoch = 0;
   Timer? _reconnectTimer;
   int _reconnectAttempt = 0;
+  bool _handshakeCompleted = false;
   static const _maxReconnectDelay = 30;
   bool _intentionalDisconnect = false;
 
@@ -388,17 +389,20 @@ class BridgeService with WidgetsBindingObserver implements BridgeServiceBase {
       _channel = WebSocketChannel.connect(
         Uri.parse(url),
       );
-      _setBridgeConnectionState(BridgeConnectionState.connected);
-      _lastConnectedAt = DateTime.now();
+      _handshakeCompleted = false;
       _reconnectAttempt = 0;
-      // Start application-layer ping for RTT measurement
-      _startPingTimer();
-      send(ClientMessage.clientCapabilities());
-      _flushMessageQueue();
 
       _channelSub = _channel!.stream.listen(
         (data) {
           if (epoch != _connectionEpoch) return;
+          if (!_handshakeCompleted) {
+            _handshakeCompleted = true;
+            _setBridgeConnectionState(BridgeConnectionState.connected);
+            _lastConnectedAt = DateTime.now();
+            _startPingTimer();
+            send(ClientMessage.clientCapabilities());
+            _flushMessageQueue();
+          }
           _incomingMessageQueue = _incomingMessageQueue
               .catchError((_) {})
               .then((_) => _handleIncomingMessage(data as String, epoch));
@@ -406,6 +410,7 @@ class BridgeService with WidgetsBindingObserver implements BridgeServiceBase {
         onError: (error, stackTrace) {
           if (epoch != _connectionEpoch) return;
           logger.error('WS stream error', error, stackTrace);
+          _handshakeCompleted = false;
           _setBridgeConnectionState(BridgeConnectionState.disconnected);
           _requeueInFlightInputMessages();
           _requeueInFlightPendingMessages();
@@ -417,6 +422,7 @@ class BridgeService with WidgetsBindingObserver implements BridgeServiceBase {
         onDone: () {
           if (epoch != _connectionEpoch) return;
           _channel = null;
+          _handshakeCompleted = false;
           if (!_intentionalDisconnect) {
             _setBridgeConnectionState(BridgeConnectionState.disconnected);
             _requeueInFlightInputMessages();
@@ -429,6 +435,7 @@ class BridgeService with WidgetsBindingObserver implements BridgeServiceBase {
       );
     } catch (e, st) {
       logger.error('WS connect failed', e, st);
+      _handshakeCompleted = false;
       _setBridgeConnectionState(BridgeConnectionState.disconnected);
       _messageController.add(ErrorMessage(message: 'Connection failed: $e'));
       _scheduleReconnect();
@@ -890,6 +897,8 @@ class BridgeService with WidgetsBindingObserver implements BridgeServiceBase {
   }
 
   void _scheduleReconnect() {
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
     if (_intentionalDisconnect || _lastUrl == null) return;
 
     _totalReconnectAttempts++;

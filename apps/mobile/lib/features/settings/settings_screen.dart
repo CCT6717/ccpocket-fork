@@ -70,21 +70,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final _supportSectionKey = GlobalKey();
   Timer? _connectionHighlightTimer;
   Timer? _supportHighlightTimer;
-  bool _didHandleConnectionFocus = false;
-  bool _didHandleSupportFocus = false;
+  int _focusConnectionRetries = 0;
+  int _focusSupportRetries = 0;
   bool _highlightConnectionSection = false;
   bool _highlightSupportSection = false;
   bool _isIOSAppOnMac = false;
   String _appIconDeviceName = isAndroidPlatform ? 'Android' : 'iPhone';
 
   void _maybeFocusConnectionSection() {
-    if (!widget.focusConnection || _didHandleConnectionFocus) return;
-    _didHandleConnectionFocus = true;
+    if (!widget.focusConnection || _focusConnectionRetries >= 3) return;
+    _focusConnectionRetries++;
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       final targetContext = _connectionSectionKey.currentContext;
       if (targetContext == null || !targetContext.mounted) {
-        _didHandleConnectionFocus = false;
         return;
       }
       await Scrollable.ensureVisible(
@@ -109,22 +108,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _maybeFocusSupportSection() {
-    if (!widget.focusSupport || _didHandleSupportFocus) return;
-    _didHandleSupportFocus = true;
+    if (!widget.focusSupport || _focusSupportRetries >= 3) return;
+    _focusSupportRetries++;
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (_supportSectionKey.currentContext == null &&
-          _scrollController.hasClients) {
-        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
-        await WidgetsBinding.instance.endOfFrame;
-      }
       if (!mounted) return;
       final targetContext = _supportSectionKey.currentContext;
-      if (targetContext == null) {
-        _didHandleSupportFocus = false;
-        return;
-      }
-      if (!targetContext.mounted) {
-        _didHandleSupportFocus = false;
+      if (targetContext == null || !targetContext.mounted) {
         return;
       }
       await Scrollable.ensureVisible(
@@ -236,11 +225,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
       body: BlocBuilder<SettingsCubit, SettingsState>(
         builder: (context, state) {
-          final machineManagerCubit = context.watch<MachineManagerCubit>();
-          final machineWithStatus = _activeMachineWithStatus(
-            machineManagerCubit.state,
-            state.activeMachineId,
+          final machineManagerCubit = context.read<MachineManagerCubit>();
+          final activeMachineId = state.activeMachineId;
+          final machineSnapshot = context.select<MachineManagerCubit, ({Machine? machine, bool online})?>(
+            (cubit) {
+              if (activeMachineId == null) return null;
+              final item = cubit.state.machines
+                  .where((m) => m.machine.id == activeMachineId)
+                  .firstOrNull;
+              if (item == null) return null;
+              return (machine: item.machine, online: item.status == MachineStatus.online);
+            },
           );
+          final machineWithStatus = activeMachineId != null
+              ? _activeMachineWithStatus(
+                  machineManagerCubit.state,
+                  activeMachineId,
+                )
+              : null;
           final enabledAgentsMode = enabledAgentsModeFromTabs(
             state.newSessionTabs,
           );
@@ -252,8 +254,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             state.newSessionTabs,
             NewSessionTab.claude,
           );
-          final machine = machineWithStatus?.machine;
-          final isConnected = state.activeMachineId != null;
+          final machine = machineSnapshot?.machine;
+          final isConnected = activeMachineId != null;
           final isUpdating =
               machine != null &&
               machineManagerCubit.state.updatingMachineId == machine.id;

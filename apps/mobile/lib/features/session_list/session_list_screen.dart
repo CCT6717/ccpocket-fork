@@ -775,6 +775,7 @@ class _SessionListScreenState extends State<SessionListScreen>
             result.codexPermissionsMode == CodexPermissionsMode.custom);
     _pendingResumeProjectPath = result.projectPath;
     _pendingResumeGitBranch = result.worktreeBranch;
+    _pendingNavigation = true;
     bridge.send(
       ClientMessage.start(
         result.projectPath,
@@ -860,7 +861,6 @@ class _SessionListScreenState extends State<SessionListScreen>
     }
     // Navigate immediately to chat with pending state
     final pendingId = 'pending_${DateTime.now().millisecondsSinceEpoch}';
-    _pendingNavigation = true;
     _navigateToChat(
       pendingId,
       projectPath: result.projectPath,

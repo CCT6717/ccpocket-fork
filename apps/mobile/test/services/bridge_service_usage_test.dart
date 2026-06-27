@@ -132,6 +132,11 @@ void main() {
         final newReceived = <Map<String, dynamic>>[];
         final firstNewMessage = Completer<void>();
         newServer.transform(WebSocketTransformer()).listen((socket) {
+          // ponytail: trigger client onData so _handshakeCompleted = true
+          socket.add(jsonEncode({
+            'type': 'session_list',
+            'sessions': <Map<String, dynamic>>[],
+          }));
           newSocketReady.complete(socket);
           socket.listen((data) {
             newReceived.add(jsonDecode(data as String) as Map<String, dynamic>);
@@ -837,6 +842,11 @@ void main() {
       final received = <Map<String, dynamic>>[];
 
       server.transform(WebSocketTransformer()).listen((socket) {
+        // ponytail: trigger client onData so _handshakeCompleted = true
+        socket.add(jsonEncode({
+          'type': 'session_list',
+          'sessions': <Map<String, dynamic>>[],
+        }));
         socketReady.complete(socket);
         socket.listen((data) {
           received.add(jsonDecode(data as String) as Map<String, dynamic>);
@@ -986,6 +996,11 @@ void main() {
       final socketReady = Completer<WebSocket>();
 
       server.transform(WebSocketTransformer()).listen((socket) {
+        // ponytail: trigger client onData so _handshakeCompleted = true
+        socket.add(jsonEncode({
+          'type': 'session_list',
+          'sessions': <Map<String, dynamic>>[],
+        }));
         socketReady.complete(socket);
       });
 
@@ -1033,6 +1048,11 @@ void main() {
       final socketReady = Completer<WebSocket>();
 
       server.transform(WebSocketTransformer()).listen((socket) {
+        // ponytail: trigger client onData so _handshakeCompleted = true
+        socket.add(jsonEncode({
+          'type': 'session_list',
+          'sessions': <Map<String, dynamic>>[],
+        }));
         socketReady.complete(socket);
       });
 
@@ -1162,6 +1182,11 @@ void main() {
         final sawRename = Completer<void>();
 
         server.transform(WebSocketTransformer()).listen((socket) {
+          // ponytail: trigger client onData so _handshakeCompleted = true
+          socket.add(jsonEncode({
+            'type': 'session_list',
+            'sessions': <Map<String, dynamic>>[],
+          }));
           socket.listen((data) {
             final json = jsonDecode(data as String) as Map<String, dynamic>;
             received.add(json);
