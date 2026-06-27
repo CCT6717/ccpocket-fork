@@ -149,7 +149,6 @@ class BridgeService with WidgetsBindingObserver implements BridgeServiceBase {
 
   // Connection health monitoring
   int _totalReconnectAttempts = 0;
-  DateTime? _lastConnectedAt;
 
   // Application-layer RTT measurement
   static const _foregroundPingInterval = Duration(seconds: 10);
@@ -398,7 +397,6 @@ class BridgeService with WidgetsBindingObserver implements BridgeServiceBase {
           if (!_handshakeCompleted) {
             _handshakeCompleted = true;
             _setBridgeConnectionState(BridgeConnectionState.connected);
-            _lastConnectedAt = DateTime.now();
             _startPingTimer();
             send(ClientMessage.clientCapabilities());
             _flushMessageQueue();

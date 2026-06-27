@@ -128,7 +128,7 @@ Widget _buildHomeContent({
     return true;
   }).toList();
   final allProjectPaths = <String>{
-    if (currentProjectFilter != null) currentProjectFilter!,
+    if (currentProjectFilter != null) currentProjectFilter,
     ...filteredRecentSessions.map((session) => session.projectPath),
   }.where((path) => path.isNotEmpty).toList();
   final groupedRecentSessions = groupSessionsByProject(

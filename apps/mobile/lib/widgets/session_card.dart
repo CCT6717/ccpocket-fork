@@ -337,7 +337,7 @@ class _RunningSessionCardState extends State<RunningSessionCard> {
                                     ),
                                   ),
                                   child: Text(
-                                    sessionTitle!,
+                                    sessionTitle,
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w500,
@@ -2612,7 +2612,7 @@ class RecentSessionCard extends StatelessWidget {
                                     ),
                                   ),
                                   child: Text(
-                                    sessionTitle!,
+                                    sessionTitle,
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w500,

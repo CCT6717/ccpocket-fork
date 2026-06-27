@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../l10n/app_localizations.dart';
-import '../../../models/messages.dart';
 import '../../../router/app_router.dart';
 import '../../../services/app_update_service.dart';
 import '../../../theme/app_theme.dart';

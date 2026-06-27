@@ -329,7 +329,7 @@ class SessionListCubit extends Cubit<SessionListState> {
         .toList();
 
     final allProjectPaths = <String>{
-      if (currentProjectFilter != null) currentProjectFilter!,
+      if (currentProjectFilter != null) currentProjectFilter,
       if (currentProjectFilter == null) ...?accumulatedProjectPaths,
       if (currentProjectFilter == null)
         ...filteredRecentSessions.map((session) => session.projectPath),

@@ -11,7 +11,6 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/services.dart';
 
 import '../core/logger.dart';
-import '../l10n/app_localizations.dart';
 import '../widgets/google_search_text_selection.dart';
 import 'app_theme.dart';
 import 'code_text_style.dart';
