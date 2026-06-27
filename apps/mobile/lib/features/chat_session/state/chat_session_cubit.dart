@@ -161,20 +161,23 @@ class ChatSessionCubit extends Cubit<ChatSessionState> {
     _startStatusRefreshTimer();
   }
 
+  int _statusRefreshTimerGen = 0;
+
   void _startStatusRefreshTimer() {
     // Exponential backoff: 3s → 6s → 12s → 24s → max 30s
     var interval = const Duration(seconds: 3);
     const maxInterval = Duration(seconds: 30);
+    final gen = ++_statusRefreshTimerGen;
 
     void scheduleNext() {
       _statusRefreshTimer = Timer(interval, () {
+        if (gen != _statusRefreshTimerGen) return; // cubit closed or timer restarted
         if (state.status != ProcessStatus.starting) {
           _statusRefreshTimer?.cancel();
           _statusRefreshTimer = null;
           return;
         }
         _bridge.requestSessionHistory(sessionId);
-        // Double the interval for next poll, capped at maxInterval.
         interval = Duration(
           milliseconds: (interval.inMilliseconds * 2)
               .clamp(3000, maxInterval.inMilliseconds)
@@ -2009,6 +2012,7 @@ class ChatSessionCubit extends Cubit<ChatSessionState> {
   @override
   Future<void> close() {
     _statusRefreshTimer?.cancel();
+    _statusRefreshTimerGen++; // 阻止 close 后的 Timer 回调执行
     for (final timer in _deliveryPendingTimers.values) {
       timer.cancel();
     }

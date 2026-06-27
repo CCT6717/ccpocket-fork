@@ -158,7 +158,7 @@ void main() async {
   StoreScreenshotState.draftService = draftService;
   final dbService = DatabaseService();
   final promptHistoryService = PromptHistoryService(dbService);
-  bridge.connectionStatus.listen((state) {
+  final connectionStatusSub = bridge.connectionStatus.listen((state) {
     if (state == BridgeConnectionState.connected) {
       unawaited(
         promptHistoryService.syncAll(
@@ -256,17 +256,30 @@ void main() async {
           ),
           BlocProvider<SettingsCubit>.value(value: settingsCubit),
         ],
-        child: CcpocketApp(fcmService: fcmService, prefs: prefs),
+        child: CcpocketApp(
+          fcmService: fcmService,
+          prefs: prefs,
+          bridge: bridge,
+          connectionStatusSub: connectionStatusSub,
+        ),
       ),
     ),
   );
 }
 
 class CcpocketApp extends StatefulWidget {
-  const CcpocketApp({required this.fcmService, required this.prefs, super.key});
+  const CcpocketApp({
+    required this.fcmService,
+    required this.prefs,
+    required this.bridge,
+    required this.connectionStatusSub,
+    super.key,
+  });
 
   final FcmService fcmService;
   final SharedPreferences prefs;
+  final BridgeService bridge;
+  final StreamSubscription<dynamic> connectionStatusSub;
 
   @override
   State<CcpocketApp> createState() => _CcpocketAppState();
@@ -276,6 +289,7 @@ class _CcpocketAppState extends State<CcpocketApp> {
   AppLinks? _appLinks;
   final _deepLinkNotifier = ValueNotifier<ConnectionParams?>(null);
   StreamSubscription<Uri>? _linkSub;
+  StreamSubscription<dynamic>? _connectionStatusSub;
   StreamSubscription<RemoteMessage>? _fcmOnMessageSub;
   StreamSubscription<RemoteMessage>? _fcmOnMessageOpenedAppSub;
 
@@ -289,6 +303,7 @@ class _CcpocketAppState extends State<CcpocketApp> {
     super.initState();
 
     // Clear stale notifications on launch and whenever the app is resumed.
+    _connectionStatusSub = widget.connectionStatusSub;
     _lifecycleListener = AppLifecycleListener(
       onStateChange: (state) {
         if (state == AppLifecycleState.resumed) {
@@ -455,7 +470,9 @@ class _CcpocketAppState extends State<CcpocketApp> {
     _linkSub?.cancel();
     _fcmOnMessageSub?.cancel();
     _fcmOnMessageOpenedAppSub?.cancel();
+    _connectionStatusSub?.cancel();
     _deepLinkNotifier.dispose();
+    widget.bridge.dispose();
     super.dispose();
   }
 

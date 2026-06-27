@@ -462,7 +462,7 @@ class _ChatScreenProviders extends StatelessWidget {
             initialProjectPath: projectPath,
           ),
         ),
-        BlocProvider.value(value: streamingCubit),
+        BlocProvider(create: (_) => streamingCubit),
       ],
       child: _ChatScreenBody(
         sessionId: sessionId,

@@ -53,7 +53,12 @@ void main() {
                   SessionListCubit(bridge: ctx.read<BridgeService>()),
             ),
           ],
-          child: CcpocketApp(fcmService: fcmService, prefs: prefs),
+          child: CcpocketApp(
+            fcmService: fcmService,
+            prefs: prefs,
+            bridge: bridge,
+            connectionStatusSub: bridge.connectionStatus.listen((_) {}),
+          ),
         ),
       ),
     );

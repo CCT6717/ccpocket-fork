@@ -385,6 +385,13 @@ class _SessionListScreenState extends State<SessionListScreen>
         _pendingNavigation = false;
       }
 
+      // C6: Reset pending navigation for Codex/any provider failures
+      if (msg is ErrorMessage && _pendingNavigation) {
+        _pendingNavigation = false;
+        _pendingResumeProjectPath = null;
+        _pendingResumeGitBranch = null;
+      }
+
       if (msg is ArchiveResultMessage) {
         if (_archivingSessionIds.contains(msg.sessionId) && mounted) {
           setState(() => _archivingSessionIds.remove(msg.sessionId));
